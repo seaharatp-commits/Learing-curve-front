@@ -1,6 +1,13 @@
 import type { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { mockUsers } from "@/lib/mock/db";
+import axios from "axios";
+
+const API_URL = process.env.BACKEND_API_URL ?? "http://localhost:3333/api";
+
+interface BackendLoginResponse {
+  accessToken: string;
+  user: { id: string; email: string; name: string; role: "USER" | "ADMIN" };
+}
 
 export const authOptions: AuthOptions = {
   session: { strategy: "jwt" },
@@ -13,27 +20,34 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const user = mockUsers.find(
-          (u) => u.email === credentials?.email && u.password === credentials?.password
-        );
-        if (!user) return null;
-        return { id: user.id, email: user.email, name: user.name, role: user.role };
+        try {
+          const res = await axios.post<BackendLoginResponse>(`${API_URL}/auth/login`, {
+            email: credentials?.email,
+            password: credentials?.password,
+          });
+          const { accessToken, user } = res.data;
+          return { id: user.id, email: user.email, name: user.name, role: user.role, accessToken };
+        } catch {
+          return null;
+        }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role: "USER" | "ADMIN" }).role;
         token.id = user.id;
+        token.role = user.role;
+        token.accessToken = user.accessToken;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as "USER" | "ADMIN";
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
+      session.accessToken = token.accessToken;
       return session;
     },
   },

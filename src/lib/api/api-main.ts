@@ -6,25 +6,27 @@ import type { DashboardStats } from "@/types/app/dashboard";
 import { mainClient } from "./client";
 
 export const sendChatMessageApi = (payload: SendMessagePayload) =>
-  mainClient.post<SendMessageResult>("/api/chat", payload);
+  mainClient.post<SendMessageResult>("/chat", payload);
 
-export const getHistoryListApi = () => mainClient.get<HistoryItem[]>("/api/history");
+export const getSessionMessagesApi = (sessionId: string) =>
+  mainClient.get<SendMessageResult["messages"]>("/chat", { params: { sessionId } });
+
+export const getHistoryListApi = () => mainClient.get<HistoryItem[]>("/history");
 
 export const createIssueApi = (payload: IssueFormValues) =>
-  mainClient.post<IssueReport>("/api/issues", payload);
+  mainClient.post<IssueReport>("/issues", payload);
 
-export const getIssueListApi = () => mainClient.get<IssueReport[]>("/api/issues");
+export const getIssueListApi = () => mainClient.get<IssueReport[]>("/issues");
 
-export const getKnowledgeBaseListApi = () =>
-  mainClient.get<KnowledgeBaseItem[]>("/api/knowledge-base");
+export const getKnowledgeBaseListApi = () => mainClient.get<KnowledgeBaseItem[]>("/knowledge-base");
 
 export const createKnowledgeBaseApi = (payload: KnowledgeBaseFormValues) =>
-  mainClient.post<KnowledgeBaseItem>("/api/knowledge-base", payload);
+  mainClient.post<KnowledgeBaseItem>("/knowledge-base", payload);
 
 export const updateKnowledgeBaseApi = (id: string, payload: KnowledgeBaseFormValues) =>
-  mainClient.put<KnowledgeBaseItem>(`/api/knowledge-base/${id}`, payload);
+  mainClient.put<KnowledgeBaseItem>(`/knowledge-base/${id}`, payload);
 
 export const deleteKnowledgeBaseApi = (id: string) =>
-  mainClient.delete<{ success: boolean }>(`/api/knowledge-base/${id}`);
+  mainClient.delete<{ success: boolean }>(`/knowledge-base/${id}`);
 
-export const getDashboardStatsApi = () => mainClient.get<DashboardStats>("/api/dashboard");
+export const getDashboardStatsApi = () => mainClient.get<DashboardStats>("/dashboard");
