@@ -21,12 +21,13 @@ export default function KnowledgeBaseModal({ isOpen, mode, data, onClose }: Know
   const { createMutation, updateMutation } = useKnowledgeBaseMutations();
 
   useEffect(() => {
+    if (!isOpen) return;
     if (data) {
       setForm({ title: data.title, category: data.category, content: data.content });
     } else {
       setForm(EMPTY_FORM);
     }
-  }, [data]);
+  }, [isOpen, data]);
 
   const handleSave = async () => {
     if (mode === "edit" && data) {
@@ -45,18 +46,21 @@ export default function KnowledgeBaseModal({ isOpen, mode, data, onClose }: Know
         <ModalHeader>{mode === "edit" ? "แก้ไขความรู้" : "เพิ่มความรู้ใหม่"}</ModalHeader>
         <ModalBody className="flex flex-col gap-3">
           <BaseInput
+            name="title"
             label="หัวข้อ"
             value={form.title}
             onValueChange={(v) => setForm((p) => ({ ...p, title: v }))}
             isRequired
           />
           <BaseInput
+            name="category"
             label="หมวดหมู่"
             value={form.category}
             onValueChange={(v) => setForm((p) => ({ ...p, category: v }))}
             isRequired
           />
           <Textarea
+            name="content"
             label="เนื้อหา"
             minRows={4}
             value={form.content}
