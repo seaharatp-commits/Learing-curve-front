@@ -33,7 +33,7 @@ export default function LoginContent() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
           <div className="mb-2 text-center">
             <h1 className="text-2xl font-semibold">เข้าสู่ระบบ</h1>
-            <p className="text-sm text-default-500">Learning Curve · AI Support</p>
+            <p className="text-sm text-default-500">Learning Curve</p>
           </div>
           <BaseInput
             label="อีเมล"
