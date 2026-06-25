@@ -1,11 +1,38 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useDashboardStats } from "@/hooks/dashboard";
+import { useIssueList } from "@/hooks/issue";
 import { BaseCard } from "@/components/ui/Card";
-import { MessageSquare, FileWarning, CheckCircle2, BookOpen } from "lucide-react";
+import { MessageSquare, FileWarning, CheckCircle2, BookOpen, ChevronDown, ChevronRight } from "lucide-react";
+import dayjs from "dayjs";
+
+const STATUS_LABEL: Record<string, string> = {
+  OPEN: "เปิดอยู่",
+  IN_PROGRESS: "กำลังดำเนินการ",
+  RESOLVED: "แก้ไขแล้ว",
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+  LOW: "ต่ำ",
+  MEDIUM: "กลาง",
+  HIGH: "สูง",
+};
 
 export default function DashboardContent() {
   const { data, isLoading } = useDashboardStats();
+  const { data: issues, isLoading: isIssuesLoading } = useIssueList();
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  const issuesByCategory = useMemo(() => {
+    const map = new Map<string, typeof issues>();
+    issues.forEach((issue) => {
+      const list = map.get(issue.category) ?? [];
+      list.push(issue);
+      map.set(issue.category, list);
+    });
+    return map;
+  }, [issues]);
 
   const cards = [
     { label: "บทสนทนาทั้งหมด", value: data?.totalChats ?? 0, icon: MessageSquare },
@@ -40,13 +67,50 @@ export default function DashboardContent() {
         {(data?.issuesByCategory.length ?? 0) === 0 ? (
           <p className="text-sm text-default-400">ยังไม่มีข้อมูล</p>
         ) : (
-          <div className="space-y-2">
-            {data?.issuesByCategory.map((row) => (
-              <div key={row.category} className="flex items-center justify-between text-sm">
-                <span>{row.category}</span>
-                <span className="font-medium">{row.count}</span>
-              </div>
-            ))}
+          <div className="space-y-1">
+            {data?.issuesByCategory.map((row) => {
+              const isExpanded = expandedCategory === row.category;
+              const categoryIssues = issuesByCategory.get(row.category) ?? [];
+              return (
+                <div key={row.category} className="rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedCategory(isExpanded ? null : row.category)}
+                    className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm transition-colors hover:bg-default-100"
+                  >
+                    <span className="flex items-center gap-2">
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      {row.category}
+                    </span>
+                    <span className="font-medium">{row.count}</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-6 mb-2 space-y-2 border-l border-default-200 pl-4">
+                      {isIssuesLoading && <p className="text-xs text-default-400">กำลังโหลด...</p>}
+                      {!isIssuesLoading && categoryIssues.length === 0 && (
+                        <p className="text-xs text-default-400">ไม่มีปัญหาในหมวดหมู่นี้</p>
+                      )}
+                      {categoryIssues.map((issue) => (
+                        <div key={issue.id} className="rounded-lg bg-default-50 p-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{issue.title}</span>
+                            <span className="text-default-400">
+                              {dayjs(issue.createdAt).format("DD MMM YYYY HH:mm")}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-default-500">{issue.description}</p>
+                          <div className="mt-1 flex items-center gap-3 text-default-400">
+                            <span>สถานะ: {STATUS_LABEL[issue.status] ?? issue.status}</span>
+                            <span>ความสำคัญ: {PRIORITY_LABEL[issue.priority] ?? issue.priority}</span>
+                            <span>ผู้แจ้ง: {issue.reporterName}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </BaseCard>
