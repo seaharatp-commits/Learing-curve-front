@@ -1,0 +1,1 @@
+export { useSearchPersist } from "./useSearchPersist";

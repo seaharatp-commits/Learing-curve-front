@@ -1,0 +1,92 @@
+"use client";
+
+import { useState } from "react";
+import { Select, SelectItem, Textarea } from "@heroui/react";
+import { BaseInput } from "@/components/ui/Input";
+import { BaseButton } from "@/components/ui/Button";
+import { BaseCard } from "@/components/ui/Card";
+import { useCreateIssue } from "@/hooks/issue";
+import { ISSUE_CATEGORIES, ISSUE_PRIORITIES, DEFAULT_ISSUE_FORM } from "./Report.config";
+import type { IssueFormValues } from "@/types/app/issue";
+
+export default function ReportContent() {
+  const [form, setForm] = useState<IssueFormValues>(DEFAULT_ISSUE_FORM);
+  const [submitted, setSubmitted] = useState(false);
+  const { mutateAsync, isPending } = useCreateIssue();
+
+  const update = (key: keyof IssueFormValues, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await mutateAsync(form);
+    setSubmitted(true);
+    setForm(DEFAULT_ISSUE_FORM);
+  };
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4">
+      <h1 className="text-xl font-semibold">แจ้งปัญหา</h1>
+      <BaseCard>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-2">
+          {submitted && (
+            <p className="rounded-lg bg-success-100 px-3 py-2 text-sm text-success-700">
+              ส่งคำร้องแจ้งปัญหาเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด
+            </p>
+          )}
+          <BaseInput
+            label="หัวข้อปัญหา"
+            value={form.title}
+            onValueChange={(v) => update("title", v)}
+            isRequired
+          />
+          <Textarea
+            label="รายละเอียดปัญหา"
+            value={form.description}
+            onValueChange={(v) => update("description", v)}
+            isRequired
+            minRows={4}
+          />
+          <div className="flex gap-3">
+            <Select
+              label="หมวดหมู่"
+              selectedKeys={[form.category]}
+              onSelectionChange={(keys) => update("category", Array.from(keys)[0] as string)}
+            >
+              {ISSUE_CATEGORIES.map((c) => (
+                <SelectItem key={c}>{c}</SelectItem>
+              ))}
+            </Select>
+            <Select
+              label="ระดับความสำคัญ"
+              selectedKeys={[form.priority]}
+              onSelectionChange={(keys) => update("priority", Array.from(keys)[0] as string)}
+            >
+              {ISSUE_PRIORITIES.map((p) => (
+                <SelectItem key={p}>{p}</SelectItem>
+              ))}
+            </Select>
+          </div>
+          <div className="flex gap-3">
+            <BaseInput
+              label="ชื่อผู้แจ้ง"
+              value={form.reporterName}
+              onValueChange={(v) => update("reporterName", v)}
+              isRequired
+            />
+            <BaseInput
+              label="อีเมลผู้แจ้ง"
+              type="email"
+              value={form.reporterEmail}
+              onValueChange={(v) => update("reporterEmail", v)}
+              isRequired
+            />
+          </div>
+          <BaseButton type="submit" isLoading={isPending} className="w-full">
+            ส่งคำร้อง
+          </BaseButton>
+        </form>
+      </BaseCard>
+    </div>
+  );
+}

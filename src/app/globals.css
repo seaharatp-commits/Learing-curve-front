@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@plugin "../../heroui.plugin.ts";
+@source "../../node_modules/@heroui/theme/dist/**/*.js";
+
+html,
+body {
+  height: 100%;
+}
