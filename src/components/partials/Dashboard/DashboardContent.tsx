@@ -2,9 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useDashboardStats } from "@/hooks/dashboard";
-import { useIssueList } from "@/hooks/issue";
+import { useIssueList, useLearnFromIssue } from "@/hooks/issue";
 import { BaseCard } from "@/components/ui/Card";
-import { MessageSquare, FileWarning, CheckCircle2, BookOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { BaseButton } from "@/components/ui/Button";
+import {
+  MessageSquare,
+  FileWarning,
+  CheckCircle2,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
 import dayjs from "dayjs";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,6 +32,25 @@ export default function DashboardContent() {
   const { data, isLoading } = useDashboardStats();
   const { data: issues, isLoading: isIssuesLoading } = useIssueList();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [resultMessages, setResultMessages] = useState<Record<string, string>>({});
+  const learnFromIssue = useLearnFromIssue();
+
+  const handleLearn = (issueId: string) => {
+    learnFromIssue.mutate(issueId, {
+      onSuccess: (result) => {
+        setResultMessages((prev) => ({
+          ...prev,
+          [issueId]:
+            result.action === "created"
+              ? `สร้างความรู้ใหม่ "${result.article.title}" และปิดปัญหานี้แล้ว`
+              : `ปรับปรุงความรู้ "${result.article.title}" และปิดปัญหานี้แล้ว`,
+        }));
+      },
+      onError: () => {
+        setResultMessages((prev) => ({ ...prev, [issueId]: "เกิดข้อผิดพลาด ลองใหม่อีกครั้ง" }));
+      },
+    });
+  };
 
   const issuesByCategory = useMemo(() => {
     const map = new Map<string, typeof issues>();
@@ -90,22 +118,43 @@ export default function DashboardContent() {
                       {!isIssuesLoading && categoryIssues.length === 0 && (
                         <p className="text-xs text-default-400">ไม่มีปัญหาในหมวดหมู่นี้</p>
                       )}
-                      {categoryIssues.map((issue) => (
-                        <div key={issue.id} className="rounded-lg bg-default-50 p-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{issue.title}</span>
-                            <span className="text-default-400">
-                              {dayjs(issue.createdAt).format("DD MMM YYYY HH:mm")}
-                            </span>
+                      {categoryIssues.map((issue) => {
+                        const isLearningThis =
+                          learnFromIssue.isPending && learnFromIssue.variables === issue.id;
+                        const resultMessage = resultMessages[issue.id];
+                        return (
+                          <div key={issue.id} className="rounded-lg bg-default-50 p-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{issue.title}</span>
+                              <span className="text-default-400">
+                                {dayjs(issue.createdAt).format("DD MMM YYYY HH:mm")}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-default-500">{issue.description}</p>
+                            <div className="mt-1 flex items-center gap-3 text-default-400">
+                              <span>สถานะ: {STATUS_LABEL[issue.status] ?? issue.status}</span>
+                              <span>ความสำคัญ: {PRIORITY_LABEL[issue.priority] ?? issue.priority}</span>
+                              <span>ผู้แจ้ง: {issue.reporterName}</span>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              {issue.status !== "RESOLVED" && (
+                                <BaseButton
+                                  size="sm"
+                                  variant="flat"
+                                  startContent={<Sparkles size={12} />}
+                                  isLoading={isLearningThis}
+                                  onPress={() => handleLearn(issue.id)}
+                                >
+                                  ให้ AI แก้ปัญหานี้ลงฐานความรู้
+                                </BaseButton>
+                              )}
+                              {resultMessage && (
+                                <span className="text-success-600">{resultMessage}</span>
+                              )}
+                            </div>
                           </div>
-                          <p className="mt-1 text-default-500">{issue.description}</p>
-                          <div className="mt-1 flex items-center gap-3 text-default-400">
-                            <span>สถานะ: {STATUS_LABEL[issue.status] ?? issue.status}</span>
-                            <span>ความสำคัญ: {PRIORITY_LABEL[issue.priority] ?? issue.priority}</span>
-                            <span>ผู้แจ้ง: {issue.reporterName}</span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

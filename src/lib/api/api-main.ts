@@ -18,6 +18,11 @@ export const createIssueApi = (payload: IssueFormValues) =>
 
 export const getIssueListApi = () => mainClient.get<IssueReport[]>("/issues");
 
+export const learnFromIssueApi = (id: string) =>
+  mainClient.post<{ action: "created" | "updated"; article: { id: string; title: string } }>(
+    `/issues/${id}/learn`,
+  );
+
 export const getKnowledgeBaseListApi = () => mainClient.get<KnowledgeBaseItem[]>("/knowledge-base");
 
 export const createKnowledgeBaseApi = (payload: KnowledgeBaseFormValues) =>

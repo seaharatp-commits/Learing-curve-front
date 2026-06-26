@@ -1,5 +1,5 @@
 import type { IssueFormValues, IssueReport } from "@/types/app/issue";
-import { createIssueApi, getIssueListApi } from "@/lib/api/api-main";
+import { createIssueApi, getIssueListApi, learnFromIssueApi } from "@/lib/api/api-main";
 
 export const createIssue = async (payload: IssueFormValues): Promise<IssueReport> => {
   const res = await createIssueApi(payload);
@@ -8,5 +8,10 @@ export const createIssue = async (payload: IssueFormValues): Promise<IssueReport
 
 export const getIssueList = async (): Promise<IssueReport[]> => {
   const res = await getIssueListApi();
+  return res.data;
+};
+
+export const learnFromIssue = async (id: string) => {
+  const res = await learnFromIssueApi(id);
   return res.data;
 };
