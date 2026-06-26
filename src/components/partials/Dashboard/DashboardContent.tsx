@@ -64,8 +64,8 @@ export default function DashboardContent() {
 
   const cards = [
     { label: "บทสนทนาทั้งหมด", value: data?.totalChats ?? 0, icon: MessageSquare },
-    { label: "ปัญหาที่แจ้งทั้งหมด", value: data?.totalIssues ?? 0, icon: FileWarning },
-    { label: "ปัญหาที่แก้ไขแล้ว", value: data?.resolvedIssues ?? 0, icon: CheckCircle2 },
+    // { label: "ปัญหาที่แจ้งทั้งหมด", value: data?.totalIssues ?? 0, icon: FileWarning },
+    // { label: "ปัญหาที่แก้ไขแล้ว", value: data?.resolvedIssues ?? 0, icon: CheckCircle2 },
     { label: "บทความในฐานความรู้", value: data?.knowledgeBaseCount ?? 0, icon: BookOpen },
   ];
 
@@ -90,7 +90,7 @@ export default function DashboardContent() {
         })}
       </div>
 
-      <BaseCard>
+      {/* <BaseCard>
         <h2 className="mb-3 font-medium">ปัญหาตามหมวดหมู่</h2>
         {(data?.issuesByCategory.length ?? 0) === 0 ? (
           <p className="text-sm text-default-400">ยังไม่มีข้อมูล</p>
@@ -162,7 +162,7 @@ export default function DashboardContent() {
             })}
           </div>
         )}
-      </BaseCard>
+      </BaseCard> */}
     </div>
   );
 }

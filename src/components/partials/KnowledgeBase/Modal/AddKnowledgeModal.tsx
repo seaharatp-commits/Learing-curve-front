@@ -175,11 +175,11 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
                 value={draft.symptoms}
                 onValueChange={(v) => updateDraft("symptoms", v)}
               />
-              <BaseInput
+              {/* <BaseInput
                 label="สภาพแวดล้อม"
                 value={draft.environment}
                 onValueChange={(v) => updateDraft("environment", v)}
-              />
+              /> */}
               <Textarea
                 label="สาเหตุที่เป็นไปได้"
                 minRows={2}
@@ -198,7 +198,7 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
                 value={draft.verification}
                 onValueChange={(v) => updateDraft("verification", v)}
               />
-              <BaseInput
+              {/* <BaseInput
                 label="คำสำคัญ (คั่นด้วยจุลภาค)"
                 value={draft.keywords.join(", ")}
                 onValueChange={(v) => updateListField("keywords", v)}
@@ -207,7 +207,7 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
                 label="แท็ก (คั่นด้วยจุลภาค)"
                 value={draft.tags.join(", ")}
                 onValueChange={(v) => updateListField("tags", v)}
-              />
+              /> */}
             </ModalBody>
             <ModalFooter>
               <BaseButton variant="light" onPress={onClose}>
