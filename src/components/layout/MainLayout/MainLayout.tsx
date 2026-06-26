@@ -8,7 +8,7 @@ import { MessageSquare, History, FileWarning, LogOut, ShieldCheck } from "lucide
 const NAV_ITEMS = [
   { href: "/chat", label: "แชทกับ AI", icon: MessageSquare },
   { href: "/history", label: "ประวัติ", icon: History },
-  { href: "/report", label: "แจ้งปัญหา", icon: FileWarning },
+  // { href: "/report", label: "แจ้งปัญหา", icon: FileWarning },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
