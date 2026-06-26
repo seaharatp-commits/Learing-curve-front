@@ -1,9 +1,15 @@
-import type { KnowledgeBaseFormValues, KnowledgeBaseItem } from "@/types/app/knowledgeBase";
+import type {
+  KnowledgeBaseFormValues,
+  KnowledgeBaseItem,
+  RecommendQuery,
+  RecommendationResult,
+} from "@/types/app/knowledgeBase";
 import {
   getKnowledgeBaseListApi,
   createKnowledgeBaseApi,
   updateKnowledgeBaseApi,
   deleteKnowledgeBaseApi,
+  getRecommendationsApi,
 } from "@/lib/api/api-main";
 
 export const getKnowledgeBaseList = async (): Promise<KnowledgeBaseItem[]> => {
@@ -28,5 +34,10 @@ export const updateKnowledgeBase = async (
 
 export const deleteKnowledgeBase = async (id: string): Promise<{ success: boolean }> => {
   const res = await deleteKnowledgeBaseApi(id);
+  return res.data;
+};
+
+export const getRecommendations = async (query: RecommendQuery): Promise<RecommendationResult[]> => {
+  const res = await getRecommendationsApi(query);
   return res.data;
 };

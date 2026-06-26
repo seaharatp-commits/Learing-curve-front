@@ -1,7 +1,12 @@
 import type { SendMessagePayload, SendMessageResult } from "@/types/app/chat";
 import type { HistoryItem } from "@/types/app/history";
 import type { IssueFormValues, IssueReport } from "@/types/app/issue";
-import type { KnowledgeBaseFormValues, KnowledgeBaseItem } from "@/types/app/knowledgeBase";
+import type {
+  KnowledgeBaseFormValues,
+  KnowledgeBaseItem,
+  RecommendQuery,
+  RecommendationResult,
+} from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
 import { mainClient } from "./client";
 
@@ -35,3 +40,6 @@ export const deleteKnowledgeBaseApi = (id: string) =>
   mainClient.delete<{ success: boolean }>(`/knowledge-base/${id}`);
 
 export const getDashboardStatsApi = () => mainClient.get<DashboardStats>("/dashboard");
+
+export const getRecommendationsApi = (payload: RecommendQuery) =>
+  mainClient.post<RecommendationResult[]>("/knowledge-base/recommend", payload);
