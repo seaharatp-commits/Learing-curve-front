@@ -6,6 +6,8 @@ import type {
   KnowledgeBaseItem,
   RecommendQuery,
   RecommendationResult,
+  GenerateKnowledgeResult,
+  ConfirmKnowledgePayload,
 } from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
 import { mainClient } from "./client";
@@ -43,3 +45,9 @@ export const getDashboardStatsApi = () => mainClient.get<DashboardStats>("/dashb
 
 export const getRecommendationsApi = (payload: RecommendQuery) =>
   mainClient.post<RecommendationResult[]>("/knowledge-base/recommend", payload);
+
+export const generateKnowledgeApi = (text: string) =>
+  mainClient.post<GenerateKnowledgeResult>("/knowledge-base/generate", { text });
+
+export const confirmKnowledgeApi = (payload: ConfirmKnowledgePayload) =>
+  mainClient.post<KnowledgeBaseItem>("/knowledge-base/confirm", payload);

@@ -5,33 +5,20 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useKnowledgeBaseList, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import { KnowledgeBaseModal } from "./Modal";
-import type { KnowledgeBaseItem, ModalMode } from "@/types/app/knowledgeBase";
+import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
+import type { KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 
 export default function KnowledgeBaseContent() {
   const { data, isLoading } = useKnowledgeBaseList();
   const { deleteMutation } = useKnowledgeBaseMutations();
-  const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<ModalMode>("create");
-  const [selected, setSelected] = useState<KnowledgeBaseItem | undefined>();
-
-  const openCreate = () => {
-    setMode("create");
-    setSelected(undefined);
-    setIsOpen(true);
-  };
-
-  const openEdit = (item: KnowledgeBaseItem) => {
-    setMode("edit");
-    setSelected(item);
-    setIsOpen(true);
-  };
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editing, setEditing] = useState<KnowledgeBaseItem | undefined>();
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">จัดการฐานความรู้</h1>
-        <BaseButton startContent={<Plus size={16} />} onPress={openCreate}>
+        <BaseButton startContent={<Plus size={16} />} onPress={() => setIsAddOpen(true)}>
           เพิ่มความรู้
         </BaseButton>
       </div>
@@ -50,7 +37,7 @@ export default function KnowledgeBaseContent() {
                 <p className="mt-1 line-clamp-3 text-sm text-default-500">{item.content}</p>
               </div>
               <div className="flex flex-col gap-1">
-                <BaseButton isIconOnly size="sm" variant="light" onPress={() => openEdit(item)}>
+                <BaseButton isIconOnly size="sm" variant="light" onPress={() => setEditing(item)}>
                   <Pencil size={14} />
                 </BaseButton>
                 <BaseButton
@@ -68,7 +55,8 @@ export default function KnowledgeBaseContent() {
         ))}
       </div>
 
-      <KnowledgeBaseModal isOpen={isOpen} mode={mode} data={selected} onClose={() => setIsOpen(false)} />
+      <AddKnowledgeModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
+      <KnowledgeBaseModal isOpen={!!editing} data={editing} onClose={() => setEditing(undefined)} />
     </div>
   );
 }

@@ -3,6 +3,8 @@ import type {
   KnowledgeBaseItem,
   RecommendQuery,
   RecommendationResult,
+  GenerateKnowledgeResult,
+  ConfirmKnowledgePayload,
 } from "@/types/app/knowledgeBase";
 import {
   getKnowledgeBaseListApi,
@@ -10,6 +12,8 @@ import {
   updateKnowledgeBaseApi,
   deleteKnowledgeBaseApi,
   getRecommendationsApi,
+  generateKnowledgeApi,
+  confirmKnowledgeApi,
 } from "@/lib/api/api-main";
 
 export const getKnowledgeBaseList = async (): Promise<KnowledgeBaseItem[]> => {
@@ -39,5 +43,17 @@ export const deleteKnowledgeBase = async (id: string): Promise<{ success: boolea
 
 export const getRecommendations = async (query: RecommendQuery): Promise<RecommendationResult[]> => {
   const res = await getRecommendationsApi(query);
+  return res.data;
+};
+
+export const generateKnowledge = async (text: string): Promise<GenerateKnowledgeResult> => {
+  const res = await generateKnowledgeApi(text);
+  return res.data;
+};
+
+export const confirmKnowledge = async (
+  payload: ConfirmKnowledgePayload
+): Promise<KnowledgeBaseItem> => {
+  const res = await confirmKnowledgeApi(payload);
   return res.data;
 };

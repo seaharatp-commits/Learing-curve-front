@@ -7,8 +7,6 @@ export interface KnowledgeBaseItem {
   updatedAt: string;
 }
 
-export type ModalMode = "create" | "edit" | "view";
-
 export interface KnowledgeBaseFormValues {
   title: string;
   category: string;
@@ -31,4 +29,28 @@ export interface RecommendationResult {
   matchedKeywords: string[];
   sameCategory: boolean;
   explanation: string;
+}
+
+export interface KnowledgeDraft {
+  title: string;
+  summary: string;
+  symptoms: string;
+  environment: string;
+  rootCause: string;
+  resolution: string;
+  verification: string;
+  keywords: string[];
+  tags: string[];
+  category: string;
+}
+
+export interface GenerateKnowledgeResult {
+  draft: KnowledgeDraft;
+  originalText: string;
+  similarArticles: RecommendationResult[];
+}
+
+export interface ConfirmKnowledgePayload extends KnowledgeDraft {
+  originalText: string;
+  targetArticleId?: string;
 }

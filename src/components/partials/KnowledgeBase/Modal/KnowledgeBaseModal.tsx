@@ -5,20 +5,19 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea } fr
 import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
-import type { KnowledgeBaseFormValues, KnowledgeBaseItem, ModalMode } from "@/types/app/knowledgeBase";
+import type { KnowledgeBaseFormValues, KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 
 interface KnowledgeBaseModalProps {
   isOpen: boolean;
-  mode: ModalMode;
   data?: KnowledgeBaseItem;
   onClose: () => void;
 }
 
 const EMPTY_FORM: KnowledgeBaseFormValues = { title: "", category: "", content: "" };
 
-export default function KnowledgeBaseModal({ isOpen, mode, data, onClose }: KnowledgeBaseModalProps) {
+export default function KnowledgeBaseModal({ isOpen, data, onClose }: KnowledgeBaseModalProps) {
   const [form, setForm] = useState<KnowledgeBaseFormValues>(EMPTY_FORM);
-  const { createMutation, updateMutation } = useKnowledgeBaseMutations();
+  const { updateMutation } = useKnowledgeBaseMutations();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -30,20 +29,15 @@ export default function KnowledgeBaseModal({ isOpen, mode, data, onClose }: Know
   }, [isOpen, data]);
 
   const handleSave = async () => {
-    if (mode === "edit" && data) {
-      await updateMutation.mutateAsync({ id: data.id, payload: form });
-    } else {
-      await createMutation.mutateAsync(form);
-    }
+    if (!data) return;
+    await updateMutation.mutateAsync({ id: data.id, payload: form });
     onClose();
   };
-
-  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalContent>
-        <ModalHeader>{mode === "edit" ? "แก้ไขความรู้" : "เพิ่มความรู้ใหม่"}</ModalHeader>
+        <ModalHeader>แก้ไขความรู้</ModalHeader>
         <ModalBody className="flex flex-col gap-3">
           <BaseInput
             name="title"
@@ -72,7 +66,7 @@ export default function KnowledgeBaseModal({ isOpen, mode, data, onClose }: Know
           <BaseButton variant="light" onPress={onClose}>
             ยกเลิก
           </BaseButton>
-          <BaseButton isLoading={isLoading} onPress={handleSave}>
+          <BaseButton isLoading={updateMutation.isPending} onPress={handleSave}>
             บันทึก
           </BaseButton>
         </ModalFooter>
