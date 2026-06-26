@@ -1,19 +1,30 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import type { ChatMessage } from "@/types/app/chat";
-import { useSendMessage } from "@/hooks/chat";
+import { useSendMessage, useSessionMessages } from "@/hooks/chat";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { Send, Bot, User } from "lucide-react";
 
 export default function ChatContent() {
-  const [sessionId, setSessionId] = useState<string | undefined>();
+  const searchParams = useSearchParams();
+  const initialSessionId = searchParams.get("sessionId") ?? undefined;
+
+  const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const { mutateAsync, isPending } = useSendMessage();
+  const { data: history, isLoading: isHistoryLoading } = useSessionMessages(initialSessionId);
+
+  useEffect(() => {
+    if (initialSessionId && history.length > 0) {
+      setMessages(history);
+    }
+  }, [initialSessionId, history]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +44,10 @@ export default function ChatContent() {
       <h1 className="text-xl font-semibold">แชทกับ AI ผู้ช่วยแก้ปัญหา</h1>
       <BaseCard className="flex-1 overflow-y-auto p-2">
         <div className="flex flex-col gap-3">
-          {messages.length === 0 && (
+          {isHistoryLoading && (
+            <p className="text-center text-sm text-default-400">กำลังโหลดบทสนทนา...</p>
+          )}
+          {!isHistoryLoading && messages.length === 0 && (
             <p className="text-center text-sm text-default-400">
               พิมพ์ปัญหาของคุณเพื่อเริ่มสนทนากับ AI
             </p>

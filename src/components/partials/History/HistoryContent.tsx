@@ -1,12 +1,16 @@
 "use client";
 
 import dayjs from "dayjs";
-import { useHistoryList } from "@/hooks/history";
+import { useRouter } from "next/navigation";
+import { useHistoryList, useDeleteHistory } from "@/hooks/history";
 import { BaseCard } from "@/components/ui/Card";
-import { MessageSquare } from "lucide-react";
+import { BaseButton } from "@/components/ui/Button";
+import { MessageSquare, Trash2 } from "lucide-react";
 
 export default function HistoryContent() {
   const { data, isLoading } = useHistoryList();
+  const deleteMutation = useDeleteHistory();
+  const router = useRouter();
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -20,7 +24,11 @@ export default function HistoryContent() {
           <BaseCard key={item.id}>
             <div className="flex items-start gap-3">
               <MessageSquare size={20} className="mt-1 text-primary" />
-              <div className="flex-1">
+              <button
+                type="button"
+                className="flex-1 text-left"
+                onClick={() => router.push(`/chat?sessionId=${item.id}`)}
+              >
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium">{item.title}</h3>
                   <span className="text-xs text-default-400">
@@ -29,7 +37,17 @@ export default function HistoryContent() {
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-default-500">{item.lastMessage}</p>
                 <p className="mt-1 text-xs text-default-400">{item.messageCount} ข้อความ</p>
-              </div>
+              </button>
+              <BaseButton
+                isIconOnly
+                size="sm"
+                variant="light"
+                color="danger"
+                isLoading={deleteMutation.isPending && deleteMutation.variables === item.id}
+                onPress={() => deleteMutation.mutate(item.id)}
+              >
+                <Trash2 size={14} />
+              </BaseButton>
             </div>
           </BaseCard>
         ))}

@@ -20,6 +20,9 @@ export const getSessionMessagesApi = (sessionId: string) =>
 
 export const getHistoryListApi = () => mainClient.get<HistoryItem[]>("/history");
 
+export const deleteHistoryApi = (sessionId: string) =>
+  mainClient.delete<{ success: boolean }>(`/history/${sessionId}`);
+
 export const createIssueApi = (payload: IssueFormValues) =>
   mainClient.post<IssueReport>("/issues", payload);
 
