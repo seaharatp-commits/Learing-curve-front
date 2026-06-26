@@ -11,7 +11,7 @@ export default function AdminGroupLayout({ children }: { children: React.ReactNo
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
-    if (status === "authenticated" && session?.user?.role !== "ADMIN") router.push("/chat");
+    if (status === "authenticated" && session?.user?.role !== "ADMIN") router.push("/dashboard");
   }, [status, session, router]);
 
   if (status !== "authenticated" || session?.user?.role !== "ADMIN") return null;

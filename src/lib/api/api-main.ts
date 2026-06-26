@@ -10,6 +10,7 @@ import type {
   ConfirmKnowledgePayload,
 } from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
+import type { LearningDashboard } from "@/types/app/learning";
 import { mainClient } from "./client";
 
 export const sendChatMessageApi = (payload: SendMessagePayload) =>
@@ -54,3 +55,6 @@ export const generateKnowledgeApi = (text: string) =>
 
 export const confirmKnowledgeApi = (payload: ConfirmKnowledgePayload) =>
   mainClient.post<KnowledgeBaseItem>("/knowledge-base/confirm", payload);
+
+export const getLearningDashboardApi = () =>
+  mainClient.get<LearningDashboard>("/learning/dashboard");

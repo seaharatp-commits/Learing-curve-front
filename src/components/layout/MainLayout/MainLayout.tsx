@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { MessageSquare, History, FileWarning, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, MessageSquare, History, FileWarning, LogOut, ShieldCheck } from "lucide-react";
+import ThemeToggle from "@/components/common/ThemeToggle";
 
 const NAV_ITEMS = [
+  { href: "/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { href: "/chat", label: "แชทกับ AI", icon: MessageSquare },
   { href: "/history", label: "ประวัติ", icon: History },
   // { href: "/report", label: "แจ้งปัญหา", icon: FileWarning },
@@ -19,7 +21,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-        <Link href="/chat" className="text-lg font-semibold">
+        <Link href="/dashboard" className="text-lg font-semibold">
           Learning Curve
         </Link>
         <nav className="flex items-center gap-2">
@@ -39,6 +41,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </Link>
             );
           })}
+          <ThemeToggle />
           {session?.user?.role === "ADMIN" && (
             <Link
               href="/admin/dashboard"

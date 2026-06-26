@@ -24,7 +24,7 @@ export default function LoginContent() {
       setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
       return;
     }
-    router.push("/chat");
+    router.push("/dashboard");
   };
 
   return (
