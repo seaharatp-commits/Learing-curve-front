@@ -1,6 +1,7 @@
 "use client";
 
 import dayjs from "dayjs";
+import Link from "next/link";
 import { Progress } from "@heroui/react";
 import { useLearningDashboard } from "@/hooks/learning";
 import { BaseCard } from "@/components/ui/Card";
@@ -84,20 +85,22 @@ export default function LearningDashboardContent() {
 
       {/* Continue Learning */}
       {continueLearning && (
-        <BaseCard className="bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-500/10 dark:to-secondary-500/10">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-primary/15 p-2 text-primary">
-                <BookOpen size={20} />
+        <Link href={`/lessons/${continueLearning.lessonId}`}>
+          <BaseCard className="bg-gradient-to-r from-primary-50 to-secondary-50 transition-colors hover:from-primary-100 hover:to-secondary-100 dark:from-primary-500/10 dark:to-secondary-500/10 dark:hover:from-primary-500/15 dark:hover:to-secondary-500/15">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary/15 p-2 text-primary">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <p className="text-xs text-default-500">เรียนต่อ</p>
+                  <h3 className="font-medium">{continueLearning.title}</h3>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-default-500">เรียนต่อ</p>
-                <h3 className="font-medium">{continueLearning.title}</h3>
-              </div>
+              <ArrowRight size={18} className="text-default-400" />
             </div>
-            <ArrowRight size={18} className="text-default-400" />
-          </div>
-        </BaseCard>
+          </BaseCard>
+        </Link>
       )}
 
       {/* Recent Quiz */}

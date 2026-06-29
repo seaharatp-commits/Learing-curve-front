@@ -4,5 +4,6 @@ export interface DashboardStats {
   openIssues: number;
   resolvedIssues: number;
   knowledgeBaseCount: number;
+  quizCount: number;
   issuesByCategory: { category: string; count: number }[];
 }

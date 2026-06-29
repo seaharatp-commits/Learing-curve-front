@@ -12,10 +12,13 @@ import type {
 import type { DashboardStats } from "@/types/app/dashboard";
 import type {
   LearningDashboard,
+  LessonCompletion,
+  LessonDetail,
   QuizListItem,
   QuizForAttempt,
   SubmitAnswer,
   QuizAttemptResult,
+  GeneratedTopicResult,
 } from "@/types/app/learning";
 import { mainClient } from "./client";
 
@@ -65,13 +68,25 @@ export const confirmKnowledgeApi = (payload: ConfirmKnowledgePayload) =>
 export const getLearningDashboardApi = () =>
   mainClient.get<LearningDashboard>("/learning/dashboard");
 
+export const getLessonApi = (lessonId: string) =>
+  mainClient.get<LessonDetail>(`/learning/lessons/${lessonId}`);
+
+export const markLessonCompletedApi = (lessonId: string) =>
+  mainClient.post<LessonCompletion>(`/learning/lessons/${lessonId}/complete`);
+
 export const getQuizListApi = () => mainClient.get<QuizListItem[]>("/learning/quizzes");
 
 export const getQuizForAttemptApi = (quizId: string) =>
   mainClient.get<QuizForAttempt>(`/learning/quizzes/${quizId}`);
+
+export const deleteQuizApi = (quizId: string) =>
+  mainClient.delete<{ success: boolean }>(`/learning/quizzes/${quizId}`);
 
 export const submitQuizAttemptApi = (quizId: string, answers: SubmitAnswer[]) =>
   mainClient.post<QuizAttemptResult>(`/learning/quizzes/${quizId}/attempts`, { answers });
 
 export const generateQuizFromArticleApi = (articleId: string) =>
   mainClient.post<{ id: string }>("/learning/quizzes/generate-from-article", { articleId });
+
+export const generateQuizFromTopicApi = (topic: string) =>
+  mainClient.post<GeneratedTopicResult>("/learning/quizzes/generate-from-topic", { topic });

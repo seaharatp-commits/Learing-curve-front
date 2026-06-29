@@ -3,3 +3,7 @@ export { useQuizList, QUIZ_LIST_QUERY_KEY } from "./useQuizList";
 export { useQuiz } from "./useQuiz";
 export { useSubmitQuizAttempt } from "./useSubmitQuizAttempt";
 export { useGenerateQuiz } from "./useGenerateQuiz";
+export { useLesson } from "./useLesson";
+export { useCompleteLesson } from "./useCompleteLesson";
+export { useGenerateQuizFromTopic } from "./useGenerateQuizFromTopic";
+export { useDeleteQuiz } from "./useDeleteQuiz";

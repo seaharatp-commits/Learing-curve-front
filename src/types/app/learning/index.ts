@@ -29,6 +29,33 @@ export interface LearningDashboard {
   continueLearning: ContinueLearning | null;
 }
 
+export interface LessonQuizItem {
+  id: string;
+  title: string;
+  questionCount: number;
+}
+
+export interface LessonDetail {
+  id: string;
+  title: string;
+  content: string;
+  completed: boolean;
+  completedAt: string | null;
+  quizzes: LessonQuizItem[];
+}
+
+export interface LessonCompletion {
+  lessonId: string;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+export interface GeneratedTopicResult {
+  lessonId: string;
+  quizId: string;
+  title: string;
+}
+
 export interface QuizListItem {
   id: string;
   title: string;

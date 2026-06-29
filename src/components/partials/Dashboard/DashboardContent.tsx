@@ -10,6 +10,7 @@ import {
   FileWarning,
   CheckCircle2,
   BookOpen,
+  ClipboardList,
   ChevronDown,
   ChevronRight,
   Sparkles,
@@ -67,6 +68,7 @@ export default function DashboardContent() {
     // { label: "ปัญหาที่แจ้งทั้งหมด", value: data?.totalIssues ?? 0, icon: FileWarning },
     // { label: "ปัญหาที่แก้ไขแล้ว", value: data?.resolvedIssues ?? 0, icon: CheckCircle2 },
     { label: "บทความในฐานความรู้", value: data?.knowledgeBaseCount ?? 0, icon: BookOpen },
+    { label: "แบบทดสอบ", value: data?.quizCount ?? 0, icon: ClipboardList },
   ];
 
   return (
