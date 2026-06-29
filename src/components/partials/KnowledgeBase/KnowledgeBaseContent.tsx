@@ -9,6 +9,24 @@ import { BaseCard } from "@/components/ui/Card";
 import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
 import type { KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 
+function extractErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object" &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+  return "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง";
+}
+
 export default function KnowledgeBaseContent() {
   const { data, isLoading } = useKnowledgeBaseList();
   const { deleteMutation } = useKnowledgeBaseMutations();
@@ -16,10 +34,28 @@ export default function KnowledgeBaseContent() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeBaseItem | undefined>();
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [quizResultMessages, setQuizResultMessages] = useState<Record<string, { text: string; isError: boolean }>>(
+    {},
+  );
 
   const handleGenerateQuiz = (articleId: string) => {
     setGeneratingId(articleId);
-    generateQuizMutation.mutate(articleId, { onSettled: () => setGeneratingId(null) });
+    setQuizResultMessages((prev) => ({ ...prev, [articleId]: undefined as never }));
+    generateQuizMutation.mutate(articleId, {
+      onSuccess: () => {
+        setQuizResultMessages((prev) => ({
+          ...prev,
+          [articleId]: { text: "สร้างแบบทดสอบสำเร็จแล้ว ดูได้ที่หน้า \"แบบทดสอบ\"", isError: false },
+        }));
+      },
+      onError: (error) => {
+        setQuizResultMessages((prev) => ({
+          ...prev,
+          [articleId]: { text: extractErrorMessage(error), isError: true },
+        }));
+      },
+      onSettled: () => setGeneratingId(null),
+    });
   };
 
   return (
@@ -70,6 +106,15 @@ export default function KnowledgeBaseContent() {
                 </BaseButton>
               </div>
             </div>
+            {quizResultMessages[item.id] && (
+              <p
+                className={`mt-2 text-xs ${
+                  quizResultMessages[item.id].isError ? "text-danger-600" : "text-success-600"
+                }`}
+              >
+                {quizResultMessages[item.id].text}
+              </p>
+            )}
           </BaseCard>
         ))}
       </div>
