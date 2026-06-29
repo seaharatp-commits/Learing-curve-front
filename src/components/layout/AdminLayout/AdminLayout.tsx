@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
-        <Link href="/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-white/5">
+        <Link href="/chat" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-white/5">
           <ArrowLeftCircle size={16} />
           กลับหน้าผู้ใช้
         </Link>
