@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { LayoutDashboard, MessageSquare, History, FileWarning, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, MessageSquare, History, FileWarning, LogOut, ShieldCheck, ClipboardList } from "lucide-react";
 import ThemeToggle from "@/components/common/ThemeToggle";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { href: "/chat", label: "แชทกับ AI", icon: MessageSquare },
+  { href: "/quizzes", label: "แบบทดสอบ", icon: ClipboardList },
   { href: "/history", label: "ประวัติ", icon: History },
   // { href: "/report", label: "แจ้งปัญหา", icon: FileWarning },
 ];

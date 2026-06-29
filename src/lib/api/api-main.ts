@@ -10,7 +10,13 @@ import type {
   ConfirmKnowledgePayload,
 } from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
-import type { LearningDashboard } from "@/types/app/learning";
+import type {
+  LearningDashboard,
+  QuizListItem,
+  QuizForAttempt,
+  SubmitAnswer,
+  QuizAttemptResult,
+} from "@/types/app/learning";
 import { mainClient } from "./client";
 
 export const sendChatMessageApi = (payload: SendMessagePayload) =>
@@ -58,3 +64,14 @@ export const confirmKnowledgeApi = (payload: ConfirmKnowledgePayload) =>
 
 export const getLearningDashboardApi = () =>
   mainClient.get<LearningDashboard>("/learning/dashboard");
+
+export const getQuizListApi = () => mainClient.get<QuizListItem[]>("/learning/quizzes");
+
+export const getQuizForAttemptApi = (quizId: string) =>
+  mainClient.get<QuizForAttempt>(`/learning/quizzes/${quizId}`);
+
+export const submitQuizAttemptApi = (quizId: string, answers: SubmitAnswer[]) =>
+  mainClient.post<QuizAttemptResult>(`/learning/quizzes/${quizId}/attempts`, { answers });
+
+export const generateQuizFromArticleApi = (articleId: string) =>
+  mainClient.post<{ id: string }>("/learning/quizzes/generate-from-article", { articleId });

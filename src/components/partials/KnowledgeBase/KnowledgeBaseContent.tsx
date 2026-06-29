@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { useKnowledgeBaseList, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
+import { useGenerateQuiz } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
@@ -11,8 +12,15 @@ import type { KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 export default function KnowledgeBaseContent() {
   const { data, isLoading } = useKnowledgeBaseList();
   const { deleteMutation } = useKnowledgeBaseMutations();
+  const generateQuizMutation = useGenerateQuiz();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeBaseItem | undefined>();
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+
+  const handleGenerateQuiz = (articleId: string) => {
+    setGeneratingId(articleId);
+    generateQuizMutation.mutate(articleId, { onSettled: () => setGeneratingId(null) });
+  };
 
   return (
     <div className="space-y-4">
@@ -39,6 +47,17 @@ export default function KnowledgeBaseContent() {
               <div className="flex flex-col gap-1">
                 <BaseButton isIconOnly size="sm" variant="light" onPress={() => setEditing(item)}>
                   <Pencil size={14} />
+                </BaseButton>
+                <BaseButton
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  color="secondary"
+                  isLoading={generatingId === item.id}
+                  onPress={() => handleGenerateQuiz(item.id)}
+                  title="สร้างแบบทดสอบจากบทความนี้"
+                >
+                  <ClipboardList size={14} />
                 </BaseButton>
                 <BaseButton
                   isIconOnly
