@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ClipboardList, ArrowRight, Sparkles, Trash2 } from "lucide-react";
-import { useDeleteQuiz, useGenerateQuizFromTopic, useQuizList } from "@/hooks/learning";
+import { ArrowRight, ClipboardList, Trash2 } from "lucide-react";
+import { useDeleteQuiz, useQuizList } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import { BaseInput } from "@/components/ui/Input";
 
 function extractErrorMessage(error: unknown): string {
   if (
@@ -28,41 +26,15 @@ function extractErrorMessage(error: unknown): string {
 }
 
 export default function QuizListContent() {
-  const router = useRouter();
   const { data, isLoading } = useQuizList();
-  const generateTopicMutation = useGenerateQuizFromTopic();
   const deleteQuizMutation = useDeleteQuiz();
-  const [topic, setTopic] = useState("");
-  const [topicMessage, setTopicMessage] = useState<{ text: string; isError: boolean } | null>(
-    null,
-  );
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
 
-  const handleGenerateTopic = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const cleanTopic = topic.trim();
-    if (cleanTopic.length < 2) {
-      setTopicMessage({ text: "กรุณาพิมพ์หัวข้ออย่างน้อย 2 ตัวอักษร", isError: true });
-      return;
-    }
-
-    setTopicMessage(null);
-    generateTopicMutation.mutate(cleanTopic, {
-      onSuccess: (result) => {
-        setTopic("");
-        router.push(`/lessons/${result.lessonId}`);
-      },
-      onError: (error) => {
-        setTopicMessage({ text: extractErrorMessage(error), isError: true });
-      },
-    });
-  };
-
   const handleDeleteQuiz = (quizId: string) => {
-    const confirmed = window.confirm("ต้องการลบแบบทดสอบนี้ใช่ไหม?");
+    const confirmed = window.confirm("ต้องการลบแบบทดสอบนี้แบบถาวรใช่ไหม?");
     if (!confirmed) return;
 
     setDeletingQuizId(quizId);
@@ -80,38 +52,9 @@ export default function QuizListContent() {
       <div>
         <h1 className="text-2xl font-semibold">แบบทดสอบ</h1>
         <p className="text-sm text-default-500">
-          แบบทดสอบปรนัยที่สร้างจากบทความในฐานความรู้ ลองทำเพื่อทดสอบความเข้าใจของคุณ
+          แบบทดสอบสำหรับบทเรียนและการประเมินผลของคุณ
         </p>
       </div>
-
-      <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
-        <form onSubmit={handleGenerateTopic} className="flex flex-col gap-3 sm:flex-row">
-          <BaseInput
-            label="อยากเรียนเรื่องอะไร?"
-            placeholder="เช่น การเขียน prompt ให้ชัดเจน"
-            value={topic}
-            onValueChange={setTopic}
-            className="flex-1"
-          />
-          <BaseButton
-            type="submit"
-            startContent={<Sparkles size={16} />}
-            isLoading={generateTopicMutation.isPending}
-            className="sm:self-end"
-          >
-            สร้างบทเรียน
-          </BaseButton>
-        </form>
-        {topicMessage && (
-          <p
-            className={`mt-2 text-xs ${
-              topicMessage.isError ? "text-danger-600" : "text-success-600"
-            }`}
-          >
-            {topicMessage.text}
-          </p>
-        )}
-      </BaseCard>
 
       {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
 
@@ -145,13 +88,13 @@ export default function QuizListContent() {
                   </div>
                 </div>
               </Link>
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-3">
                 <BaseButton
                   isIconOnly
                   size="sm"
                   variant="light"
                   color="danger"
-                  title="ลบแบบทดสอบ"
+                  title="ลบแบบทดสอบถาวร"
                   isLoading={deletingQuizId === quiz.id}
                   onPress={() => handleDeleteQuiz(quiz.id)}
                 >

@@ -18,6 +18,7 @@ import {
   submitQuizAttemptApi,
   generateQuizFromArticleApi,
   generateQuizFromTopicApi,
+  generateLessonFromTopicApi,
 } from "@/lib/api/api-main";
 
 export const getLearningDashboard = async (): Promise<LearningDashboard> => {
@@ -65,5 +66,10 @@ export const generateQuizFromArticle = async (articleId: string) => {
 
 export const generateQuizFromTopic = async (topic: string): Promise<GeneratedTopicResult> => {
   const res = await generateQuizFromTopicApi(topic);
+  return res.data;
+};
+
+export const generateLessonFromTopic = async (topic: string): Promise<GeneratedTopicResult> => {
+  const res = await generateLessonFromTopicApi(topic);
   return res.data;
 };

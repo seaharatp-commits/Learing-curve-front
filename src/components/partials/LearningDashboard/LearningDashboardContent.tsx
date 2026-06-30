@@ -1,11 +1,15 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import dayjs from "dayjs";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Progress } from "@heroui/react";
-import { useLearningDashboard } from "@/hooks/learning";
+import { ArrowRight, BookOpen, GraduationCap, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import { useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
+import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import { GraduationCap, Trophy, TrendingUp, ArrowRight, BookOpen } from "lucide-react";
+import { BaseInput } from "@/components/ui/Input";
 
 const SCORE_COLOR = (score: number) => {
   if (score >= 80) return "text-success-600";
@@ -13,8 +17,52 @@ const SCORE_COLOR = (score: number) => {
   return "text-danger-600";
 };
 
+function extractErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object" &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+  return "สร้างบทเรียนไม่สำเร็จ ลองใหม่อีกครั้ง";
+}
+
 export default function LearningDashboardContent() {
+  const router = useRouter();
   const { data, isLoading } = useLearningDashboard();
+  const generateLessonMutation = useGenerateLessonFromTopic();
+  const [topic, setTopic] = useState("");
+  const [topicMessage, setTopicMessage] = useState<{ text: string; isError: boolean } | null>(
+    null,
+  );
+
+  const handleGenerateLesson = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanTopic = topic.trim();
+    if (cleanTopic.length < 2) {
+      setTopicMessage({ text: "กรุณาพิมพ์หัวข้ออย่างน้อย 2 ตัวอักษร", isError: true });
+      return;
+    }
+
+    setTopicMessage(null);
+    generateLessonMutation.mutate(cleanTopic, {
+      onSuccess: (result) => {
+        setTopic("");
+        router.push(`/lessons/${result.lessonId}`);
+      },
+      onError: (error) => {
+        setTopicMessage({ text: extractErrorMessage(error), isError: true });
+      },
+    });
+  };
 
   if (isLoading || !data) {
     return (
@@ -30,11 +78,41 @@ export default function LearningDashboardContent() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">แดชบอร์ดการเรียนรู้</h1>
-        <p className="text-sm text-default-500">ภาพรวมความก้าวหน้าและผลคะแนนแบบทดสอบของคุณ</p>
+        <p className="text-sm text-default-500">
+          ภาพรวมความก้าวหน้าและผลคะแนนแบบทดสอบของคุณ
+        </p>
       </div>
 
+      <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
+        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-3 sm:flex-row">
+          <BaseInput
+            label="อยากเรียนเรื่องอะไร?"
+            placeholder="เช่น การเขียน prompt ให้ชัดเจน"
+            value={topic}
+            onValueChange={setTopic}
+            className="flex-1"
+          />
+          <BaseButton
+            type="submit"
+            startContent={<Sparkles size={16} />}
+            isLoading={generateLessonMutation.isPending}
+            className="sm:self-end"
+          >
+            สร้างบทเรียน
+          </BaseButton>
+        </form>
+        {topicMessage && (
+          <p
+            className={`mt-2 text-xs ${
+              topicMessage.isError ? "text-danger-600" : "text-success-600"
+            }`}
+          >
+            {topicMessage.text}
+          </p>
+        )}
+      </BaseCard>
+
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Learning Progress */}
         <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
           <div className="flex items-center gap-2 text-primary-600">
             <GraduationCap size={20} />
@@ -42,7 +120,8 @@ export default function LearningDashboardContent() {
           </div>
           <p className="mt-3 text-3xl font-semibold">{learningProgress.percentage}%</p>
           <p className="mb-2 text-sm text-default-500">
-            เรียนจบแล้ว {learningProgress.completedLessons} จาก {learningProgress.totalLessons} บทเรียน
+            เรียนจบแล้ว {learningProgress.completedLessons} จาก{" "}
+            {learningProgress.totalLessons} บทเรียน
           </p>
           <Progress
             aria-label="ความก้าวหน้าการเรียน"
@@ -52,7 +131,6 @@ export default function LearningDashboardContent() {
           />
         </BaseCard>
 
-        {/* Quiz Performance */}
         <BaseCard className="bg-secondary-50/60 dark:bg-secondary-500/10">
           <div className="flex items-center gap-2 text-secondary-600">
             <Trophy size={20} />
@@ -75,7 +153,7 @@ export default function LearningDashboardContent() {
                   quizPerformance.latestScore !== null ? SCORE_COLOR(quizPerformance.latestScore) : ""
                 }`}
               >
-                {quizPerformance.latestScore ?? "—"}
+                {quizPerformance.latestScore ?? "-"}
               </p>
               <p className="text-xs text-default-500">คะแนนล่าสุด</p>
             </div>
@@ -83,7 +161,6 @@ export default function LearningDashboardContent() {
         </BaseCard>
       </div>
 
-      {/* Continue Learning */}
       {continueLearning && (
         <Link href={`/lessons/${continueLearning.lessonId}`}>
           <BaseCard className="bg-gradient-to-r from-primary-50 to-secondary-50 transition-colors hover:from-primary-100 hover:to-secondary-100 dark:from-primary-500/10 dark:to-secondary-500/10 dark:hover:from-primary-500/15 dark:hover:to-secondary-500/15">
@@ -103,7 +180,6 @@ export default function LearningDashboardContent() {
         </Link>
       )}
 
-      {/* Recent Quiz */}
       <BaseCard>
         <div className="mb-3 flex items-center gap-2">
           <TrendingUp size={20} className="text-default-500" />

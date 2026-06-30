@@ -83,3 +83,6 @@ export const generateQuizFromArticleApi = (articleId: string) =>
 
 export const generateQuizFromTopicApi = (topic: string) =>
   mainClient.post<GeneratedTopicResult>("/learning/quizzes/generate-from-topic", { topic });
+
+export const generateLessonFromTopicApi = (topic: string) =>
+  mainClient.post<GeneratedTopicResult>("/learning/lessons/generate-from-topic", { topic });
