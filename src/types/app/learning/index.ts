@@ -52,6 +52,11 @@ export interface LessonCompletion {
 
 export interface GeneratedTopicResult {
   lessonId: string;
+  quizId: string | null;
+  title: string;
+}
+
+export interface GeneratedLessonQuizResult {
   quizId: string;
   title: string;
 }

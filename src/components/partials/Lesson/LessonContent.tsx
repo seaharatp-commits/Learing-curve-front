@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, ClipboardList, ArrowRight } from "lucide-react";
-import { useCompleteLesson, useLesson } from "@/hooks/learning";
+import { Textarea } from "@heroui/react";
+import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardList, Sparkles } from "lucide-react";
+import { useCompleteLesson, useGenerateQuizFromLesson, useLesson } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 
@@ -11,10 +13,45 @@ interface LessonContentProps {
   lessonId: string;
 }
 
+function extractErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object" &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+  return "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง";
+}
+
 export default function LessonContent({ lessonId }: LessonContentProps) {
   const router = useRouter();
   const { data: lesson, isLoading } = useLesson(lessonId);
   const completeMutation = useCompleteLesson(lessonId);
+  const generateQuizMutation = useGenerateQuizFromLesson(lessonId);
+  const [additionalPrompt, setAdditionalPrompt] = useState("");
+  const [quizMessage, setQuizMessage] = useState<{ text: string; isError: boolean } | null>(null);
+
+  const handleGenerateQuiz = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setQuizMessage(null);
+    generateQuizMutation.mutate(additionalPrompt.trim(), {
+      onSuccess: (result) => {
+        setAdditionalPrompt("");
+        router.push(`/quizzes/${result.quizId}`);
+      },
+      onError: (error) => {
+        setQuizMessage({ text: extractErrorMessage(error), isError: true });
+      },
+    });
+  };
 
   if (isLoading || !lesson) {
     return (
@@ -60,7 +97,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
       <BaseCard>
         {paragraphs.length === 0 ? (
           <p className="text-sm text-default-500">
-            บทเรียนนี้ยังไม่มีเนื้อหาเพิ่มเติม คุณสามารถทำแบบทดสอบที่เกี่ยวข้องหรือกลับไปเลือกบทเรียนอื่นได้
+            บทเรียนนี้ยังไม่มีเนื้อหาเพิ่มเติม คุณสามารถกลับไปเลือกบทเรียนอื่นได้
           </p>
         ) : (
           <div className="space-y-4 text-sm leading-7 text-default-700 dark:text-default-300">
@@ -72,12 +109,49 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
       </BaseCard>
 
       <BaseCard>
+        <form onSubmit={handleGenerateQuiz} className="space-y-3">
+          <div>
+            <h2 className="font-medium">ถามเพิ่มก่อนสร้างแบบทดสอบ</h2>
+            <p className="text-sm text-default-500">
+              ใส่คำถามหรือประเด็นล่าสุดที่อยากเน้น ระบบจะใช้รวมกับบทเรียนนี้เพื่อสร้างคำถาม
+            </p>
+          </div>
+          <Textarea
+            minRows={3}
+            radius="lg"
+            variant="bordered"
+            value={additionalPrompt}
+            onValueChange={setAdditionalPrompt}
+            placeholder="เช่น อยากเน้นตัวอย่างใช้งานจริง หรือถามเพิ่มเรื่องข้อควรระวัง"
+          />
+          <BaseButton
+            type="submit"
+            startContent={<Sparkles size={16} />}
+            isLoading={generateQuizMutation.isPending}
+          >
+            สร้างแบบทดสอบ
+          </BaseButton>
+          {quizMessage && (
+            <p
+              className={`text-xs ${
+                quizMessage.isError ? "text-danger-600" : "text-success-600"
+              }`}
+            >
+              {quizMessage.text}
+            </p>
+          )}
+        </form>
+      </BaseCard>
+
+      <BaseCard>
         <div className="mb-3 flex items-center gap-2">
           <ClipboardList size={20} className="text-default-500" />
           <h2 className="font-medium">แบบทดสอบของบทเรียนนี้</h2>
         </div>
         {lesson.quizzes.length === 0 ? (
-          <p className="text-sm text-default-400">ยังไม่มีแบบทดสอบสำหรับบทเรียนนี้</p>
+          <p className="text-sm text-default-400">
+            ยังไม่มีแบบทดสอบสำหรับบทเรียนนี้ สร้างได้จากช่องด้านบนเมื่อพร้อม
+          </p>
         ) : (
           <div className="space-y-2">
             {lesson.quizzes.map((quiz) =>

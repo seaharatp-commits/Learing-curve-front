@@ -19,6 +19,7 @@ import type {
   SubmitAnswer,
   QuizAttemptResult,
   GeneratedTopicResult,
+  GeneratedLessonQuizResult,
 } from "@/types/app/learning";
 import { mainClient } from "./client";
 
@@ -86,3 +87,8 @@ export const generateQuizFromTopicApi = (topic: string) =>
 
 export const generateLessonFromTopicApi = (topic: string) =>
   mainClient.post<GeneratedTopicResult>("/learning/lessons/generate-from-topic", { topic });
+
+export const generateQuizFromLessonApi = (lessonId: string, additionalPrompt: string) =>
+  mainClient.post<GeneratedLessonQuizResult>(`/learning/lessons/${lessonId}/quizzes/generate`, {
+    additionalPrompt,
+  });

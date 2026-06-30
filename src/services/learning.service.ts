@@ -7,6 +7,7 @@ import type {
   SubmitAnswer,
   QuizAttemptResult,
   GeneratedTopicResult,
+  GeneratedLessonQuizResult,
 } from "@/types/app/learning";
 import {
   getLearningDashboardApi,
@@ -19,6 +20,7 @@ import {
   generateQuizFromArticleApi,
   generateQuizFromTopicApi,
   generateLessonFromTopicApi,
+  generateQuizFromLessonApi,
 } from "@/lib/api/api-main";
 
 export const getLearningDashboard = async (): Promise<LearningDashboard> => {
@@ -71,5 +73,13 @@ export const generateQuizFromTopic = async (topic: string): Promise<GeneratedTop
 
 export const generateLessonFromTopic = async (topic: string): Promise<GeneratedTopicResult> => {
   const res = await generateLessonFromTopicApi(topic);
+  return res.data;
+};
+
+export const generateQuizFromLesson = async (
+  lessonId: string,
+  additionalPrompt: string,
+): Promise<GeneratedLessonQuizResult> => {
+  const res = await generateQuizFromLessonApi(lessonId, additionalPrompt);
   return res.data;
 };

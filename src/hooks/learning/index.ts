@@ -6,5 +6,6 @@ export { useGenerateQuiz } from "./useGenerateQuiz";
 export { useLesson } from "./useLesson";
 export { useCompleteLesson } from "./useCompleteLesson";
 export { useGenerateLessonFromTopic } from "./useGenerateLessonFromTopic";
+export { useGenerateQuizFromLesson } from "./useGenerateQuizFromLesson";
 export { useGenerateQuizFromTopic } from "./useGenerateQuizFromTopic";
 export { useDeleteQuiz } from "./useDeleteQuiz";
