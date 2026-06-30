@@ -1,16 +1,34 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@heroui/react";
-import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardList, Sparkles } from "lucide-react";
-import { useCompleteLesson, useGenerateQuizFromLesson, useLesson } from "@/hooks/learning";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  ClipboardList,
+  MessageCircle,
+  Send,
+  Sparkles,
+} from "lucide-react";
+import {
+  useAskLessonQuestion,
+  useCompleteLesson,
+  useGenerateQuizFromLesson,
+  useLesson,
+} from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 
 interface LessonContentProps {
   lessonId: string;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -28,23 +46,56 @@ function extractErrorMessage(error: unknown): string {
   ) {
     return error.response.data.message;
   }
-  return "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง";
+  return "ดำเนินการไม่สำเร็จ ลองใหม่อีกครั้ง";
+}
+
+function formatChatHistory(messages: ChatMessage[]) {
+  return messages
+    .map((message) => `${message.role === "user" ? "ผู้เรียน" : "AI"}: ${message.content}`)
+    .join("\n");
 }
 
 export default function LessonContent({ lessonId }: LessonContentProps) {
   const router = useRouter();
   const { data: lesson, isLoading } = useLesson(lessonId);
   const completeMutation = useCompleteLesson(lessonId);
+  const askMutation = useAskLessonQuestion(lessonId);
   const generateQuizMutation = useGenerateQuizFromLesson(lessonId);
-  const [additionalPrompt, setAdditionalPrompt] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
   const [quizMessage, setQuizMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
-  const handleGenerateQuiz = (event: FormEvent<HTMLFormElement>) => {
+  const chatHistory = useMemo(() => formatChatHistory(messages), [messages]);
+
+  const handleAsk = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const cleanMessage = chatInput.trim();
+    if (!cleanMessage) return;
+
+    const historyBeforeQuestion = formatChatHistory(messages);
+    setChatInput("");
+    setChatError(null);
     setQuizMessage(null);
-    generateQuizMutation.mutate(additionalPrompt.trim(), {
+    setMessages((current) => [...current, { role: "user", content: cleanMessage }]);
+
+    askMutation.mutate(
+      { message: cleanMessage, chatHistory: historyBeforeQuestion },
+      {
+        onSuccess: (result) => {
+          setMessages((current) => [...current, { role: "assistant", content: result.answer }]);
+        },
+        onError: (error) => {
+          setChatError(extractErrorMessage(error));
+        },
+      },
+    );
+  };
+
+  const handleGenerateQuiz = () => {
+    setQuizMessage(null);
+    generateQuizMutation.mutate(chatHistory, {
       onSuccess: (result) => {
-        setAdditionalPrompt("");
         router.push(`/quizzes/${result.quizId}`);
       },
       onError: (error) => {
@@ -55,7 +106,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
 
   if (isLoading || !lesson) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl">
         <p className="text-default-400">กำลังโหลดบทเรียน...</p>
       </div>
     );
@@ -68,7 +119,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   const isCompleted = lesson.completed || completeMutation.isSuccess;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-5xl space-y-5">
       <button
         onClick={() => router.push("/dashboard")}
         className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
@@ -82,16 +133,26 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           <p className="text-sm text-default-500">บทเรียน</p>
           <h1 className="text-2xl font-semibold">{lesson.title}</h1>
         </div>
-        <BaseButton
-          color={isCompleted ? "success" : "primary"}
-          variant={isCompleted ? "flat" : "solid"}
-          startContent={<CheckCircle2 size={16} />}
-          isDisabled={isCompleted}
-          isLoading={completeMutation.isPending}
-          onPress={() => completeMutation.mutate()}
-        >
-          {isCompleted ? "เรียนจบแล้ว" : "เรียนจบบทนี้"}
-        </BaseButton>
+        <div className="flex flex-wrap gap-2">
+          <BaseButton
+            color={isCompleted ? "success" : "primary"}
+            variant={isCompleted ? "flat" : "solid"}
+            startContent={<CheckCircle2 size={16} />}
+            isDisabled={isCompleted}
+            isLoading={completeMutation.isPending}
+            onPress={() => completeMutation.mutate()}
+          >
+            {isCompleted ? "เรียนจบแล้ว" : "เรียนจบบทนี้"}
+          </BaseButton>
+          <BaseButton
+            color="secondary"
+            startContent={<Sparkles size={16} />}
+            isLoading={generateQuizMutation.isPending}
+            onPress={handleGenerateQuiz}
+          >
+            สร้างแบบทดสอบ
+          </BaseButton>
+        </div>
       </div>
 
       <BaseCard>
@@ -109,37 +170,90 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
       </BaseCard>
 
       <BaseCard>
-        <form onSubmit={handleGenerateQuiz} className="space-y-3">
-          <div>
-            <h2 className="font-medium">ถามเพิ่มก่อนสร้างแบบทดสอบ</h2>
-            <p className="text-sm text-default-500">
-              ใส่คำถามหรือประเด็นล่าสุดที่อยากเน้น ระบบจะใช้รวมกับบทเรียนนี้เพื่อสร้างคำถาม
-            </p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <MessageCircle size={20} className="text-default-500" />
+            <div>
+              <h2 className="font-medium">ถามต่อเกี่ยวกับบทเรียนนี้</h2>
+              <p className="text-sm text-default-500">
+                อธิบายเพิ่ม ยกตัวอย่าง หรือขยายความจากบทเรียน
+              </p>
+            </div>
           </div>
-          <Textarea
-            minRows={3}
-            radius="lg"
-            variant="bordered"
-            value={additionalPrompt}
-            onValueChange={setAdditionalPrompt}
-            placeholder="เช่น อยากเน้นตัวอย่างใช้งานจริง หรือถามเพิ่มเรื่องข้อควรระวัง"
-          />
           <BaseButton
-            type="submit"
+            size="sm"
+            color="secondary"
+            variant="flat"
             startContent={<Sparkles size={16} />}
             isLoading={generateQuizMutation.isPending}
+            onPress={handleGenerateQuiz}
           >
-            สร้างแบบทดสอบ
+            พร้อมแล้ว สร้าง quiz
           </BaseButton>
-          {quizMessage && (
-            <p
-              className={`text-xs ${
-                quizMessage.isError ? "text-danger-600" : "text-success-600"
-              }`}
-            >
-              {quizMessage.text}
+        </div>
+
+        <div className="mb-3 max-h-[420px] space-y-3 overflow-y-auto rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
+          {messages.length === 0 ? (
+            <p className="text-sm text-default-400">
+              ถามสิ่งที่ยังสงสัยเกี่ยวกับบทเรียนนี้ได้ AI จะใช้เนื้อหาด้านบนเป็นหลัก และอธิบายเสริมเมื่อจำเป็น
             </p>
+          ) : (
+            messages.map((message, index) => (
+              <div
+                key={`${message.role}-${index}`}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[82%] rounded-lg px-3 py-2 text-sm leading-6 ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-content1 text-default-700 shadow-sm dark:text-default-200"
+                  }`}
+                >
+                  {message.content}
+                </div>
+              </div>
+            ))
           )}
+          {askMutation.isPending && (
+            <div className="flex justify-start">
+              <div className="rounded-lg bg-content1 px-3 py-2 text-sm text-default-400 shadow-sm">
+                กำลังตอบ...
+              </div>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleAsk} className="space-y-2">
+          <Textarea
+            minRows={2}
+            radius="lg"
+            variant="bordered"
+            value={chatInput}
+            onValueChange={setChatInput}
+            placeholder="ถามต่อ เช่น ขอคำอธิบายเพิ่ม ตัวอย่าง วิธีใช้จริง หรือเรื่องที่เกี่ยวข้องกับบทเรียน"
+          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              {chatError && <p className="text-xs text-danger-600">{chatError}</p>}
+              {quizMessage && (
+                <p
+                  className={`text-xs ${
+                    quizMessage.isError ? "text-danger-600" : "text-success-600"
+                  }`}
+                >
+                  {quizMessage.text}
+                </p>
+              )}
+            </div>
+            <BaseButton
+              type="submit"
+              startContent={<Send size={16} />}
+              isLoading={askMutation.isPending}
+            >
+              ส่งคำถาม
+            </BaseButton>
+          </div>
         </form>
       </BaseCard>
 
@@ -150,7 +264,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
         </div>
         {lesson.quizzes.length === 0 ? (
           <p className="text-sm text-default-400">
-            ยังไม่มีแบบทดสอบสำหรับบทเรียนนี้ สร้างได้จากช่องด้านบนเมื่อพร้อม
+            ยังไม่มีแบบทดสอบสำหรับบทเรียนนี้ คุยต่อให้มั่นใจก่อน แล้วค่อยกดสร้าง quiz
           </p>
         ) : (
           <div className="space-y-2">

@@ -5,7 +5,15 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Progress } from "@heroui/react";
-import { ArrowRight, BookOpen, GraduationCap, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  GraduationCap,
+  Sparkles,
+  TrendingUp,
+  Trophy,
+} from "lucide-react";
 import { useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
@@ -53,15 +61,18 @@ export default function LearningDashboardContent() {
     }
 
     setTopicMessage(null);
-    generateLessonMutation.mutate(cleanTopic, {
-      onSuccess: (result) => {
-        setTopic("");
-        router.push(`/lessons/${result.lessonId}`);
+    generateLessonMutation.mutate(
+      { topic: cleanTopic },
+      {
+        onSuccess: (result) => {
+          setTopic("");
+          router.push(`/lessons/${result.lessonId}`);
+        },
+        onError: (error) => {
+          setTopicMessage({ text: extractErrorMessage(error), isError: true });
+        },
       },
-      onError: (error) => {
-        setTopicMessage({ text: extractErrorMessage(error), isError: true });
-      },
-    });
+    );
   };
 
   if (isLoading || !data) {
@@ -72,7 +83,7 @@ export default function LearningDashboardContent() {
     );
   }
 
-  const { learningProgress, quizPerformance, recentQuizzes, continueLearning } = data;
+  const { learningProgress, quizPerformance, recentQuizzes, lessons } = data;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -84,19 +95,17 @@ export default function LearningDashboardContent() {
       </div>
 
       <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
-        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-3 sm:flex-row">
+        <form onSubmit={handleGenerateLesson} className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
           <BaseInput
             label="อยากเรียนเรื่องอะไร?"
             placeholder="เช่น การเขียน prompt ให้ชัดเจน"
             value={topic}
             onValueChange={setTopic}
-            className="flex-1"
           />
           <BaseButton
             type="submit"
             startContent={<Sparkles size={16} />}
             isLoading={generateLessonMutation.isPending}
-            className="sm:self-end"
           >
             สร้างบทเรียน
           </BaseButton>
@@ -161,24 +170,44 @@ export default function LearningDashboardContent() {
         </BaseCard>
       </div>
 
-      {continueLearning && (
-        <Link href={`/lessons/${continueLearning.lessonId}`}>
-          <BaseCard className="bg-gradient-to-r from-primary-50 to-secondary-50 transition-colors hover:from-primary-100 hover:to-secondary-100 dark:from-primary-500/10 dark:to-secondary-500/10 dark:hover:from-primary-500/15 dark:hover:to-secondary-500/15">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-primary/15 p-2 text-primary">
-                  <BookOpen size={20} />
+      <BaseCard>
+        <div className="mb-3 flex items-center gap-2">
+          <BookOpen size={20} className="text-default-500" />
+          <h2 className="font-medium">เลือกบทเรียนที่จะเรียนต่อ</h2>
+        </div>
+        {lessons.length === 0 ? (
+          <p className="text-sm text-default-400">
+            ยังไม่มีบทเรียน สร้างหัวข้อแรกจากช่องด้านบนได้เลย
+          </p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {lessons.map((lesson) => (
+              <Link
+                key={lesson.lessonId}
+                href={`/lessons/${lesson.lessonId}`}
+                className="rounded-lg bg-default-50 px-3 py-3 transition-colors hover:bg-default-100 dark:bg-default-100/10 dark:hover:bg-default-100/20"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{lesson.title}</p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-default-500">
+                      {lesson.completed ? (
+                        <>
+                          <CheckCircle2 size={14} className="text-success-600" />
+                          เรียนจบแล้ว
+                        </>
+                      ) : (
+                        "ยังไม่จบ"
+                      )}
+                    </p>
+                  </div>
+                  <ArrowRight size={16} className="mt-1 shrink-0 text-default-400" />
                 </div>
-                <div>
-                  <p className="text-xs text-default-500">เรียนต่อ</p>
-                  <h3 className="font-medium">{continueLearning.title}</h3>
-                </div>
-              </div>
-              <ArrowRight size={18} className="text-default-400" />
-            </div>
-          </BaseCard>
-        </Link>
-      )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </BaseCard>
 
       <BaseCard>
         <div className="mb-3 flex items-center gap-2">

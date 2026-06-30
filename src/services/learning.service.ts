@@ -8,6 +8,8 @@ import type {
   QuizAttemptResult,
   GeneratedTopicResult,
   GeneratedLessonQuizResult,
+  GenerateLessonFromTopicPayload,
+  LessonChatResult,
 } from "@/types/app/learning";
 import {
   getLearningDashboardApi,
@@ -20,6 +22,7 @@ import {
   generateQuizFromArticleApi,
   generateQuizFromTopicApi,
   generateLessonFromTopicApi,
+  askLessonQuestionApi,
   generateQuizFromLessonApi,
 } from "@/lib/api/api-main";
 
@@ -71,8 +74,19 @@ export const generateQuizFromTopic = async (topic: string): Promise<GeneratedTop
   return res.data;
 };
 
-export const generateLessonFromTopic = async (topic: string): Promise<GeneratedTopicResult> => {
-  const res = await generateLessonFromTopicApi(topic);
+export const generateLessonFromTopic = async (
+  payload: GenerateLessonFromTopicPayload,
+): Promise<GeneratedTopicResult> => {
+  const res = await generateLessonFromTopicApi(payload);
+  return res.data;
+};
+
+export const askLessonQuestion = async (
+  lessonId: string,
+  message: string,
+  chatHistory: string,
+): Promise<LessonChatResult> => {
+  const res = await askLessonQuestionApi(lessonId, message, chatHistory);
   return res.data;
 };
 

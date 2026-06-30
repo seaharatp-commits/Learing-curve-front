@@ -20,6 +20,8 @@ import type {
   QuizAttemptResult,
   GeneratedTopicResult,
   GeneratedLessonQuizResult,
+  GenerateLessonFromTopicPayload,
+  LessonChatResult,
 } from "@/types/app/learning";
 import { mainClient } from "./client";
 
@@ -85,8 +87,14 @@ export const generateQuizFromArticleApi = (articleId: string) =>
 export const generateQuizFromTopicApi = (topic: string) =>
   mainClient.post<GeneratedTopicResult>("/learning/quizzes/generate-from-topic", { topic });
 
-export const generateLessonFromTopicApi = (topic: string) =>
-  mainClient.post<GeneratedTopicResult>("/learning/lessons/generate-from-topic", { topic });
+export const generateLessonFromTopicApi = (payload: GenerateLessonFromTopicPayload) =>
+  mainClient.post<GeneratedTopicResult>("/learning/lessons/generate-from-topic", payload);
+
+export const askLessonQuestionApi = (lessonId: string, message: string, chatHistory: string) =>
+  mainClient.post<LessonChatResult>(`/learning/lessons/${lessonId}/chat`, {
+    message,
+    chatHistory,
+  });
 
 export const generateQuizFromLessonApi = (lessonId: string, additionalPrompt: string) =>
   mainClient.post<GeneratedLessonQuizResult>(`/learning/lessons/${lessonId}/quizzes/generate`, {
