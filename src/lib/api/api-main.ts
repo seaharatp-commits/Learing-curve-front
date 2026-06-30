@@ -1,6 +1,5 @@
 import type { SendMessagePayload, SendMessageResult } from "@/types/app/chat";
 import type { HistoryItem } from "@/types/app/history";
-import type { IssueFormValues, IssueReport } from "@/types/app/issue";
 import type {
   KnowledgeBaseFormValues,
   KnowledgeBaseItem,
@@ -32,16 +31,6 @@ export const getHistoryListApi = () => mainClient.get<HistoryItem[]>("/history")
 
 export const deleteHistoryApi = (sessionId: string) =>
   mainClient.delete<{ success: boolean }>(`/history/${sessionId}`);
-
-export const createIssueApi = (payload: IssueFormValues) =>
-  mainClient.post<IssueReport>("/issues", payload);
-
-export const getIssueListApi = () => mainClient.get<IssueReport[]>("/issues");
-
-export const learnFromIssueApi = (id: string) =>
-  mainClient.post<{ action: "created" | "updated"; article: { id: string; title: string } }>(
-    `/issues/${id}/learn`,
-  );
 
 export const getKnowledgeBaseListApi = () => mainClient.get<KnowledgeBaseItem[]>("/knowledge-base");
 
