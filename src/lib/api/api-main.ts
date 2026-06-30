@@ -1,4 +1,5 @@
 import type { SendMessagePayload, SendMessageResult } from "@/types/app/chat";
+import type { RegisterPayload, RegisterResult } from "@/types/app/auth";
 import type { HistoryItem } from "@/types/app/history";
 import type {
   KnowledgeBaseFormValues,
@@ -23,6 +24,9 @@ import { mainClient } from "./client";
 
 export const sendChatMessageApi = (payload: SendMessagePayload) =>
   mainClient.post<SendMessageResult>("/chat", payload);
+
+export const registerApi = (payload: RegisterPayload) =>
+  mainClient.post<RegisterResult>("/auth/register", payload);
 
 export const getSessionMessagesApi = (sessionId: string) =>
   mainClient.get<SendMessageResult["messages"]>("/chat", { params: { sessionId } });

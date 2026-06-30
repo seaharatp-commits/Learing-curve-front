@@ -61,6 +61,9 @@ export interface QuizListItem {
   title: string;
   questionCount: number;
   sourceArticleTitle: string | null;
+  createdByUserId: string | null;
+  createdByName: string | null;
+  createdByEmail: string | null;
 }
 
 export interface QuizQuestionForAttempt {

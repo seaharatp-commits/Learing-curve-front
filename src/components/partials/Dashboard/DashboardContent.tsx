@@ -2,22 +2,25 @@
 
 import { useDashboardStats } from "@/hooks/dashboard";
 import { BaseCard } from "@/components/ui/Card";
-import { MessageSquare, BookOpen, ClipboardList } from "lucide-react";
+import { MessageSquare, BookOpen, ClipboardList, Users, CheckCircle2, Trophy } from "lucide-react";
 
 export default function DashboardContent() {
   const { data, isLoading } = useDashboardStats();
 
   const cards = [
+    { label: "ผู้ใช้ทั้งหมด", value: data?.userCount ?? 0, icon: Users },
     { label: "บทสนทนาทั้งหมด", value: data?.totalChats ?? 0, icon: MessageSquare },
     { label: "บทความในฐานความรู้", value: data?.knowledgeBaseCount ?? 0, icon: BookOpen },
     { label: "แบบทดสอบ", value: data?.quizCount ?? 0, icon: ClipboardList },
+    { label: "การทำแบบทดสอบ", value: data?.quizAttemptCount ?? 0, icon: Trophy },
+    { label: "บทเรียนที่เรียนจบ", value: data?.completedLessonCount ?? 0, icon: CheckCircle2 },
   ];
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Dashboard</h1>
       {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {cards.map((card) => {
           const Icon = card.icon;
           return (

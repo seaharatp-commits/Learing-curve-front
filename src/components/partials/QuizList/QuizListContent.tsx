@@ -138,6 +138,9 @@ export default function QuizListContent() {
                     <p className="text-xs text-default-500">
                       {quiz.questionCount} คำถาม
                       {quiz.sourceArticleTitle ? ` · จากบทความ "${quiz.sourceArticleTitle}"` : ""}
+                      {quiz.createdByEmail
+                        ? ` · สร้างโดย ${quiz.createdByName ?? quiz.createdByEmail} (${quiz.createdByEmail})`
+                        : " · ไม่ทราบผู้สร้าง"}
                     </p>
                   </div>
                 </div>
