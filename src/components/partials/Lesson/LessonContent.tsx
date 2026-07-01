@@ -354,10 +354,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   }
 
   const lessonDisplay = parseLessonDisplayContent(lesson);
-  const paragraphs = lessonDisplay.content
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+  const hasLessonContent = lessonDisplay.content.trim().length > 0;
   const isCompleted = lesson.completed || completeMutation.isSuccess;
 
   return (
@@ -398,15 +395,13 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
       </div>
 
       <BaseCard>
-        {paragraphs.length === 0 ? (
+        {!hasLessonContent ? (
           <p className="text-sm text-default-500">
             บทเรียนนี้ยังไม่มีเนื้อหาเพิ่มเติม คุณสามารถกลับไปเลือกบทเรียนอื่นได้
           </p>
         ) : (
           <div className="lesson-content space-y-4 text-default-700 dark:text-default-300">
-            {paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+            <LessonAnswer content={lessonDisplay.content} />
           </div>
         )}
       </BaseCard>

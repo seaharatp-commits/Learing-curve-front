@@ -20,12 +20,34 @@ import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
 
 const LESSONS_PER_PAGE = 6;
+const MAX_VISIBLE_PAGE_BUTTONS = 7;
+
+type PaginationItem = number | "ellipsis-start" | "ellipsis-end";
 
 const SCORE_COLOR = (score: number) => {
   if (score >= 80) return "text-success-600";
   if (score >= 60) return "text-warning-600";
   return "text-danger-600";
 };
+
+function getLessonPaginationItems(currentPage: number, totalPages: number): PaginationItem[] {
+  if (totalPages <= MAX_VISIBLE_PAGE_BUTTONS) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const items: PaginationItem[] = [1];
+  const startPage = Math.max(2, currentPage - 1);
+  const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+  if (startPage > 2) items.push("ellipsis-start");
+  for (let page = startPage; page <= endPage; page += 1) {
+    items.push(page);
+  }
+  if (endPage < totalPages - 1) items.push("ellipsis-end");
+
+  items.push(totalPages);
+  return items;
+}
 
 function extractErrorMessage(error: unknown): string {
   if (
@@ -94,6 +116,7 @@ export default function LearningDashboardContent() {
     (currentLessonPage - 1) * LESSONS_PER_PAGE,
     currentLessonPage * LESSONS_PER_PAGE,
   );
+  const lessonPaginationItems = getLessonPaginationItems(currentLessonPage, totalLessonPages);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -219,7 +242,16 @@ export default function LearningDashboardContent() {
           </div>
           {totalLessonPages > 1 && (
             <div className="mt-3 flex flex-wrap justify-end gap-1">
-              {Array.from({ length: totalLessonPages }, (_, index) => index + 1).map((page) => (
+              <button
+                type="button"
+                disabled={currentLessonPage === 1}
+                onClick={() => setLessonPage((page) => Math.max(1, page - 1))}
+                className="h-8 rounded-md bg-default-100 px-3 text-sm font-medium text-default-600 transition-colors hover:bg-default-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-default-100/10 dark:text-default-300 dark:hover:bg-default-100/20"
+              >
+                ก่อนหน้า
+              </button>
+              {lessonPaginationItems.map((page) =>
+                typeof page === "number" ? (
                 <button
                   key={page}
                   type="button"
@@ -232,7 +264,23 @@ export default function LearningDashboardContent() {
                 >
                   {page}
                 </button>
-              ))}
+                ) : (
+                  <span
+                    key={page}
+                    className="flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm text-default-400"
+                  >
+                    ...
+                  </span>
+                ),
+              )}
+              <button
+                type="button"
+                disabled={currentLessonPage === totalLessonPages}
+                onClick={() => setLessonPage((page) => Math.min(totalLessonPages, page + 1))}
+                className="h-8 rounded-md bg-default-100 px-3 text-sm font-medium text-default-600 transition-colors hover:bg-default-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-default-100/10 dark:text-default-300 dark:hover:bg-default-100/20"
+              >
+                ถัดไป
+              </button>
             </div>
           )}
           </>
