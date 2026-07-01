@@ -20,6 +20,7 @@ export default function ChatContent() {
   const [input, setInput] = useState("");
   const [pendingQuestion, setPendingQuestion] = useState("");
   const [knowledgeChoices, setKnowledgeChoices] = useState<RecommendationResult[]>([]);
+  const [pendingMessageIds, setPendingMessageIds] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { mutateAsync, isPending } = useSendMessage();
   const recommendationsMutation = useRecommendations();
@@ -35,8 +36,25 @@ export default function ChatContent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendToAi = async (content: string, knowledgeBaseArticleId?: string) => {
-    const result = await mutateAsync({ sessionId, content, knowledgeBaseArticleId });
+  const createLocalMessage = (role: ChatMessage["role"], content: string): ChatMessage => ({
+    id: `local-${role}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    sessionId: sessionId ?? "pending",
+    role,
+    content,
+    createdAt: new Date().toISOString(),
+  });
+
+  const sendToAi = async (
+    content: string,
+    knowledgeBaseArticleId?: string,
+    knowledgeBaseConfidenceScore?: number,
+  ) => {
+    const result = await mutateAsync({
+      sessionId,
+      content,
+      knowledgeBaseArticleId,
+      knowledgeBaseConfidenceScore,
+    });
     setSessionId(result.session.id);
     setMessages((prev) => [...prev, ...result.messages]);
   };
@@ -44,9 +62,13 @@ export default function ChatContent() {
   const handleSend = async () => {
     const content = input.trim();
     if (!content) return;
+    if (knowledgeChoices.length > 0) return;
     setInput("");
     setPendingQuestion("");
     setKnowledgeChoices([]);
+    setPendingMessageIds([]);
+    const userMessage = createLocalMessage("user", content);
+    setMessages((prev) => [...prev, userMessage]);
 
     const matches = await recommendationsMutation.mutateAsync({
       title: content,
@@ -54,11 +76,18 @@ export default function ChatContent() {
     });
 
     if (matches.length > 0) {
+      const pendingMessage = createLocalMessage(
+        "assistant",
+        "พบข้อมูลที่เกี่ยวข้องในฐานความรู้ กรุณาเลือกข้อมูลที่ตรงกับคำถาม",
+      );
       setPendingQuestion(content);
       setKnowledgeChoices(matches);
+      setPendingMessageIds([userMessage.id, pendingMessage.id]);
+      setMessages((prev) => [...prev, pendingMessage]);
       return;
     }
 
+    setMessages((prev) => prev.filter((message) => message.id !== userMessage.id));
     await sendToAi(content);
   };
 
@@ -67,7 +96,9 @@ export default function ChatContent() {
     const content = pendingQuestion;
     setPendingQuestion("");
     setKnowledgeChoices([]);
-    await sendToAi(content, choice?.articleId);
+    setMessages((prev) => prev.filter((message) => !pendingMessageIds.includes(message.id)));
+    setPendingMessageIds([]);
+    await sendToAi(content, choice?.articleId, choice?.confidenceScore);
   };
 
   const isBusy = isPending || recommendationsMutation.isPending;
