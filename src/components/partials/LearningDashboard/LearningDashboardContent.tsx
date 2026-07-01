@@ -19,6 +19,8 @@ import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
 
+const LESSONS_PER_PAGE = 6;
+
 const SCORE_COLOR = (score: number) => {
   if (score >= 80) return "text-success-600";
   if (score >= 60) return "text-warning-600";
@@ -48,6 +50,7 @@ export default function LearningDashboardContent() {
   const { data, isLoading } = useLearningDashboard();
   const generateLessonMutation = useGenerateLessonFromTopic();
   const [topic, setTopic] = useState("");
+  const [lessonPage, setLessonPage] = useState(1);
   const [topicMessage, setTopicMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
@@ -84,6 +87,13 @@ export default function LearningDashboardContent() {
   }
 
   const { learningProgress, quizPerformance, recentQuizzes, lessons } = data;
+  const sortedLessons = [...lessons].sort((a, b) => Number(a.completed) - Number(b.completed));
+  const totalLessonPages = Math.ceil(sortedLessons.length / LESSONS_PER_PAGE);
+  const currentLessonPage = Math.min(lessonPage, Math.max(totalLessonPages, 1));
+  const visibleLessons = sortedLessons.slice(
+    (currentLessonPage - 1) * LESSONS_PER_PAGE,
+    currentLessonPage * LESSONS_PER_PAGE,
+  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -180,8 +190,9 @@ export default function LearningDashboardContent() {
             ยังไม่มีบทเรียน สร้างหัวข้อแรกจากช่องด้านบนได้เลย
           </p>
         ) : (
+          <>
           <div className="grid gap-3 md:grid-cols-2">
-            {lessons.map((lesson) => (
+            {visibleLessons.map((lesson) => (
               <Link
                 key={lesson.lessonId}
                 href={`/lessons/${lesson.lessonId}`}
@@ -206,6 +217,25 @@ export default function LearningDashboardContent() {
               </Link>
             ))}
           </div>
+          {totalLessonPages > 1 && (
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              {Array.from({ length: totalLessonPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setLessonPage(page)}
+                  className={`h-8 min-w-8 rounded-md px-2 text-sm font-medium transition-colors ${
+                    page === currentLessonPage
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-default-100 text-default-600 hover:bg-default-200 dark:bg-default-100/10 dark:text-default-300 dark:hover:bg-default-100/20"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+          )}
+          </>
         )}
       </BaseCard>
 
