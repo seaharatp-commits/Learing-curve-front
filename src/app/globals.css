@@ -59,7 +59,7 @@ button {
 }
 
 .ai-answer {
-  white-space: pre-wrap;
+  white-space: normal;
   overflow-wrap: anywhere;
   font-size: 0.98rem;
   line-height: 1.82;
