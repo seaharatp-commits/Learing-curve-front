@@ -6,3 +6,92 @@ html,
 body {
   height: 100%;
 }
+
+html {
+  font-size: 15px;
+}
+
+body {
+  font-family: var(--font-noto-sans-thai), var(--font-inter), system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.78;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  font-weight: 500;
+}
+
+.thai-readable {
+  font-family: var(--font-noto-sans-thai), var(--font-inter), system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+.thai-readable h1,
+.thai-readable h2,
+.thai-readable h3,
+.thai-readable strong {
+  font-weight: 600;
+}
+
+.lesson-content {
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.lesson-content p + p {
+  margin-top: 1rem;
+}
+
+.lesson-chat-area {
+  font-size: 0.98rem;
+  line-height: 1.78;
+}
+
+.ai-answer {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.98rem;
+  line-height: 1.82;
+}
+
+.ai-answer p,
+.ai-answer ul,
+.ai-answer ol,
+.ai-answer pre {
+  margin-block: 0.55rem;
+}
+
+.ai-answer ul,
+.ai-answer ol {
+  padding-inline-start: 1.25rem;
+}
+
+.ai-answer li + li {
+  margin-top: 0.35rem;
+}
+
+.ai-answer code {
+  border-radius: 0.35rem;
+  padding: 0.1rem 0.3rem;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+.ai-answer pre {
+  overflow-x: auto;
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}

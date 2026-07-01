@@ -119,7 +119,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   const isCompleted = lesson.completed || completeMutation.isSuccess;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="thai-readable mx-auto max-w-5xl space-y-5">
       <button
         onClick={() => router.push("/dashboard")}
         className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
@@ -161,7 +161,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
             บทเรียนนี้ยังไม่มีเนื้อหาเพิ่มเติม คุณสามารถกลับไปเลือกบทเรียนอื่นได้
           </p>
         ) : (
-          <div className="space-y-4 text-sm leading-7 text-default-700 dark:text-default-300">
+          <div className="lesson-content space-y-4 text-default-700 dark:text-default-300">
             {paragraphs.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
             ))}
@@ -192,7 +192,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           </BaseButton>
         </div>
 
-        <div className="mb-3 max-h-[420px] space-y-3 overflow-y-auto rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
+        <div className="lesson-chat-area mb-3 max-h-[420px] space-y-3 overflow-y-auto rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
           {messages.length === 0 ? (
             <p className="text-sm text-default-400">
               ถามสิ่งที่ยังสงสัยเกี่ยวกับบทเรียนนี้ได้ AI จะใช้เนื้อหาด้านบนเป็นหลัก และอธิบายเสริมเมื่อจำเป็น
@@ -204,10 +204,10 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[82%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-6 ${
+                  className={`max-w-[82%] rounded-lg px-3 py-2 ${
                     message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-content1 text-default-700 shadow-sm dark:text-default-200"
+                      ? "text-sm leading-7 bg-primary text-primary-foreground"
+                      : "ai-answer bg-content1 text-default-700 shadow-sm dark:text-default-200"
                   }`}
                 >
                   {message.content}
@@ -229,6 +229,10 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
             minRows={2}
             radius="lg"
             variant="bordered"
+            classNames={{
+              input: "text-[0.98rem] leading-7",
+              inputWrapper: "min-h-14",
+            }}
             value={chatInput}
             onValueChange={setChatInput}
             placeholder="ถามต่อ เช่น ขอคำอธิบายเพิ่ม ตัวอย่าง วิธีใช้จริง หรือเรื่องที่เกี่ยวข้องกับบทเรียน"
