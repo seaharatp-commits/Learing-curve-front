@@ -171,12 +171,15 @@ export default function ChatContent() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">{choice.title}</p>
                   <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                    {Math.round(choice.confidenceScore * 100)}%
+                    เกี่ยวข้อง {Math.round(choice.confidenceScore * 100)}%
                   </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-xs text-default-500">
                   {choice.preview || choice.summary || choice.resolution || choice.explanation}
                 </p>
+                {/* <p className="mt-1 text-[11px] text-default-400">
+                  คะแนนนี้คือความเกี่ยวข้องกับคำถาม ไม่ใช่การรับประกันว่าคำตอบถูกต้อง 100%
+                </p> */}
               </button>
             ))}
             <button
