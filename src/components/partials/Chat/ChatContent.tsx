@@ -127,7 +127,20 @@ export default function ChatContent() {
                   m.role === "user" ? "bg-primary text-primary-foreground" : "bg-default-100"
                 }`}
               >
-                {m.content}
+                <div className="whitespace-pre-line">{m.content}</div>
+                {m.role === "assistant" && m.sourceType === "KNOWLEDGE_BASE" && (
+                  <p className="mt-2 border-t border-default-200/70 pt-2 text-xs text-default-500">
+                    อ้างอิงจากฐานความรู้: {m.sourceArticleTitle ?? m.sourceArticleId}
+                    {m.sourceConfidenceScore !== null && m.sourceConfidenceScore !== undefined
+                      ? ` (${Math.round(m.sourceConfidenceScore * 100)}%)`
+                      : ""}
+                  </p>
+                )}
+                {m.role === "assistant" && m.sourceType === "GENERAL_AI" && (
+                  <p className="mt-2 border-t border-default-200/70 pt-2 text-xs text-default-500">
+                    คำตอบจากความรู้ทั่วไปของ AI ไม่ได้อ้างอิงจากฐานความรู้โดยตรง
+                  </p>
+                )}
               </div>
               {m.role === "user" && <User size={20} className="mt-1 text-default-400" />}
             </div>
