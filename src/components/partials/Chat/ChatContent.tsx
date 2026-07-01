@@ -59,6 +59,29 @@ export default function ChatContent() {
     setMessages((prev) => [...prev, ...result.messages]);
   };
 
+  const sendGeneralAnswerAfterKnowledgeSearchFailed = async (
+    content: string,
+    localUserMessage: ChatMessage,
+  ) => {
+    const fallbackMessage = createLocalMessage(
+      "assistant",
+      "ไม่สามารถค้นหาฐานความรู้ได้ในขณะนี้ ระบบจะตอบจากความรู้ทั่วไปแทน",
+    );
+    setMessages((prev) => [...prev, fallbackMessage]);
+
+    const result = await mutateAsync({ sessionId, content });
+    const [serverUserMessage, serverAssistantMessage] = result.messages;
+    setSessionId(result.session.id);
+    setMessages((prev) => [
+      ...prev.filter(
+        (message) => message.id !== localUserMessage.id && message.id !== fallbackMessage.id,
+      ),
+      serverUserMessage,
+      fallbackMessage,
+      serverAssistantMessage,
+    ]);
+  };
+
   const handleSend = async () => {
     const content = input.trim();
     if (!content) return;
@@ -70,10 +93,16 @@ export default function ChatContent() {
     const userMessage = createLocalMessage("user", content);
     setMessages((prev) => [...prev, userMessage]);
 
-    const matches = await recommendationsMutation.mutateAsync({
-      title: content,
-      description: content,
-    });
+    let matches: RecommendationResult[] = [];
+    try {
+      matches = await recommendationsMutation.mutateAsync({
+        title: content,
+        description: content,
+      });
+    } catch {
+      await sendGeneralAnswerAfterKnowledgeSearchFailed(content, userMessage);
+      return;
+    }
 
     if (matches.length > 0) {
       const pendingMessage = createLocalMessage(
