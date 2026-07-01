@@ -16,6 +16,7 @@ export interface ChatSession {
 
 export interface SendMessagePayload {
   sessionId?: string;
+  knowledgeBaseArticleId?: string;
   content: string;
 }
 
