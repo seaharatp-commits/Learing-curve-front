@@ -84,9 +84,6 @@ export const submitQuizAttemptApi = (quizId: string, answers: SubmitAnswer[]) =>
 export const generateQuizFromArticleApi = (articleId: string) =>
   mainClient.post<{ id: string }>("/learning/quizzes/generate-from-article", { articleId });
 
-export const generateQuizFromTopicApi = (topic: string) =>
-  mainClient.post<GeneratedTopicResult>("/learning/quizzes/generate-from-topic", { topic });
-
 export const generateLessonFromTopicApi = (payload: GenerateLessonFromTopicPayload) =>
   mainClient.post<GeneratedTopicResult>("/learning/lessons/generate-from-topic", payload);
 

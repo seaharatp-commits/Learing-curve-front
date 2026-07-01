@@ -33,8 +33,10 @@ export default function QuizListContent() {
     null,
   );
 
-  const handleDeleteQuiz = (quizId: string) => {
-    const confirmed = window.confirm("ต้องการลบแบบทดสอบนี้แบบถาวรใช่ไหม?");
+  const handleDeleteQuiz = (quizId: string, quizTitle: string) => {
+    const confirmed = window.confirm(
+      `ลบแบบทดสอบ "${quizTitle}" ใช่ไหม?\n\nการลบนี้ถาวรและไม่สามารถกู้คืนได้ คำถามและประวัติการทำแบบทดสอบนี้ทั้งหมดจะถูกลบไปด้วย`,
+    );
     if (!confirmed) return;
 
     setDeletingQuizId(quizId);
@@ -96,7 +98,7 @@ export default function QuizListContent() {
                   color="danger"
                   title="ลบแบบทดสอบถาวร"
                   isLoading={deletingQuizId === quiz.id}
-                  onPress={() => handleDeleteQuiz(quiz.id)}
+                  onPress={() => handleDeleteQuiz(quiz.id, quiz.title)}
                 >
                   <Trash2 size={16} />
                 </BaseButton>

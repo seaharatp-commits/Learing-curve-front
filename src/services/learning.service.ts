@@ -20,7 +20,6 @@ import {
   deleteQuizApi,
   submitQuizAttemptApi,
   generateQuizFromArticleApi,
-  generateQuizFromTopicApi,
   generateLessonFromTopicApi,
   askLessonQuestionApi,
   generateQuizFromLessonApi,
@@ -66,11 +65,6 @@ export const submitQuizAttempt = async (
 
 export const generateQuizFromArticle = async (articleId: string) => {
   const res = await generateQuizFromArticleApi(articleId);
-  return res.data;
-};
-
-export const generateQuizFromTopic = async (topic: string): Promise<GeneratedTopicResult> => {
-  const res = await generateQuizFromTopicApi(topic);
   return res.data;
 };
 

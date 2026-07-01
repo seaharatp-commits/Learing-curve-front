@@ -8,5 +8,4 @@ export { useCompleteLesson } from "./useCompleteLesson";
 export { useGenerateLessonFromTopic } from "./useGenerateLessonFromTopic";
 export { useAskLessonQuestion } from "./useAskLessonQuestion";
 export { useGenerateQuizFromLesson } from "./useGenerateQuizFromLesson";
-export { useGenerateQuizFromTopic } from "./useGenerateQuizFromTopic";
 export { useDeleteQuiz } from "./useDeleteQuiz";
