@@ -218,7 +218,7 @@ export default function LearningDashboardContent() {
             ))}
           </div>
           {totalLessonPages > 1 && (
-            <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <div className="mt-2.3 flex flex-wrap justify-end gap-1">
               {Array.from({ length: totalLessonPages }, (_, index) => index + 1).map((page) => (
                 <button
                   key={page}
