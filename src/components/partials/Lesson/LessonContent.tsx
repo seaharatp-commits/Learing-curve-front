@@ -31,6 +31,10 @@ interface ChatMessage {
   content: string;
 }
 
+const MAX_CHAT_HISTORY_MESSAGES = 12;
+const MAX_CHAT_HISTORY_MESSAGE_LENGTH = 800;
+const MAX_CHAT_HISTORY_LENGTH = 5500;
+
 function extractErrorMessage(error: unknown): string {
   if (
     error &&
@@ -50,9 +54,22 @@ function extractErrorMessage(error: unknown): string {
 }
 
 function formatChatHistory(messages: ChatMessage[]) {
-  return messages
-    .map((message) => `${message.role === "user" ? "ผู้เรียน" : "AI"}: ${message.content}`)
-    .join("\n");
+  const recentMessages = messages.slice(-MAX_CHAT_HISTORY_MESSAGES);
+  const history = recentMessages
+    .map((message, index) => {
+      const label = message.role === "user" ? "Learner" : "Assistant";
+      const content =
+        message.content.length > MAX_CHAT_HISTORY_MESSAGE_LENGTH
+          ? `${message.content.slice(0, MAX_CHAT_HISTORY_MESSAGE_LENGTH).trim()}...`
+          : message.content;
+
+      return `Turn ${index + 1} - ${label}: ${content}`;
+    })
+    .join("\n\n");
+
+  return history.length > MAX_CHAT_HISTORY_LENGTH
+    ? history.slice(history.length - MAX_CHAT_HISTORY_LENGTH).trim()
+    : history;
 }
 
 export default function LessonContent({ lessonId }: LessonContentProps) {
