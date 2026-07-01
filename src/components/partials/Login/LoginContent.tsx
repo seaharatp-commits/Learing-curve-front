@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
@@ -54,7 +54,10 @@ export default function LoginContent() {
         setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
         return;
       }
-      router.push("/dashboard");
+
+      const session = await getSession();
+      const role = session?.user?.role?.toUpperCase();
+      router.push(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
