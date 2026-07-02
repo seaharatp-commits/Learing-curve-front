@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { ArrowRight, ClipboardList, Trash2 } from "lucide-react";
 import { useDeleteQuiz, useQuizList } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
@@ -28,22 +29,23 @@ function extractErrorMessage(error: unknown): string {
 export default function QuizListContent() {
   const { data, isLoading } = useQuizList();
   const deleteQuizMutation = useDeleteQuiz();
+  const [deletingQuiz, setDeletingQuiz] = useState<{ id: string; title: string } | null>(null);
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
 
-  const handleDeleteQuiz = (quizId: string, quizTitle: string) => {
-    const confirmed = window.confirm(
-      `ลบแบบทดสอบ "${quizTitle}" ใช่ไหม?\n\nการลบนี้ถาวรและไม่สามารถกู้คืนได้ คำถามและประวัติการทำแบบทดสอบนี้ทั้งหมดจะถูกลบไปด้วย`,
-    );
-    if (!confirmed) return;
-
-    setDeletingQuizId(quizId);
+  const handleConfirmDelete = () => {
+    if (!deletingQuiz) return;
+    setDeletingQuizId(deletingQuiz.id);
     setDeleteMessage(null);
-    deleteQuizMutation.mutate(quizId, {
+    deleteQuizMutation.mutate(deletingQuiz.id, {
+      onSuccess: () => {
+        setDeletingQuiz(null);
+      },
       onError: (error) => {
         setDeleteMessage({ text: extractErrorMessage(error), isError: true });
+        setDeletingQuiz(null);
       },
       onSettled: () => setDeletingQuizId(null),
     });
@@ -98,7 +100,7 @@ export default function QuizListContent() {
                   color="danger"
                   title="ลบแบบทดสอบถาวร"
                   isLoading={deletingQuizId === quiz.id}
-                  onPress={() => handleDeleteQuiz(quiz.id, quiz.title)}
+                  onPress={() => setDeletingQuiz({ id: quiz.id, title: quiz.title })}
                 >
                   <Trash2 size={16} />
                 </BaseButton>
@@ -119,6 +121,25 @@ export default function QuizListContent() {
           {deleteMessage.text}
         </p>
       )}
+      <Modal isOpen={!!deletingQuiz} onClose={() => setDeletingQuiz(null)}>
+        <ModalContent>
+          <ModalHeader>ยืนยันการลบแบบทดสอบ</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              คุณแน่ใจหรือไม่ว่าต้องการลบแบบทดสอบนี้? การลบนี้ไม่สามารถย้อนกลับได้
+            </p>
+            {deletingQuiz && <p className="font-medium">{deletingQuiz.title}</p>}
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setDeletingQuiz(null)}>
+              ยกเลิก
+            </BaseButton>
+            <BaseButton color="danger" isLoading={deleteQuizMutation.isPending} onPress={handleConfirmDelete}>
+              ลบแบบทดสอบ
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

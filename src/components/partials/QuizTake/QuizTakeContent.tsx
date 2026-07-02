@@ -14,12 +14,31 @@ interface QuizTakeContentProps {
   quizId: string;
 }
 
+function extractErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object" &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+  return "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+}
+
 export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const router = useRouter();
   const { data: quiz, isLoading } = useQuiz(quizId);
   const submitMutation = useSubmitQuizAttempt(quizId);
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (isLoading || !quiz) {
     return (
@@ -32,9 +51,13 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const allAnswered = quiz.questions.every((q) => selections[q.id] !== undefined);
 
   const handleSubmit = () => {
+    setSubmitError(null);
     submitMutation.mutate(
       quiz.questions.map((q) => ({ questionId: q.id, selectedIndex: selections[q.id] })),
-      { onSuccess: (data) => setResult(data) },
+      {
+        onSuccess: (data) => setResult(data),
+        onError: (error) => setSubmitError(extractErrorMessage(error)),
+      },
     );
   };
 
@@ -92,9 +115,10 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                     <button
                       key={optionIdx}
                       disabled={!!result}
-                      onClick={() =>
-                        setSelections((prev) => ({ ...prev, [question.id]: optionIdx }))
-                      }
+                      onClick={() => {
+                        setSubmitError(null);
+                        setSelections((prev) => ({ ...prev, [question.id]: optionIdx }));
+                      }}
                       className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:cursor-default ${stateClass}`}
                     >
                       <span className="font-medium">{OPTION_LABELS[optionIdx]}.</span>
@@ -120,13 +144,20 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
       </div>
 
       {!result && (
-        <BaseButton
-          isDisabled={!allAnswered}
-          isLoading={submitMutation.isPending}
-          onPress={handleSubmit}
-        >
-          ส่งคำตอบ
-        </BaseButton>
+        <div className="space-y-2">
+          {submitError && (
+            <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">
+              {submitError}
+            </p>
+          )}
+          <BaseButton
+            isDisabled={!allAnswered}
+            isLoading={submitMutation.isPending}
+            onPress={handleSubmit}
+          >
+            ส่งคำตอบ
+          </BaseButton>
+        </div>
       )}
     </div>
   );
