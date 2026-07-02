@@ -9,6 +9,7 @@ import { useRecommendations } from "@/hooks/knowledgeBase";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
+import { FormattedAnswer } from "@/components/common/FormattedAnswer";
 import { Send, Bot, User, BookOpen } from "lucide-react";
 
 type ActiveKnowledgeContext = Pick<
@@ -425,7 +426,7 @@ export default function ChatContent() {
                 }`}
               >
                 {m.role === "assistant" ? (
-                  <ChatAnswer content={m.content} />
+                  <FormattedAnswer content={m.content} className="space-y-2 leading-6" />
                 ) : (
                   <div className="whitespace-pre-line">{m.content}</div>
                 )}

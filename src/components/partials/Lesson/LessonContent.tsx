@@ -22,6 +22,7 @@ import {
 } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
+import { FormattedAnswer } from "@/components/common/FormattedAnswer";
 
 interface LessonContentProps {
   lessonId: string;
@@ -401,7 +402,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           </p>
         ) : (
           <div className="lesson-content space-y-4 text-default-700 dark:text-default-300">
-            <LessonAnswer content={lessonDisplay.content} />
+            <FormattedAnswer content={lessonDisplay.content} />
           </div>
         )}
       </BaseCard>
@@ -448,7 +449,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
                   }`}
                 >
                   {message.role === "assistant" ? (
-                    <LessonAnswer content={message.content} />
+                    <FormattedAnswer content={message.content} />
                   ) : (
                     message.content
                   )}
