@@ -10,27 +10,10 @@ import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
 import type { KnowledgeBaseItem } from "@/types/app/knowledgeBase";
-
-function extractErrorMessage(error: unknown, fallback = "ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return fallback;
-}
+import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 export default function KnowledgeBaseContent() {
-  const { data, isLoading } = useKnowledgeBaseList();
+  const { data, isLoading, isError, error } = useKnowledgeBaseList();
   const { deleteMutation } = useKnowledgeBaseMutations();
   const generateQuizMutation = useGenerateQuiz();
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -91,7 +74,7 @@ export default function KnowledgeBaseContent() {
         }));
       },
       onError: (error) => {
-        const message = extractErrorMessage(error, "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง");
+        const message = getErrorMessage(error, "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง");
         setPageMessage({ text: message, isError: true });
         setQuizResultMessages((prev) => ({
           ...prev,
@@ -112,7 +95,7 @@ export default function KnowledgeBaseContent() {
       },
       onError: (error) => {
         setPageMessage({
-          text: extractErrorMessage(error, "ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"),
+          text: getErrorMessage(error, "ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"),
           isError: true,
         });
         setDeleting(null);
@@ -183,7 +166,15 @@ export default function KnowledgeBaseContent() {
         </BaseCard>
       )}
 
-      {!isLoading && data.length === 0 && (
+      {isError && (
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(error, "โหลดข้อมูลฐานความรู้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      )}
+
+      {!isLoading && !isError && data.length === 0 && (
         <BaseCard>
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <BookOpen size={28} className="text-primary" />
@@ -199,14 +190,14 @@ export default function KnowledgeBaseContent() {
       )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        {!isLoading && data.length > 0 && visibleItems.length === 0 && (
+        {!isLoading && !isError && data.length > 0 && visibleItems.length === 0 && (
           <BaseCard className="md:col-span-2">
             <p className="py-6 text-center text-sm text-default-500">
               ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
             </p>
           </BaseCard>
         )}
-        {visibleItems.map((item) => (
+        {!isError && visibleItems.map((item) => (
           <BaseCard key={item.id}>
             <div className="flex items-start justify-between gap-2">
               <div>

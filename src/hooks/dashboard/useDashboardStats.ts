@@ -6,9 +6,9 @@ import { getDashboardStats } from "@/services/dashboard.service";
 export const DASHBOARD_STATS_QUERY_KEY = ["dashboardStats"] as const;
 
 export const useDashboardStats = () => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: DASHBOARD_STATS_QUERY_KEY,
     queryFn: getDashboardStats,
   });
-  return { data, isLoading };
+  return { data, isLoading, isError, error };
 };

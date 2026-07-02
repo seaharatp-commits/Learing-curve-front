@@ -8,26 +8,9 @@ import { BaseButton } from "@/components/ui/Button";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseCard } from "@/components/ui/Card";
 import { registerUser } from "@/services/auth.service";
+import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
 type AuthMode = "login" | "register";
-
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "ดำเนินการไม่สำเร็จ ลองใหม่อีกครั้ง";
-}
 
 export default function LoginContent() {
   const router = useRouter();

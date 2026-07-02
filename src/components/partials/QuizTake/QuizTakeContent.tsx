@@ -7,29 +7,12 @@ import { useQuiz, useSubmitQuizAttempt } from "@/hooks/learning";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseButton } from "@/components/ui/Button";
 import type { QuizAttemptResult } from "@/types/app/learning";
+import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 const OPTION_LABELS = ["ก", "ข", "ค", "ง"];
 
 interface QuizTakeContentProps {
   quizId: string;
-}
-
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
 }
 
 export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
@@ -56,7 +39,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
       quiz.questions.map((q) => ({ questionId: q.id, selectedIndex: selections[q.id] })),
       {
         onSuccess: (data) => setResult(data),
-        onError: (error) => setSubmitError(extractErrorMessage(error)),
+        onError: (error) => setSubmitError(getErrorMessage(error, "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")),
       },
     );
   };

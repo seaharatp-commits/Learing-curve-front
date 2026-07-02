@@ -7,6 +7,7 @@ import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { useGenerateKnowledge, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
 import type { KnowledgeBaseFormValues, KnowledgeBaseItem } from "@/types/app/knowledgeBase";
+import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
 interface KnowledgeBaseModalProps {
   isOpen: boolean;
@@ -23,24 +24,6 @@ const EMPTY_FORM: KnowledgeBaseFormValues = {
   keywords: [],
   tags: [],
 };
-
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
-}
 
 function validateForm(form: KnowledgeBaseFormValues) {
   if (!form.title.trim()) return "กรุณาระบุหัวข้อ";

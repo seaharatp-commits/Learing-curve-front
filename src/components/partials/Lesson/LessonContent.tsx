@@ -22,6 +22,7 @@ import {
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { FormattedAnswer } from "@/components/common/FormattedAnswer";
+import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 interface LessonContentProps {
   lessonId: string;
@@ -35,24 +36,6 @@ interface ChatMessage {
 const MAX_CHAT_HISTORY_MESSAGES = 12;
 const MAX_CHAT_HISTORY_MESSAGE_LENGTH = 800;
 const MAX_CHAT_HISTORY_LENGTH = 5500;
-
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "ดำเนินการไม่สำเร็จ ลองใหม่อีกครั้ง";
-}
 
 function formatChatHistory(messages: ChatMessage[]) {
   const recentMessages = messages.slice(-MAX_CHAT_HISTORY_MESSAGES);
@@ -122,6 +105,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [completeError, setCompleteError] = useState<string | null>(null);
   const [quizMessage, setQuizMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const chatHistory = useMemo(() => formatChatHistory(messages), [messages]);
@@ -144,7 +128,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           setMessages((current) => [...current, { role: "assistant", content: result.answer }]);
         },
         onError: (error) => {
-          setChatError(extractErrorMessage(error));
+          setChatError(getErrorMessage(error));
         },
       },
     );
@@ -157,7 +141,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
         router.push(`/quizzes/${result.quizId}`);
       },
       onError: (error) => {
-        setQuizMessage({ text: extractErrorMessage(error), isError: true });
+        setQuizMessage({ text: getErrorMessage(error), isError: true });
       },
     });
   };
@@ -196,7 +180,13 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
             startContent={<CheckCircle2 size={16} />}
             isDisabled={isCompleted}
             isLoading={completeMutation.isPending}
-            onPress={() => completeMutation.mutate()}
+            onPress={() => {
+              setCompleteError(null);
+              completeMutation.mutate(undefined, {
+                onError: (error) =>
+                  setCompleteError(getErrorMessage(error, "บันทึกว่าเรียนจบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")),
+              });
+            }}
           >
             {isCompleted ? "เรียนจบแล้ว" : "เรียนจบบทนี้"}
           </BaseButton>
@@ -210,6 +200,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           </BaseButton>
         </div>
       </div>
+      {completeError && <p className="text-sm text-danger-600">{completeError}</p>}
 
       <BaseCard>
         {!hasLessonContent ? (

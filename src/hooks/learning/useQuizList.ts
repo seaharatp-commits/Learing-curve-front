@@ -6,9 +6,9 @@ import { getQuizList } from "@/services/learning.service";
 export const QUIZ_LIST_QUERY_KEY = ["quizList"] as const;
 
 export const useQuizList = () => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: QUIZ_LIST_QUERY_KEY,
     queryFn: getQuizList,
   });
-  return { data: data ?? [], isLoading };
+  return { data: data ?? [], isLoading, isError, error };
 };

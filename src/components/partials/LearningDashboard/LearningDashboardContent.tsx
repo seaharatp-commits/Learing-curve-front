@@ -18,6 +18,7 @@ import { useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learni
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
+import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 const LESSONS_PER_PAGE = 6;
 const MAX_VISIBLE_PAGE_BUTTONS = 7;
@@ -49,27 +50,9 @@ function getLessonPaginationItems(currentPage: number, totalPages: number): Pagi
   return items;
 }
 
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "สร้างบทเรียนไม่สำเร็จ ลองใหม่อีกครั้ง";
-}
-
 export default function LearningDashboardContent() {
   const router = useRouter();
-  const { data, isLoading } = useLearningDashboard();
+  const { data, isLoading, isError, error } = useLearningDashboard();
   const generateLessonMutation = useGenerateLessonFromTopic();
   const [topic, setTopic] = useState("");
   const [lessonPage, setLessonPage] = useState(1);
@@ -94,11 +77,23 @@ export default function LearningDashboardContent() {
           router.push(`/lessons/${result.lessonId}`);
         },
         onError: (error) => {
-          setTopicMessage({ text: extractErrorMessage(error), isError: true });
+          setTopicMessage({ text: getErrorMessage(error, "สร้างบทเรียนไม่สำเร็จ ลองใหม่อีกครั้ง"), isError: true });
         },
       },
     );
   };
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(error, "โหลดแดชบอร์ดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return (

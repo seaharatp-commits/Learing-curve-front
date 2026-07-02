@@ -3,9 +3,10 @@
 import { useDashboardStats } from "@/hooks/dashboard";
 import { BaseCard } from "@/components/ui/Card";
 import { MessageSquare, BookOpen, ClipboardList, Users, CheckCircle2, Trophy } from "lucide-react";
+import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
 export default function DashboardContent() {
-  const { data, isLoading } = useDashboardStats();
+  const { data, isLoading, isError, error } = useDashboardStats();
 
   const cards = [
     { label: "ผู้ใช้ทั้งหมด", value: data?.userCount ?? 0, icon: Users },
@@ -20,6 +21,14 @@ export default function DashboardContent() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Dashboard</h1>
       {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
+      {isError && (
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {extractErrorMessage(error, "โหลดข้อมูล Dashboard ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      )}
+      {!isError && (
       <div className="grid gap-4 md:grid-cols-3">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -36,6 +45,7 @@ export default function DashboardContent() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

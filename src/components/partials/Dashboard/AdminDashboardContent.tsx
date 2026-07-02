@@ -15,6 +15,7 @@ import { useDashboardStats } from "@/hooks/dashboard";
 import { useKnowledgeBaseList } from "@/hooks/knowledgeBase";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
+import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("th-TH", {
@@ -23,8 +24,13 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 export default function AdminDashboardContent() {
-  const { data, isLoading: isStatsLoading } = useDashboardStats();
-  const { data: knowledgeBaseItems, isLoading: isKnowledgeLoading } = useKnowledgeBaseList();
+  const { data, isLoading: isStatsLoading, isError: isStatsError, error: statsError } = useDashboardStats();
+  const {
+    data: knowledgeBaseItems,
+    isLoading: isKnowledgeLoading,
+    isError: isKnowledgeError,
+    error: knowledgeError,
+  } = useKnowledgeBaseList();
   const recentKnowledge = knowledgeBaseItems.slice(0, 3);
 
   const statCards = [
@@ -48,6 +54,12 @@ export default function AdminDashboardContent() {
         {isStatsLoading ? (
           <BaseCard>
             <p className="text-sm text-default-400">กำลังโหลดสถิติระบบ...</p>
+          </BaseCard>
+        ) : isStatsError ? (
+          <BaseCard>
+            <p className="text-sm text-danger-600">
+              {extractErrorMessage(statsError, "โหลดสถิติระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+            </p>
           </BaseCard>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
@@ -82,6 +94,12 @@ export default function AdminDashboardContent() {
         {isKnowledgeLoading ? (
           <BaseCard>
             <p className="text-sm text-default-400">กำลังโหลดข้อมูลฐานความรู้...</p>
+          </BaseCard>
+        ) : isKnowledgeError ? (
+          <BaseCard>
+            <p className="text-sm text-danger-600">
+              {extractErrorMessage(knowledgeError, "โหลดข้อมูลฐานความรู้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+            </p>
           </BaseCard>
         ) : recentKnowledge.length === 0 ? (
           <BaseCard>

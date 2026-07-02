@@ -6,9 +6,10 @@ import { useHistoryList, useDeleteHistory } from "@/hooks/history";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseButton } from "@/components/ui/Button";
 import { MessageSquare, Trash2 } from "lucide-react";
+import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
 export default function HistoryContent() {
-  const { data, isLoading } = useHistoryList();
+  const { data, isLoading, isError, error } = useHistoryList();
   const deleteMutation = useDeleteHistory();
   const router = useRouter();
 
@@ -16,11 +17,18 @@ export default function HistoryContent() {
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-xl font-semibold">ประวัติการสนทนา</h1>
       {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
-      {!isLoading && data.length === 0 && (
+      {isError && (
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {extractErrorMessage(error, "โหลดประวัติการสนทนาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      )}
+      {!isLoading && !isError && data.length === 0 && (
         <p className="text-default-400">ยังไม่มีประวัติการสนทนา</p>
       )}
       <div className="space-y-3">
-        {data.map((item) => (
+        {!isError && data.map((item) => (
           <BaseCard key={item.id}>
             <div className="flex items-start gap-3">
               <MessageSquare size={20} className="mt-1 text-primary" />

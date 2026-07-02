@@ -7,6 +7,7 @@ import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { useGenerateKnowledge, useConfirmKnowledge } from "@/hooks/knowledgeBase";
 import type { KnowledgeDraft, RecommendationResult } from "@/types/app/knowledgeBase";
+import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
 interface AddKnowledgeModalProps {
   isOpen: boolean;
@@ -17,24 +18,6 @@ interface AddKnowledgeModalProps {
 const PLACEHOLDER =
   "อธิบายความรู้ ปัญหา วิธีแก้ไข หรือประสบการณ์ของคุณให้ละเอียดที่สุด " +
   "AI จะจัดระเบียบให้เป็นบทความฐานความรู้ที่มีโครงสร้างให้เอง";
-
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
-}
 
 function getDraftContent(draft: KnowledgeDraft) {
   return [

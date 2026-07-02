@@ -7,27 +7,10 @@ import { ArrowRight, ClipboardList, Trash2 } from "lucide-react";
 import { useDeleteQuiz, useQuizList } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-
-function extractErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return "ดำเนินการไม่สำเร็จ ลองใหม่อีกครั้ง";
-}
+import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 export default function QuizListContent() {
-  const { data, isLoading } = useQuizList();
+  const { data, isLoading, isError, error } = useQuizList();
   const deleteQuizMutation = useDeleteQuiz();
   const [deletingQuiz, setDeletingQuiz] = useState<{ id: string; title: string } | null>(null);
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
@@ -44,7 +27,7 @@ export default function QuizListContent() {
         setDeletingQuiz(null);
       },
       onError: (error) => {
-        setDeleteMessage({ text: extractErrorMessage(error), isError: true });
+        setDeleteMessage({ text: getErrorMessage(error), isError: true });
         setDeletingQuiz(null);
       },
       onSettled: () => setDeletingQuizId(null),
@@ -62,14 +45,22 @@ export default function QuizListContent() {
 
       {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
 
-      {!isLoading && data.length === 0 && (
+      {isError && (
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(error, "โหลดรายการแบบทดสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      )}
+
+      {!isLoading && !isError && data.length === 0 && (
         <BaseCard>
           <p className="text-sm text-default-400">ยังไม่มีแบบทดสอบในระบบ</p>
         </BaseCard>
       )}
 
       <div className="space-y-3">
-        {data.map((quiz) => (
+        {!isError && data.map((quiz) => (
           <BaseCard
             key={quiz.id}
             className="transition-colors hover:bg-default-50 dark:hover:bg-default-100/10"
