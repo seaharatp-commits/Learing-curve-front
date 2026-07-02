@@ -6,10 +6,10 @@ import { getLesson } from "@/services/learning.service";
 export const lessonQueryKey = (lessonId: string) => ["lesson", lessonId] as const;
 
 export const useLesson = (lessonId: string) => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: lessonQueryKey(lessonId),
     queryFn: () => getLesson(lessonId),
     enabled: !!lessonId,
   });
-  return { data, isLoading };
+  return { data, isLoading, isError, error };
 };

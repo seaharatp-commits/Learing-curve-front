@@ -211,8 +211,11 @@ export default function KnowledgeBaseContent() {
                 <p className="mt-1 line-clamp-3 text-sm text-default-500">{item.content}</p>
                 {((item.keywords?.length ?? 0) > 0 || (item.tags?.length ?? 0) > 0) && (
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {[...(item.keywords ?? []), ...(item.tags ?? [])].slice(0, 6).map((label) => (
-                      <span key={label} className="rounded-full bg-default-100 px-2 py-0.5 text-xs text-default-500">
+                    {[...(item.keywords ?? []), ...(item.tags ?? [])].slice(0, 6).map((label, index) => (
+                      <span
+                        key={`${item.id}-${label}-${index}`}
+                        className="rounded-full bg-default-100 px-2 py-0.5 text-xs text-default-500"
+                      >
                         {label}
                       </span>
                     ))}

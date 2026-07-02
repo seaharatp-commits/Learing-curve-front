@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@heroui/react";
@@ -21,7 +21,7 @@ import {
 } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import { FormattedAnswer } from "@/components/common/FormattedAnswer";
+import { FormattedAnswer, getFormattedAnswerDisplay } from "@/components/common/FormattedAnswer";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 interface LessonContentProps {
@@ -36,6 +36,8 @@ interface ChatMessage {
 const MAX_CHAT_HISTORY_MESSAGES = 12;
 const MAX_CHAT_HISTORY_MESSAGE_LENGTH = 800;
 const MAX_CHAT_HISTORY_LENGTH = 5500;
+const MAX_QUIZ_FOCUS_MESSAGES = 4;
+const MAX_QUIZ_FOCUS_LENGTH = 1200;
 
 function formatChatHistory(messages: ChatMessage[]) {
   const recentMessages = messages.slice(-MAX_CHAT_HISTORY_MESSAGES);
@@ -56,49 +58,22 @@ function formatChatHistory(messages: ChatMessage[]) {
     : history;
 }
 
-function parseLessonDisplayContent(lesson: { title: string; content: string }) {
-  const fallback = { title: lesson.title, content: lesson.content };
-  const candidates = new Set<string>();
-  const trimmed = lesson.content.trim();
-  const unfenced = trimmed
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
-  const firstBrace = unfenced.indexOf("{");
-  const lastBrace = unfenced.lastIndexOf("}");
+function formatQuizFocus(messages: ChatMessage[]) {
+  const focus = messages
+    .filter((message) => message.role === "user")
+    .slice(-MAX_QUIZ_FOCUS_MESSAGES)
+    .map((message) => message.content.trim())
+    .filter(Boolean)
+    .join("\n");
 
-  candidates.add(trimmed);
-  candidates.add(unfenced);
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    candidates.add(unfenced.slice(firstBrace, lastBrace + 1));
-  }
-
-  for (const candidate of candidates) {
-    try {
-      const parsed = JSON.parse(candidate) as unknown;
-      const parsedObject = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-
-      if (typeof parsedObject !== "object" || parsedObject === null) continue;
-
-      const titleValue = (parsedObject as { title?: unknown }).title;
-      const contentValue = (parsedObject as { content?: unknown }).content;
-      const parsedTitle = typeof titleValue === "string" ? titleValue.trim() : "";
-      const parsedContent = typeof contentValue === "string" ? contentValue.trim() : "";
-
-      if (parsedTitle && parsedContent) {
-        return { title: parsedTitle, content: parsedContent };
-      }
-    } catch {
-      // Keep trying other safe candidates, then fall back to original content.
-    }
-  }
-
-  return fallback;
+  return focus.length > MAX_QUIZ_FOCUS_LENGTH
+    ? focus.slice(focus.length - MAX_QUIZ_FOCUS_LENGTH).trim()
+    : focus;
 }
 
 export default function LessonContent({ lessonId }: LessonContentProps) {
   const router = useRouter();
-  const { data: lesson, isLoading } = useLesson(lessonId);
+  const { data: lesson, isLoading, isError, error } = useLesson(lessonId);
   const completeMutation = useCompleteLesson(lessonId);
   const askMutation = useAskLessonQuestion(lessonId);
   const generateQuizMutation = useGenerateQuizFromLesson(lessonId);
@@ -107,8 +82,6 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   const [chatError, setChatError] = useState<string | null>(null);
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [quizMessage, setQuizMessage] = useState<{ text: string; isError: boolean } | null>(null);
-
-  const chatHistory = useMemo(() => formatChatHistory(messages), [messages]);
 
   const handleAsk = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -136,7 +109,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
 
   const handleGenerateQuiz = () => {
     setQuizMessage(null);
-    generateQuizMutation.mutate(chatHistory, {
+    generateQuizMutation.mutate(formatQuizFocus(messages), {
       onSuccess: (result) => {
         router.push(`/quizzes/${result.quizId}`);
       },
@@ -146,6 +119,25 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
     });
   };
 
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-3">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
+        >
+          <ArrowLeft size={16} />
+          กลับแดชบอร์ด
+        </button>
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(error, "โหลดบทเรียนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      </div>
+    );
+  }
+
   if (isLoading || !lesson) {
     return (
       <div className="mx-auto max-w-5xl">
@@ -154,7 +146,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
     );
   }
 
-  const lessonDisplay = parseLessonDisplayContent(lesson);
+  const lessonDisplay = getFormattedAnswerDisplay(lesson.content, lesson.title);
   const hasLessonContent = lessonDisplay.content.trim().length > 0;
   const isCompleted = lesson.completed || completeMutation.isSuccess;
 

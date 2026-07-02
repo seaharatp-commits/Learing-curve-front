@@ -17,11 +17,30 @@ interface QuizTakeContentProps {
 
 export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const router = useRouter();
-  const { data: quiz, isLoading } = useQuiz(quizId);
+  const { data: quiz, isLoading, isError, error } = useQuiz(quizId);
   const submitMutation = useSubmitQuizAttempt(quizId);
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-3">
+        <button
+          onClick={() => router.push("/quizzes")}
+          className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
+        >
+          <ArrowLeft size={16} />
+          กลับไปยังรายการแบบทดสอบ
+        </button>
+        <BaseCard>
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(error, "โหลดแบบทดสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+          </p>
+        </BaseCard>
+      </div>
+    );
+  }
 
   if (isLoading || !quiz) {
     return (
@@ -68,6 +87,37 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
           </p>
         )}
       </div>
+
+      {result && (
+        <BaseCard className="border-success/30 bg-success/10">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-success-700">
+                ส่งคำตอบสำเร็จ
+              </p>
+              <p className="text-sm text-default-600">
+                คุณตอบถูก {result.correctCount}/{result.totalQuestions} ข้อ ได้ {result.score} คะแนน
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <BaseButton
+                size="sm"
+                variant="flat"
+                onPress={() => {
+                  setSelections({});
+                  setResult(null);
+                  setSubmitError(null);
+                }}
+              >
+                ทำใหม่
+              </BaseButton>
+              <BaseButton size="sm" onPress={() => router.push("/quizzes")}>
+                กลับรายการแบบทดสอบ
+              </BaseButton>
+            </div>
+          </div>
+        </BaseCard>
+      )}
 
       <div className="space-y-4">
         {quiz.questions.map((question, idx) => {

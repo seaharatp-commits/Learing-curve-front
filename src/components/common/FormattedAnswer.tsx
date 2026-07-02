@@ -12,39 +12,62 @@ interface FormattedAnswerProps {
   className?: string;
 }
 
+interface FormattedAnswerDisplay {
+  title?: string;
+  content: string;
+}
+
 function extractJsonLikeString(value: string, key: "title" | "content") {
   const match = value.match(new RegExp(`["']?${key}["']?\\s*:\\s*["']([\\s\\S]*?)["']\\s*(?:,|})`, "i"));
   return match?.[1]?.trim() ?? "";
 }
 
-function normalizeAnswerContent(content: string) {
+export function getFormattedAnswerDisplay(content: string, fallbackTitle?: string): FormattedAnswerDisplay {
   const trimmed = content.trim();
   const jsonCandidate = trimmed
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/```$/i, "")
     .trim();
 
-  if (!jsonCandidate.startsWith("{") || !jsonCandidate.endsWith("}")) return trimmed;
+  if (!jsonCandidate.startsWith("{") || !jsonCandidate.endsWith("}")) {
+    return { title: fallbackTitle, content: trimmed };
+  }
 
   try {
     const parsed = JSON.parse(jsonCandidate) as { title?: unknown; content?: unknown };
     const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
     const body = typeof parsed.content === "string" ? parsed.content.trim() : "";
-    if (!title && !body) return trimmed;
-    return [title ? `## ${title}` : "", body].filter(Boolean).join("\n\n");
+    if (!title && !body) return { title: fallbackTitle, content: trimmed };
+    return {
+      title: title || fallbackTitle,
+      content: body || trimmed,
+    };
   } catch {
     const title = extractJsonLikeString(jsonCandidate, "title");
     const body = extractJsonLikeString(jsonCandidate, "content");
-    if (title || body) return [title ? `## ${title}` : "", body].filter(Boolean).join("\n\n");
-    if (jsonCandidate.startsWith("{") && jsonCandidate.endsWith("}")) {
-      return jsonCandidate
-        .replace(/[{}"]/g, "")
-        .replace(/\s*,\s*/g, "\n")
-        .replace(/\b(?:title|content)\s*:\s*/gi, "")
-        .trim();
+    if (title || body) {
+      return {
+        title: title || fallbackTitle,
+        content: body || trimmed,
+      };
     }
-    return trimmed;
+    if (jsonCandidate.startsWith("{") && jsonCandidate.endsWith("}")) {
+      return {
+        title: fallbackTitle,
+        content: jsonCandidate
+          .replace(/[{}"]/g, "")
+          .replace(/\s*,\s*/g, "\n")
+          .replace(/\b(?:title|content)\s*:\s*/gi, "")
+          .trim(),
+      };
+    }
+    return { title: fallbackTitle, content: trimmed };
   }
+}
+
+function normalizeAnswerContent(content: string) {
+  const display = getFormattedAnswerDisplay(content);
+  return [display.title ? `## ${display.title}` : "", display.content].filter(Boolean).join("\n\n");
 }
 
 function parseAnswerBlocks(content: string): AnswerBlock[] {
