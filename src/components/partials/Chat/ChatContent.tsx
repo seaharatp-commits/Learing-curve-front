@@ -107,7 +107,11 @@ function normalizeChatAnswer(content: string) {
 }
 
 function parseChatAnswerBlocks(content: string): ChatAnswerBlock[] {
-  const lines = normalizeChatAnswer(content).replace(/\r\n/g, "\n").split("\n");
+  const normalizedContent = normalizeChatAnswer(content)
+    .replace(/\r\n/g, "\n")
+    .replace(/([^\n])\s+(\d+[.)]\s+)/g, "$1\n$2")
+    .replace(/([^\n])\s+([-*â€¢]\s+)/g, "$1\n$2");
+  const lines = normalizedContent.split("\n");
   const blocks: ChatAnswerBlock[] = [];
   let paragraph: string[] = [];
   let listItems: string[] = [];
@@ -143,7 +147,7 @@ function parseChatAnswerBlocks(content: string): ChatAnswerBlock[] {
       continue;
     }
 
-    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    const orderedMatch = trimmed.match(/^\d+[.)]\s*(.+)$/);
     if (orderedMatch) {
       flushParagraph();
       if (listType !== "ordered-list") flushList();
