@@ -163,6 +163,7 @@ function renderInlineText(text: string): ReactNode[] {
 
 export function FormattedAnswer({ content, className = "space-y-3" }: FormattedAnswerProps) {
   const blocks = parseAnswerBlocks(content);
+  let orderedListStart = 1;
 
   return (
     <div className={className}>
@@ -184,8 +185,11 @@ export function FormattedAnswer({ content, className = "space-y-3" }: FormattedA
           );
         }
         if (block.type === "ordered-list") {
+          const start = orderedListStart;
+          orderedListStart += block.items.length;
+
           return (
-            <ol key={index} className="list-decimal space-y-1 pl-5">
+            <ol key={index} start={start} className="list-decimal space-y-1 pl-5">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex}>{renderInlineText(item)}</li>
               ))}
