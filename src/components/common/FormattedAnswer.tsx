@@ -12,6 +12,11 @@ interface FormattedAnswerProps {
   className?: string;
 }
 
+function extractJsonLikeString(value: string, key: "title" | "content") {
+  const match = value.match(new RegExp(`["']?${key}["']?\\s*:\\s*["']([\\s\\S]*?)["']\\s*(?:,|})`, "i"));
+  return match?.[1]?.trim() ?? "";
+}
+
 function normalizeAnswerContent(content: string) {
   const trimmed = content.trim();
   const jsonCandidate = trimmed
@@ -28,6 +33,16 @@ function normalizeAnswerContent(content: string) {
     if (!title && !body) return trimmed;
     return [title ? `## ${title}` : "", body].filter(Boolean).join("\n\n");
   } catch {
+    const title = extractJsonLikeString(jsonCandidate, "title");
+    const body = extractJsonLikeString(jsonCandidate, "content");
+    if (title || body) return [title ? `## ${title}` : "", body].filter(Boolean).join("\n\n");
+    if (jsonCandidate.startsWith("{") && jsonCandidate.endsWith("}")) {
+      return jsonCandidate
+        .replace(/[{}"]/g, "")
+        .replace(/\s*,\s*/g, "\n")
+        .replace(/\b(?:title|content)\s*:\s*/gi, "")
+        .trim();
+    }
     return trimmed;
   }
 }
@@ -35,8 +50,8 @@ function normalizeAnswerContent(content: string) {
 function parseAnswerBlocks(content: string): AnswerBlock[] {
   const normalizedContent = normalizeAnswerContent(content)
     .replace(/\r\n/g, "\n")
-    .replace(/([^\n])\s+(\d+[.)]\s*)/g, "$1\n$2")
-    .replace(/([^\n])\s+([-*•]\s+)/g, "$1\n$2");
+    .replace(/([.!?:])\s+(\d+[.)]\s+)/g, "$1\n$2")
+    .replace(/([^\n])\s+([-*\u2022]\s+)/g, "$1\n$2");
   const lines = normalizedContent.split("\n");
   const blocks: AnswerBlock[] = [];
   let paragraph: string[] = [];
@@ -91,7 +106,7 @@ function parseAnswerBlocks(content: string): AnswerBlock[] {
       continue;
     }
 
-    const unorderedMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+    const unorderedMatch = trimmed.match(/^[-*\u2022]\s+(.+)$/);
     if (unorderedMatch) {
       flushParagraph();
       if (listType !== "unordered-list") flushList();
@@ -123,7 +138,12 @@ function parseAnswerBlocks(content: string): AnswerBlock[] {
 }
 
 function renderInlineText(text: string): ReactNode[] {
-  return text
+  const safeText =
+    (text.match(/\*\*/g)?.length ?? 0) % 2 === 1 || (text.match(/`/g)?.length ?? 0) % 2 === 1
+      ? text.replace(/\*\*/g, "").replace(/`/g, "")
+      : text;
+
+  return safeText
     .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
     .filter(Boolean)
     .map((part, index) => {

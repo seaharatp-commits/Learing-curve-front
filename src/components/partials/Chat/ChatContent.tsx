@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import type { ChatMessage } from "@/types/app/chat";
 import type { RecommendationResult } from "@/types/app/knowledgeBase";
@@ -16,11 +16,6 @@ type ActiveKnowledgeContext = Pick<
   RecommendationResult,
   "articleId" | "title" | "category" | "preview" | "summary" | "resolution" | "confidenceScore" | "matchedKeywords"
 >;
-
-type ChatAnswerBlock =
-  | { type: "paragraph"; text: string }
-  | { type: "unordered-list"; items: string[] }
-  | { type: "ordered-list"; items: string[] };
 
 const THINKING_MESSAGE = "AI กำลังคิด...";
 const GENERIC_FOLLOW_UP_TOKENS = new Set([
@@ -85,134 +80,6 @@ function isRelatedToActiveKnowledge(question: string, knowledge: ActiveKnowledge
 
 function boostConfirmedConfidence(confidenceScore: number) {
   return Math.min(1, Math.max(confidenceScore, confidenceScore + 0.05));
-}
-
-function normalizeChatAnswer(content: string) {
-  const trimmed = content.trim();
-  const jsonCandidate = trimmed
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
-
-  if (!jsonCandidate.startsWith("{") || !jsonCandidate.endsWith("}")) return trimmed;
-
-  try {
-    const parsed = JSON.parse(jsonCandidate) as { title?: unknown; content?: unknown };
-    const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
-    const body = typeof parsed.content === "string" ? parsed.content.trim() : "";
-    if (!title && !body) return trimmed;
-    return [title, body].filter(Boolean).join("\n\n");
-  } catch {
-    return trimmed;
-  }
-}
-
-function parseChatAnswerBlocks(content: string): ChatAnswerBlock[] {
-  const normalizedContent = normalizeChatAnswer(content)
-    .replace(/\r\n/g, "\n")
-    .replace(/([^\n])\s+(\d+[.)]\s+)/g, "$1\n$2")
-    .replace(/([^\n])\s+([-*â€¢]\s+)/g, "$1\n$2");
-  const lines = normalizedContent.split("\n");
-  const blocks: ChatAnswerBlock[] = [];
-  let paragraph: string[] = [];
-  let listItems: string[] = [];
-  let listType: "unordered-list" | "ordered-list" | null = null;
-
-  const flushParagraph = () => {
-    if (paragraph.length === 0) return;
-    blocks.push({ type: "paragraph", text: paragraph.join(" ").trim() });
-    paragraph = [];
-  };
-
-  const flushList = () => {
-    if (!listType || listItems.length === 0) return;
-    blocks.push({ type: listType, items: listItems });
-    listItems = [];
-    listType = null;
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-
-    const unorderedMatch = trimmed.match(/^[-*•]\s+(.+)$/);
-    if (unorderedMatch) {
-      flushParagraph();
-      if (listType !== "unordered-list") flushList();
-      listType = "unordered-list";
-      listItems.push(unorderedMatch[1].trim());
-      continue;
-    }
-
-    const orderedMatch = trimmed.match(/^\d+[.)]\s*(.+)$/);
-    if (orderedMatch) {
-      flushParagraph();
-      if (listType !== "ordered-list") flushList();
-      listType = "ordered-list";
-      listItems.push(orderedMatch[1].trim());
-      continue;
-    }
-
-    flushList();
-    paragraph.push(trimmed.replace(/^#{1,4}\s+/, ""));
-  }
-
-  flushParagraph();
-  flushList();
-  return blocks.length > 0 ? blocks : [{ type: "paragraph", text: normalizeChatAnswer(content) }];
-}
-
-function renderInlineText(text: string): ReactNode[] {
-  return text
-    .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
-    .filter(Boolean)
-    .map((part, index) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return (
-          <strong key={index} className="font-semibold">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      if (part.startsWith("`") && part.endsWith("`")) {
-        return <code key={index}>{part.slice(1, -1)}</code>;
-      }
-      return part;
-    });
-}
-
-function ChatAnswer({ content }: { content: string }) {
-  const blocks = parseChatAnswerBlocks(content);
-
-  return (
-    <div className="space-y-2 leading-6">
-      {blocks.map((block, index) => {
-        if (block.type === "unordered-list") {
-          return (
-            <ul key={index} className="list-disc space-y-1 pl-5">
-              {block.items.map((item, itemIndex) => (
-                <li key={itemIndex}>{renderInlineText(item)}</li>
-              ))}
-            </ul>
-          );
-        }
-        if (block.type === "ordered-list") {
-          return (
-            <ol key={index} className="list-decimal space-y-1 pl-5">
-              {block.items.map((item, itemIndex) => (
-                <li key={itemIndex}>{renderInlineText(item)}</li>
-              ))}
-            </ol>
-          );
-        }
-        return <p key={index}>{renderInlineText(block.text)}</p>;
-      })}
-    </div>
-  );
 }
 
 export default function ChatContent() {
@@ -432,7 +299,7 @@ export default function ChatContent() {
                 )}
                 {m.role === "assistant" && m.sourceType === "KNOWLEDGE_BASE" && (
                   <p className="mt-2 border-t border-default-200/70 pt-2 text-xs font-medium text-primary">
-                    กำลังใช้ฐานความรู้: {m.sourceArticleTitle ?? m.sourceArticleId}
+                    อ้างอิงจากฐานความรู้: {m.sourceArticleTitle ?? m.sourceArticleId}
                     {m.sourceConfidenceScore !== null && m.sourceConfidenceScore !== undefined
                       ? ` (${Math.round(m.sourceConfidenceScore * 100)}%)`
                       : ""}
@@ -512,3 +379,4 @@ export default function ChatContent() {
     </div>
   );
 }
+

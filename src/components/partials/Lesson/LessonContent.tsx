@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@heroui/react";
@@ -32,13 +31,6 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
-
-type AnswerBlock =
-  | { type: "heading"; text: string }
-  | { type: "paragraph"; text: string }
-  | { type: "unordered-list"; items: string[] }
-  | { type: "ordered-list"; items: string[] }
-  | { type: "code"; text: string };
 
 const MAX_CHAT_HISTORY_MESSAGES = 12;
 const MAX_CHAT_HISTORY_MESSAGE_LENGTH = 800;
@@ -79,182 +71,6 @@ function formatChatHistory(messages: ChatMessage[]) {
   return history.length > MAX_CHAT_HISTORY_LENGTH
     ? history.slice(history.length - MAX_CHAT_HISTORY_LENGTH).trim()
     : history;
-}
-
-function normalizeAnswerContent(content: string) {
-  const trimmed = content.trim();
-  const jsonCandidate = trimmed
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
-
-  if (!jsonCandidate.startsWith("{") || !jsonCandidate.endsWith("}")) {
-    return trimmed;
-  }
-
-  try {
-    const parsed = JSON.parse(jsonCandidate) as { title?: unknown; content?: unknown };
-    const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
-    const body = typeof parsed.content === "string" ? parsed.content.trim() : "";
-
-    if (!title && !body) return trimmed;
-    return [title ? `## ${title}` : "", body].filter(Boolean).join("\n\n");
-  } catch {
-    return trimmed;
-  }
-}
-
-function parseAnswerBlocks(content: string): AnswerBlock[] {
-  const lines = normalizeAnswerContent(content).replace(/\r\n/g, "\n").split("\n");
-  const blocks: AnswerBlock[] = [];
-  let paragraph: string[] = [];
-  let listItems: string[] = [];
-  let listType: "unordered-list" | "ordered-list" | null = null;
-  let codeLines: string[] = [];
-  let inCodeBlock = false;
-
-  const flushParagraph = () => {
-    if (paragraph.length === 0) return;
-    blocks.push({ type: "paragraph", text: paragraph.join(" ").trim() });
-    paragraph = [];
-  };
-
-  const flushList = () => {
-    if (!listType || listItems.length === 0) return;
-    blocks.push({ type: listType, items: listItems });
-    listItems = [];
-    listType = null;
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (trimmed.startsWith("```")) {
-      flushParagraph();
-      flushList();
-      if (inCodeBlock) {
-        blocks.push({ type: "code", text: codeLines.join("\n") });
-        codeLines = [];
-      }
-      inCodeBlock = !inCodeBlock;
-      continue;
-    }
-
-    if (inCodeBlock) {
-      codeLines.push(line);
-      continue;
-    }
-
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-
-    const headingMatch = trimmed.match(/^#{1,3}\s+(.+)$/);
-    if (headingMatch) {
-      flushParagraph();
-      flushList();
-      blocks.push({ type: "heading", text: headingMatch[1].trim() });
-      continue;
-    }
-
-    const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
-    if (unorderedMatch) {
-      flushParagraph();
-      if (listType !== "unordered-list") flushList();
-      listType = "unordered-list";
-      listItems.push(unorderedMatch[1].trim());
-      continue;
-    }
-
-    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
-    if (orderedMatch) {
-      flushParagraph();
-      if (listType !== "ordered-list") flushList();
-      listType = "ordered-list";
-      listItems.push(orderedMatch[1].trim());
-      continue;
-    }
-
-    flushList();
-    paragraph.push(trimmed);
-  }
-
-  if (inCodeBlock && codeLines.length > 0) {
-    blocks.push({ type: "code", text: codeLines.join("\n") });
-  }
-  flushParagraph();
-  flushList();
-
-  return blocks.length > 0 ? blocks : [{ type: "paragraph", text: normalizeAnswerContent(content) }];
-}
-
-function renderInlineText(text: string): ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-
-  return parts
-    .filter(Boolean)
-    .map((part, index) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return (
-          <strong key={index} className="font-semibold text-default-800 dark:text-default-100">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-
-      if (part.startsWith("`") && part.endsWith("`")) {
-        return <code key={index}>{part.slice(1, -1)}</code>;
-      }
-
-      return part;
-    });
-}
-
-function LessonAnswer({ content }: { content: string }) {
-  const blocks = parseAnswerBlocks(content);
-
-  return (
-    <div className="space-y-3">
-      {blocks.map((block, index) => {
-        if (block.type === "heading") {
-          return (
-            <h3 key={index} className="text-base font-semibold leading-7 text-default-800 dark:text-default-100">
-              {renderInlineText(block.text)}
-            </h3>
-          );
-        }
-        if (block.type === "unordered-list") {
-          return (
-            <ul key={index} className="list-disc space-y-1 pl-5">
-              {block.items.map((item, itemIndex) => (
-                <li key={itemIndex}>{renderInlineText(item)}</li>
-              ))}
-            </ul>
-          );
-        }
-        if (block.type === "ordered-list") {
-          return (
-            <ol key={index} className="list-decimal space-y-1 pl-5">
-              {block.items.map((item, itemIndex) => (
-                <li key={itemIndex}>{renderInlineText(item)}</li>
-              ))}
-            </ol>
-          );
-        }
-        if (block.type === "code") {
-          return (
-            <pre key={index}>
-              <code>{block.text}</code>
-            </pre>
-          );
-        }
-        return <p key={index}>{renderInlineText(block.text)}</p>;
-      })}
-    </div>
-  );
 }
 
 function parseLessonDisplayContent(lesson: { title: string; content: string }) {
@@ -542,3 +358,4 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
     </div>
   );
 }
+
