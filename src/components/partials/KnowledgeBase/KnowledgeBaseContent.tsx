@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { useKnowledgeBaseList, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
 import { useGenerateQuiz } from "@/hooks/learning";
@@ -9,7 +10,7 @@ import { BaseCard } from "@/components/ui/Card";
 import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
 import type { KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 
-function extractErrorMessage(error: unknown): string {
+function extractErrorMessage(error: unknown, fallback = "ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"): string {
   if (
     error &&
     typeof error === "object" &&
@@ -24,7 +25,7 @@ function extractErrorMessage(error: unknown): string {
   ) {
     return error.response.data.message;
   }
-  return "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง";
+  return fallback;
 }
 
 export default function KnowledgeBaseContent() {
@@ -33,6 +34,8 @@ export default function KnowledgeBaseContent() {
   const generateQuizMutation = useGenerateQuiz();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeBaseItem | undefined>();
+  const [deleting, setDeleting] = useState<KnowledgeBaseItem | null>(null);
+  const [pageMessage, setPageMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [quizResultMessages, setQuizResultMessages] = useState<Record<string, { text: string; isError: boolean }>>(
     {},
@@ -40,21 +43,43 @@ export default function KnowledgeBaseContent() {
 
   const handleGenerateQuiz = (articleId: string) => {
     setGeneratingId(articleId);
+    setPageMessage(null);
     setQuizResultMessages((prev) => ({ ...prev, [articleId]: undefined as never }));
     generateQuizMutation.mutate(articleId, {
       onSuccess: () => {
+        setPageMessage({ text: "สร้างแบบทดสอบจากฐานความรู้สำเร็จแล้ว", isError: false });
         setQuizResultMessages((prev) => ({
           ...prev,
           [articleId]: { text: "สร้างแบบทดสอบสำเร็จแล้ว ดูได้ที่หน้า \"แบบทดสอบ\"", isError: false },
         }));
       },
       onError: (error) => {
+        const message = extractErrorMessage(error, "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง");
+        setPageMessage({ text: message, isError: true });
         setQuizResultMessages((prev) => ({
           ...prev,
-          [articleId]: { text: extractErrorMessage(error), isError: true },
+          [articleId]: { text: message, isError: true },
         }));
       },
       onSettled: () => setGeneratingId(null),
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleting) return;
+    setPageMessage(null);
+    deleteMutation.mutate(deleting.id, {
+      onSuccess: () => {
+        setPageMessage({ text: `ลบข้อมูล "${deleting.title}" สำเร็จแล้ว`, isError: false });
+        setDeleting(null);
+      },
+      onError: (error) => {
+        setPageMessage({
+          text: extractErrorMessage(error, "ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"),
+          isError: true,
+        });
+        setDeleting(null);
+      },
     });
   };
 
@@ -66,6 +91,18 @@ export default function KnowledgeBaseContent() {
           เพิ่มความรู้
         </BaseButton>
       </div>
+
+      {pageMessage && (
+        <div
+          className={`rounded-lg border px-3 py-2 text-sm ${
+            pageMessage.isError
+              ? "border-danger-300 bg-danger-50 text-danger-700"
+              : "border-success-300 bg-success-50 text-success-700"
+          }`}
+        >
+          {pageMessage.text}
+        </div>
+      )}
 
       {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
 
@@ -100,7 +137,7 @@ export default function KnowledgeBaseContent() {
                   size="sm"
                   variant="light"
                   color="danger"
-                  onPress={() => deleteMutation.mutate(item.id)}
+                  onPress={() => setDeleting(item)}
                 >
                   <Trash2 size={14} />
                 </BaseButton>
@@ -119,8 +156,36 @@ export default function KnowledgeBaseContent() {
         ))}
       </div>
 
-      <AddKnowledgeModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
-      <KnowledgeBaseModal isOpen={!!editing} data={editing} onClose={() => setEditing(undefined)} />
+      <AddKnowledgeModal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onSaved={() => setPageMessage({ text: "บันทึกข้อมูลฐานความรู้สำเร็จแล้ว", isError: false })}
+      />
+      <KnowledgeBaseModal
+        isOpen={!!editing}
+        data={editing}
+        onClose={() => setEditing(undefined)}
+        onSaved={(title) => setPageMessage({ text: `บันทึก "${title}" สำเร็จแล้ว`, isError: false })}
+      />
+      <Modal isOpen={!!deleting} onClose={() => setDeleting(null)}>
+        <ModalContent>
+          <ModalHeader>ยืนยันการลบข้อมูล</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้? การลบนี้ไม่สามารถย้อนกลับได้
+            </p>
+            {deleting && <p className="font-medium">{deleting.title}</p>}
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setDeleting(null)}>
+              ยกเลิก
+            </BaseButton>
+            <BaseButton color="danger" isLoading={deleteMutation.isPending} onPress={handleConfirmDelete}>
+              ลบข้อมูล
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

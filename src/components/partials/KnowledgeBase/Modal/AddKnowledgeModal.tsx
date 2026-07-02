@@ -11,18 +11,55 @@ import type { KnowledgeDraft, RecommendationResult } from "@/types/app/knowledge
 interface AddKnowledgeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
 const PLACEHOLDER =
   "อธิบายความรู้ ปัญหา วิธีแก้ไข หรือประสบการณ์ของคุณให้ละเอียดที่สุด " +
   "AI จะจัดระเบียบให้เป็นบทความฐานความรู้ที่มีโครงสร้างให้เอง";
 
-export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModalProps) {
+function extractErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object" &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+  return "ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+}
+
+function getDraftContent(draft: KnowledgeDraft) {
+  return [
+    draft.summary,
+    draft.symptoms,
+    draft.rootCause,
+    draft.resolution,
+    draft.verification,
+  ].join(" ").trim();
+}
+
+function validateDraft(draft: KnowledgeDraft) {
+  if (!draft.title.trim()) return "กรุณาระบุหัวข้อ";
+  if (!draft.category.trim()) return "กรุณาระบุหมวดหมู่";
+  if (!getDraftContent(draft)) return "กรุณาระบุเนื้อหา";
+  return "";
+}
+
+export default function AddKnowledgeModal({ isOpen, onClose, onSaved }: AddKnowledgeModalProps) {
   const [step, setStep] = useState<"input" | "review">("input");
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<KnowledgeDraft | null>(null);
   const [similarArticles, setSimilarArticles] = useState<RecommendationResult[]>([]);
   const [targetArticleId, setTargetArticleId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const generateMutation = useGenerateKnowledge();
   const confirmMutation = useConfirmKnowledge();
@@ -34,16 +71,25 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
     setDraft(null);
     setSimilarArticles([]);
     setTargetArticleId(null);
+    setMessage(null);
   }, [isOpen]);
 
   const runGenerate = () => {
-    if (text.trim().length < 10) return;
+    if (text.trim().length < 10) {
+      setMessage({ text: "กรุณาระบุเนื้อหาอย่างน้อย 10 ตัวอักษร", isError: true });
+      return;
+    }
+    setMessage(null);
     generateMutation.mutate(text, {
       onSuccess: (result) => {
         setDraft(result.draft);
         setSimilarArticles(result.similarArticles);
         setTargetArticleId(null);
         setStep("review");
+        setMessage({ text: "AI สร้างร่างฐานความรู้สำเร็จแล้ว กรุณาตรวจสอบก่อนบันทึก", isError: false });
+      },
+      onError: (error) => {
+        setMessage({ text: extractErrorMessage(error), isError: true });
       },
     });
   };
@@ -66,13 +112,28 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
 
   const handleConfirm = async () => {
     if (!draft) return;
-    await confirmMutation.mutateAsync({
-      ...draft,
-      originalText: text,
-      targetArticleId: targetArticleId ?? undefined,
-    });
-    onClose();
+    const validationMessage = validateDraft(draft);
+    if (validationMessage) {
+      setMessage({ text: validationMessage, isError: true });
+      return;
+    }
+
+    try {
+      await confirmMutation.mutateAsync({
+        ...draft,
+        title: draft.title.trim(),
+        category: draft.category.trim(),
+        originalText: text.trim(),
+        targetArticleId: targetArticleId ?? undefined,
+      });
+      onSaved?.();
+      onClose();
+    } catch (error) {
+      setMessage({ text: extractErrorMessage(error), isError: true });
+    }
   };
+
+  const isConfirmDisabled = !draft || Boolean(validateDraft(draft)) || confirmMutation.isPending;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size={step === "review" ? "2xl" : "lg"} scrollBehavior="inside">
@@ -81,7 +142,12 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
 
         {step === "input" && (
           <>
-            <ModalBody>
+            <ModalBody className="flex flex-col gap-3">
+              {message && (
+                <p className={`rounded-lg px-3 py-2 text-sm ${message.isError ? "bg-danger-50 text-danger-700" : "bg-success-50 text-success-700"}`}>
+                  {message.text}
+                </p>
+              )}
               <Textarea
                 label="เนื้อหาความรู้"
                 placeholder={PLACEHOLDER}
@@ -110,6 +176,11 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
         {step === "review" && draft && (
           <>
             <ModalBody className="flex flex-col gap-4">
+              {message && (
+                <p className={`rounded-lg px-3 py-2 text-sm ${message.isError ? "bg-danger-50 text-danger-700" : "bg-success-50 text-success-700"}`}>
+                  {message.text}
+                </p>
+              )}
               <div className="rounded-lg bg-default-50 p-3 text-xs text-default-400">
                 <p className="mb-1 font-medium text-default-500">ข้อความต้นฉบับ</p>
                 {text}
@@ -155,12 +226,16 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
                 label="หัวข้อ"
                 value={draft.title}
                 onValueChange={(v) => updateDraft("title", v)}
+                isInvalid={!draft.title.trim()}
+                errorMessage={!draft.title.trim() ? "กรุณาระบุหัวข้อ" : undefined}
                 isRequired
               />
               <BaseInput
                 label="หมวดหมู่"
                 value={draft.category}
                 onValueChange={(v) => updateDraft("category", v)}
+                isInvalid={!draft.category.trim()}
+                errorMessage={!draft.category.trim() ? "กรุณาระบุหมวดหมู่" : undefined}
                 isRequired
               />
               <Textarea
@@ -175,11 +250,6 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
                 value={draft.symptoms}
                 onValueChange={(v) => updateDraft("symptoms", v)}
               />
-              {/* <BaseInput
-                label="สภาพแวดล้อม"
-                value={draft.environment}
-                onValueChange={(v) => updateDraft("environment", v)}
-              /> */}
               <Textarea
                 label="สาเหตุที่เป็นไปได้"
                 minRows={2}
@@ -198,16 +268,11 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
                 value={draft.verification}
                 onValueChange={(v) => updateDraft("verification", v)}
               />
-              {/* <BaseInput
-                label="คำสำคัญ (คั่นด้วยจุลภาค)"
-                value={draft.keywords.join(", ")}
-                onValueChange={(v) => updateListField("keywords", v)}
-              />
-              <BaseInput
-                label="แท็ก (คั่นด้วยจุลภาค)"
-                value={draft.tags.join(", ")}
-                onValueChange={(v) => updateListField("tags", v)}
-              /> */}
+              {!getDraftContent(draft) && (
+                <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">
+                  กรุณาระบุเนื้อหาอย่างน้อยหนึ่งส่วน เช่น สรุป อาการที่พบ สาเหตุ วิธีแก้ไข หรือการตรวจสอบผลลัพธ์
+                </p>
+              )}
             </ModalBody>
             <ModalFooter>
               <BaseButton variant="light" onPress={onClose}>
@@ -221,7 +286,7 @@ export default function AddKnowledgeModal({ isOpen, onClose }: AddKnowledgeModal
               >
                 สร้างใหม่อีกครั้ง
               </BaseButton>
-              <BaseButton isLoading={confirmMutation.isPending} onPress={handleConfirm}>
+              <BaseButton isLoading={confirmMutation.isPending} isDisabled={isConfirmDisabled} onPress={handleConfirm}>
                 ยืนยันบันทึก
               </BaseButton>
             </ModalFooter>
