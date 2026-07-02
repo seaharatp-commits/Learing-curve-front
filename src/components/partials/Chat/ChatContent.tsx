@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ChatMessage } from "@/types/app/chat";
 import type { RecommendationResult } from "@/types/app/knowledgeBase";
 import { useSendMessage, useSessionMessages } from "@/hooks/chat";
@@ -10,7 +10,7 @@ import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { FormattedAnswer } from "@/components/common/FormattedAnswer";
-import { Send, Bot, User, BookOpen } from "lucide-react";
+import { Send, Bot, User, BookOpen, PlusCircle } from "lucide-react";
 
 type ActiveKnowledgeContext = Pick<
   RecommendationResult,
@@ -83,6 +83,7 @@ function boostConfirmedConfidence(confidenceScore: number) {
 }
 
 export default function ChatContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialSessionId = searchParams.get("sessionId") ?? undefined;
 
@@ -94,6 +95,7 @@ export default function ChatContent() {
   const [pendingMessageIds, setPendingMessageIds] = useState<string[]>([]);
   const [activeKnowledge, setActiveKnowledge] = useState<ActiveKnowledgeContext | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const chatRunIdRef = useRef(0);
   const { mutateAsync, isPending } = useSendMessage();
   const recommendationsMutation = useRecommendations();
   const { data: history, isLoading: isHistoryLoading } = useSessionMessages(initialSessionId);
@@ -137,6 +139,7 @@ export default function ChatContent() {
     knowledgeBaseConfidenceScore?: number,
     localMessageIdsToReplace: string[] = [],
   ) => {
+    const runId = chatRunIdRef.current;
     const thinkingMessage = createLocalMessage("assistant", THINKING_MESSAGE);
     setMessages((prev) => [...prev, thinkingMessage]);
 
@@ -147,6 +150,7 @@ export default function ChatContent() {
         knowledgeBaseArticleId,
         knowledgeBaseConfidenceScore,
       });
+      if (runId !== chatRunIdRef.current) return;
       setSessionId(result.session.id);
       setMessages((prev) => [
         ...prev.filter(
@@ -156,6 +160,7 @@ export default function ChatContent() {
         ...result.messages,
       ]);
     } catch (error) {
+      if (runId !== chatRunIdRef.current) return;
       setMessages((prev) => prev.filter((message) => message.id !== thinkingMessage.id));
       throw error;
     }
@@ -165,6 +170,7 @@ export default function ChatContent() {
     content: string,
     localUserMessage: ChatMessage,
   ) => {
+    const runId = chatRunIdRef.current;
     const fallbackMessage = createLocalMessage(
       "assistant",
       "ไม่สามารถค้นหาฐานความรู้ได้ในขณะนี้ ระบบจะตอบจากความรู้ทั่วไปแทน",
@@ -175,6 +181,7 @@ export default function ChatContent() {
     setMessages((prev) => [...prev, thinkingMessage]);
 
     const result = await mutateAsync({ sessionId, content });
+    if (runId !== chatRunIdRef.current) return;
     const [serverUserMessage, serverAssistantMessage] = result.messages;
     setSessionId(result.session.id);
     setMessages((prev) => [
@@ -191,6 +198,7 @@ export default function ChatContent() {
   };
 
   const handleSend = async () => {
+    const runId = chatRunIdRef.current;
     const content = input.trim();
     if (!content) return;
     if (knowledgeChoices.length > 0) return;
@@ -218,9 +226,11 @@ export default function ChatContent() {
         description: content,
       });
     } catch {
+      if (runId !== chatRunIdRef.current) return;
       await sendGeneralAnswerAfterKnowledgeSearchFailed(content, userMessage);
       return;
     }
+    if (runId !== chatRunIdRef.current) return;
 
     if (matches.length > 0) {
       const pendingMessage = createLocalMessage(
@@ -255,21 +265,44 @@ export default function ChatContent() {
     );
   };
 
+  const handleNewChat = () => {
+    chatRunIdRef.current += 1;
+    setSessionId(undefined);
+    setMessages([]);
+    setInput("");
+    setPendingQuestion("");
+    setKnowledgeChoices([]);
+    setPendingMessageIds([]);
+    setActiveKnowledge(null);
+    recommendationsMutation.reset();
+    router.replace("/chat");
+  };
+
   const isBusy = isPending || recommendationsMutation.isPending;
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col gap-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">แชทกับ AI ผู้ช่วยแก้ปัญหา</h1>
-        {activeKnowledge ? (
-          <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            กำลังใช้ฐานความรู้: {activeKnowledge.title}
-          </span>
-        ) : (
-          <span className="w-fit rounded-full bg-default-100 px-3 py-1 text-xs text-default-500">
-            ตอบจากความรู้ทั่วไป
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {activeKnowledge ? (
+            <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              กำลังใช้ฐานความรู้: {activeKnowledge.title}
+            </span>
+          ) : (
+            <span className="w-fit rounded-full bg-default-100 px-3 py-1 text-xs text-default-500">
+              ตอบจากความรู้ทั่วไป
+            </span>
+          )}
+          <BaseButton
+            size="sm"
+            variant="flat"
+            startContent={<PlusCircle size={16} />}
+            onPress={handleNewChat}
+          >
+            แชทใหม่
+          </BaseButton>
+        </div>
       </div>
       <BaseCard className="flex-1 overflow-y-auto p-2">
         <div className="flex flex-col gap-3">
@@ -379,4 +412,3 @@ export default function ChatContent() {
     </div>
   );
 }
-
