@@ -3,6 +3,9 @@ export interface KnowledgeBaseItem {
   title: string;
   category: string;
   content: string;
+  summary?: string | null;
+  keywords?: string[];
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -11,6 +14,9 @@ export interface KnowledgeBaseFormValues {
   title: string;
   category: string;
   content: string;
+  summary?: string;
+  keywords?: string[];
+  tags?: string[];
 }
 
 export interface RecommendQuery {

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea } from "@heroui/react";
+import { Sparkles } from "lucide-react";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
-import { useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
+import { useGenerateKnowledge, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
 import type { KnowledgeBaseFormValues, KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 
 interface KnowledgeBaseModalProps {
@@ -14,7 +15,14 @@ interface KnowledgeBaseModalProps {
   onSaved?: (title: string) => void;
 }
 
-const EMPTY_FORM: KnowledgeBaseFormValues = { title: "", category: "", content: "" };
+const EMPTY_FORM: KnowledgeBaseFormValues = {
+  title: "",
+  category: "",
+  content: "",
+  summary: "",
+  keywords: [],
+  tags: [],
+};
 
 function extractErrorMessage(error: unknown): string {
   if (
@@ -43,18 +51,64 @@ function validateForm(form: KnowledgeBaseFormValues) {
 
 export default function KnowledgeBaseModal({ isOpen, data, onClose, onSaved }: KnowledgeBaseModalProps) {
   const [form, setForm] = useState<KnowledgeBaseFormValues>(EMPTY_FORM);
+  const [keywordsText, setKeywordsText] = useState("");
+  const [tagsText, setTagsText] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const { updateMutation } = useKnowledgeBaseMutations();
+  const generateMutation = useGenerateKnowledge();
 
   useEffect(() => {
     if (!isOpen) return;
     if (data) {
-      setForm({ title: data.title, category: data.category, content: data.content });
+      setForm({
+        title: data.title,
+        category: data.category,
+        content: data.content,
+        summary: data.summary ?? "",
+        keywords: data.keywords ?? [],
+        tags: data.tags ?? [],
+      });
+      setKeywordsText((data.keywords ?? []).join(", "));
+      setTagsText((data.tags ?? []).join(", "));
     } else {
       setForm(EMPTY_FORM);
+      setKeywordsText("");
+      setTagsText("");
     }
     setMessage(null);
   }, [isOpen, data]);
+
+  const parseList = (value: string) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  const handleGenerateMetadata = () => {
+    const source = [form.title, form.category, form.summary, form.content].filter(Boolean).join("\n\n");
+    if (source.trim().length < 10) {
+      setMessage({ text: "กรุณาระบุหัวข้อหรือเนื้อหาก่อนให้ AI ช่วยสร้าง metadata", isError: true });
+      return;
+    }
+
+    setMessage(null);
+    generateMutation.mutate(source, {
+      onSuccess: (result) => {
+        setForm((prev) => ({
+          ...prev,
+          summary: result.draft.summary,
+          keywords: result.draft.keywords,
+          tags: result.draft.tags,
+        }));
+        setKeywordsText(result.draft.keywords.join(", "));
+        setTagsText(result.draft.tags.join(", "));
+        setMessage({ text: "AI เติม summary, keywords และ tags ให้แล้ว กรุณาตรวจสอบก่อนบันทึก", isError: false });
+      },
+      onError: (error) => {
+        setMessage({ text: extractErrorMessage(error), isError: true });
+      },
+    });
+  };
 
   const handleSave = async () => {
     if (!data) return;
@@ -68,6 +122,9 @@ export default function KnowledgeBaseModal({ isOpen, data, onClose, onSaved }: K
       title: form.title.trim(),
       category: form.category.trim(),
       content: form.content.trim(),
+      summary: form.summary?.trim() ?? "",
+      keywords: parseList(keywordsText),
+      tags: parseList(tagsText),
     };
 
     try {
@@ -119,10 +176,42 @@ export default function KnowledgeBaseModal({ isOpen, data, onClose, onSaved }: K
             errorMessage={!form.content.trim() ? "กรุณาระบุเนื้อหา" : undefined}
             isRequired
           />
+          <Textarea
+            name="summary"
+            label="สรุปสั้น ๆ"
+            minRows={2}
+            value={form.summary ?? ""}
+            onValueChange={(v) => setForm((p) => ({ ...p, summary: v }))}
+            description="ช่วยให้ AI Chat จับคู่คำถามกับฐานความรู้ได้แม่นขึ้น"
+          />
+          <BaseInput
+            name="keywords"
+            label="Keywords"
+            value={keywordsText}
+            onValueChange={setKeywordsText}
+            placeholder="เช่น merge workflow, deploy, permission"
+            description="คั่นแต่ละคำด้วยเครื่องหมาย comma"
+          />
+          <BaseInput
+            name="tags"
+            label="Tags"
+            value={tagsText}
+            onValueChange={setTagsText}
+            placeholder="เช่น workflow, backend"
+            description="คั่นแต่ละ tag ด้วยเครื่องหมาย comma"
+          />
         </ModalBody>
         <ModalFooter>
           <BaseButton variant="light" onPress={onClose}>
             ยกเลิก
+          </BaseButton>
+          <BaseButton
+            variant="flat"
+            startContent={<Sparkles size={14} />}
+            isLoading={generateMutation.isPending}
+            onPress={handleGenerateMetadata}
+          >
+            ให้ AI เติม metadata
           </BaseButton>
           <BaseButton isLoading={updateMutation.isPending} isDisabled={isSaveDisabled} onPress={handleSave}>
             บันทึก

@@ -268,6 +268,20 @@ export default function AddKnowledgeModal({ isOpen, onClose, onSaved }: AddKnowl
                 value={draft.verification}
                 onValueChange={(v) => updateDraft("verification", v)}
               />
+              <BaseInput
+                label="Keywords"
+                value={draft.keywords.join(", ")}
+                onValueChange={(v) => updateListField("keywords", v)}
+                placeholder="เช่น merge workflow, deploy, permission"
+                description="คั่นแต่ละคำด้วยเครื่องหมาย comma"
+              />
+              <BaseInput
+                label="Tags"
+                value={draft.tags.join(", ")}
+                onValueChange={(v) => updateListField("tags", v)}
+                placeholder="เช่น workflow, backend"
+                description="คั่นแต่ละ tag ด้วยเครื่องหมาย comma"
+              />
               {!getDraftContent(draft) && (
                 <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">
                   กรุณาระบุเนื้อหาอย่างน้อยหนึ่งส่วน เช่น สรุป อาการที่พบ สาเหตุ วิธีแก้ไข หรือการตรวจสอบผลลัพธ์

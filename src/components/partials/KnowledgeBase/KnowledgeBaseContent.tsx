@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
-import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Pencil, Trash2, ClipboardList, Search, BookOpen } from "lucide-react";
 import { useKnowledgeBaseList, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
 import { useGenerateQuiz } from "@/hooks/learning";
+import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
@@ -37,9 +38,45 @@ export default function KnowledgeBaseContent() {
   const [deleting, setDeleting] = useState<KnowledgeBaseItem | null>(null);
   const [pageMessage, setPageMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortMode, setSortMode] = useState<"updated-desc" | "created-desc" | "created-asc" | "title-asc">("updated-desc");
   const [quizResultMessages, setQuizResultMessages] = useState<Record<string, { text: string; isError: boolean }>>(
     {},
   );
+
+  const categories = Array.from(new Set(data.map((item) => item.category).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const visibleItems = data
+    .filter((item) => {
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+      if (!matchesCategory) return false;
+      if (!normalizedSearch) return true;
+
+      const searchableText = [
+        item.title,
+        item.category,
+        item.content,
+        item.summary ?? "",
+        ...(item.keywords ?? []),
+        ...(item.tags ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return searchableText.includes(normalizedSearch);
+    })
+    .sort((a, b) => {
+      if (sortMode === "title-asc") return a.title.localeCompare(b.title);
+      if (sortMode === "created-asc") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortMode === "created-desc") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
 
   const handleGenerateQuiz = (articleId: string) => {
     setGeneratingId(articleId);
@@ -104,10 +141,72 @@ export default function KnowledgeBaseContent() {
         </div>
       )}
 
-      {isLoading && <p className="text-default-400">กำลังโหลด...</p>}
+      <BaseCard className="space-y-3">
+        <div className="grid gap-3 md:grid-cols-[1fr_180px_180px]">
+          <BaseInput
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            placeholder="ค้นหาจากหัวข้อ หมวดหมู่ keywords tags หรือเนื้อหา"
+            startContent={<Search size={16} className="text-default-400" />}
+          />
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm text-default-700 outline-none"
+          >
+            <option value="all">ทุกหมวดหมู่</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value as typeof sortMode)}
+            className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm text-default-700 outline-none"
+          >
+            <option value="updated-desc">อัปเดตล่าสุด</option>
+            <option value="created-desc">ใหม่สุดก่อน</option>
+            <option value="created-asc">เก่าสุดก่อน</option>
+            <option value="title-asc">ชื่อ A-Z</option>
+          </select>
+        </div>
+      </BaseCard>
+
+      {isLoading && (
+        <BaseCard>
+          <div className="flex items-center gap-3 text-default-500">
+            <BookOpen size={20} className="text-primary" />
+            <p className="text-sm">กำลังโหลดข้อมูลฐานความรู้...</p>
+          </div>
+        </BaseCard>
+      )}
+
+      {!isLoading && data.length === 0 && (
+        <BaseCard>
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <BookOpen size={28} className="text-primary" />
+            <h2 className="text-lg font-semibold">ยังไม่มีข้อมูลในฐานความรู้</h2>
+            <p className="max-w-md text-sm text-default-500">
+              เพิ่มข้อมูลแรกเพื่อให้ AI Chat สามารถนำไปใช้ตอบคำถามได้
+            </p>
+            <BaseButton className="mt-2" startContent={<Plus size={16} />} onPress={() => setIsAddOpen(true)}>
+              เพิ่มความรู้
+            </BaseButton>
+          </div>
+        </BaseCard>
+      )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        {data.map((item) => (
+        {!isLoading && data.length > 0 && visibleItems.length === 0 && (
+          <BaseCard className="md:col-span-2">
+            <p className="py-6 text-center text-sm text-default-500">
+              ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
+            </p>
+          </BaseCard>
+        )}
+        {visibleItems.map((item) => (
           <BaseCard key={item.id}>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -115,7 +214,19 @@ export default function KnowledgeBaseContent() {
                   {item.category}
                 </span>
                 <h3 className="mt-2 font-medium">{item.title}</h3>
+                {item.summary && (
+                  <p className="mt-1 line-clamp-2 text-sm text-default-600">{item.summary}</p>
+                )}
                 <p className="mt-1 line-clamp-3 text-sm text-default-500">{item.content}</p>
+                {((item.keywords?.length ?? 0) > 0 || (item.tags?.length ?? 0) > 0) && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {[...(item.keywords ?? []), ...(item.tags ?? [])].slice(0, 6).map((label) => (
+                      <span key={label} className="rounded-full bg-default-100 px-2 py-0.5 text-xs text-default-500">
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 <BaseButton isIconOnly size="sm" variant="light" onPress={() => setEditing(item)}>
