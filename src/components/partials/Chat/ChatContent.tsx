@@ -11,6 +11,76 @@ import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { Send, Bot, User, BookOpen } from "lucide-react";
 
+type ActiveKnowledgeContext = Pick<
+  RecommendationResult,
+  "articleId" | "title" | "category" | "preview" | "summary" | "resolution" | "confidenceScore" | "matchedKeywords"
+>;
+
+const THINKING_MESSAGE = "AI กำลังคิด...";
+const GENERIC_FOLLOW_UP_TOKENS = new Set([
+  "ช่วย",
+  "บอก",
+  "ขอ",
+  "หน่อย",
+  "อธิบาย",
+  "เกี่ยวกับ",
+  "คืออะไร",
+  "ยังไง",
+  "อย่างไร",
+  "ทำไม",
+  "อะไร",
+  "ได้ไหม",
+  "ครับ",
+  "ค่ะ",
+]);
+
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+function getUsefulTokens(value: string) {
+  return normalizeText(value)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length > 1 && !GENERIC_FOLLOW_UP_TOKENS.has(token));
+}
+
+function getKnowledgeTerms(knowledge: ActiveKnowledgeContext) {
+  const rawTerms = [
+    knowledge.title,
+    knowledge.category,
+    knowledge.preview,
+    knowledge.summary ?? "",
+    knowledge.resolution ?? "",
+    ...knowledge.matchedKeywords,
+  ];
+
+  return Array.from(
+    new Set(
+      rawTerms.flatMap((term) => [normalizeText(term), ...getUsefulTokens(term)]).filter((term) => term.length > 2),
+    ),
+  );
+}
+
+function isRelatedToActiveKnowledge(question: string, knowledge: ActiveKnowledgeContext) {
+  const normalizedQuestion = normalizeText(question);
+  const questionTokens = new Set(getUsefulTokens(question));
+  if (!normalizedQuestion || questionTokens.size === 0) return false;
+
+  const title = normalizeText(knowledge.title);
+  if (title && (normalizedQuestion.includes(title) || title.includes(normalizedQuestion))) return true;
+
+  const matchingTerms = getKnowledgeTerms(knowledge).filter(
+    (term) => normalizedQuestion.includes(term) || questionTokens.has(term),
+  );
+
+  return matchingTerms.length >= 2 || matchingTerms.some((term) => term.length >= 5);
+}
+
+function boostConfirmedConfidence(confidenceScore: number) {
+  return Math.min(1, Math.max(confidenceScore, confidenceScore + 0.05));
+}
+
 export default function ChatContent() {
   const searchParams = useSearchParams();
   const initialSessionId = searchParams.get("sessionId") ?? undefined;
@@ -21,6 +91,7 @@ export default function ChatContent() {
   const [pendingQuestion, setPendingQuestion] = useState("");
   const [knowledgeChoices, setKnowledgeChoices] = useState<RecommendationResult[]>([]);
   const [pendingMessageIds, setPendingMessageIds] = useState<string[]>([]);
+  const [activeKnowledge, setActiveKnowledge] = useState<ActiveKnowledgeContext | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { mutateAsync, isPending } = useSendMessage();
   const recommendationsMutation = useRecommendations();
@@ -29,6 +100,21 @@ export default function ChatContent() {
   useEffect(() => {
     if (initialSessionId && history.length > 0) {
       setMessages(history);
+      const lastKnowledgeAnswer = [...history]
+        .reverse()
+        .find((message) => message.role === "assistant" && message.sourceType === "KNOWLEDGE_BASE");
+      if (lastKnowledgeAnswer?.sourceArticleId && lastKnowledgeAnswer.sourceArticleTitle) {
+        setActiveKnowledge({
+          articleId: lastKnowledgeAnswer.sourceArticleId,
+          title: lastKnowledgeAnswer.sourceArticleTitle,
+          category: "",
+          preview: "",
+          summary: null,
+          resolution: null,
+          confidenceScore: lastKnowledgeAnswer.sourceConfidenceScore ?? 0.1,
+          matchedKeywords: [],
+        });
+      }
     }
   }, [initialSessionId, history]);
 
@@ -48,15 +134,30 @@ export default function ChatContent() {
     content: string,
     knowledgeBaseArticleId?: string,
     knowledgeBaseConfidenceScore?: number,
+    localMessageIdsToReplace: string[] = [],
   ) => {
-    const result = await mutateAsync({
-      sessionId,
-      content,
-      knowledgeBaseArticleId,
-      knowledgeBaseConfidenceScore,
-    });
-    setSessionId(result.session.id);
-    setMessages((prev) => [...prev, ...result.messages]);
+    const thinkingMessage = createLocalMessage("assistant", THINKING_MESSAGE);
+    setMessages((prev) => [...prev, thinkingMessage]);
+
+    try {
+      const result = await mutateAsync({
+        sessionId,
+        content,
+        knowledgeBaseArticleId,
+        knowledgeBaseConfidenceScore,
+      });
+      setSessionId(result.session.id);
+      setMessages((prev) => [
+        ...prev.filter(
+          (message) =>
+            message.id !== thinkingMessage.id && !localMessageIdsToReplace.includes(message.id),
+        ),
+        ...result.messages,
+      ]);
+    } catch (error) {
+      setMessages((prev) => prev.filter((message) => message.id !== thinkingMessage.id));
+      throw error;
+    }
   };
 
   const sendGeneralAnswerAfterKnowledgeSearchFailed = async (
@@ -69,12 +170,18 @@ export default function ChatContent() {
     );
     setMessages((prev) => [...prev, fallbackMessage]);
 
+    const thinkingMessage = createLocalMessage("assistant", THINKING_MESSAGE);
+    setMessages((prev) => [...prev, thinkingMessage]);
+
     const result = await mutateAsync({ sessionId, content });
     const [serverUserMessage, serverAssistantMessage] = result.messages;
     setSessionId(result.session.id);
     setMessages((prev) => [
       ...prev.filter(
-        (message) => message.id !== localUserMessage.id && message.id !== fallbackMessage.id,
+        (message) =>
+          message.id !== localUserMessage.id &&
+          message.id !== fallbackMessage.id &&
+          message.id !== thinkingMessage.id,
       ),
       serverUserMessage,
       fallbackMessage,
@@ -92,6 +199,16 @@ export default function ChatContent() {
     setPendingMessageIds([]);
     const userMessage = createLocalMessage("user", content);
     setMessages((prev) => [...prev, userMessage]);
+
+    if (activeKnowledge) {
+      if (isRelatedToActiveKnowledge(content, activeKnowledge)) {
+        const confirmedConfidence = boostConfirmedConfidence(activeKnowledge.confidenceScore);
+        setActiveKnowledge({ ...activeKnowledge, confidenceScore: confirmedConfidence });
+        await sendToAi(content, activeKnowledge.articleId, confirmedConfidence, [userMessage.id]);
+        return;
+      }
+      setActiveKnowledge(null);
+    }
 
     let matches: RecommendationResult[] = [];
     try {
@@ -116,8 +233,7 @@ export default function ChatContent() {
       return;
     }
 
-    setMessages((prev) => prev.filter((message) => message.id !== userMessage.id));
-    await sendToAi(content);
+    await sendToAi(content, undefined, undefined, [userMessage.id]);
   };
 
   const handleSelectKnowledge = async (choice?: RecommendationResult) => {
@@ -127,7 +243,15 @@ export default function ChatContent() {
     setKnowledgeChoices([]);
     setMessages((prev) => prev.filter((message) => !pendingMessageIds.includes(message.id)));
     setPendingMessageIds([]);
-    await sendToAi(content, choice?.articleId, choice?.confidenceScore);
+    const confirmedChoice = choice
+      ? { ...choice, confidenceScore: boostConfirmedConfidence(choice.confidenceScore) }
+      : null;
+    setActiveKnowledge(confirmedChoice);
+    await sendToAi(
+      content,
+      confirmedChoice?.articleId,
+      confirmedChoice?.confidenceScore,
+    );
   };
 
   const isBusy = isPending || recommendationsMutation.isPending;
