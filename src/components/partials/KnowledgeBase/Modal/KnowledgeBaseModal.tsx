@@ -139,7 +139,7 @@ export default function KnowledgeBaseModal({ isOpen, data, onClose, onSaved }: K
   const isSaveDisabled = Boolean(validateForm(form)) || updateMutation.isPending;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside" className="w-[92vw] max-w-[720px]">
       <ModalContent>
         <ModalHeader>แก้ไขความรู้</ModalHeader>
         <ModalBody className="flex flex-col gap-3">
