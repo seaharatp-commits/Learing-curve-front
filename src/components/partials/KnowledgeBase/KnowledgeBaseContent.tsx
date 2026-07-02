@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { Plus, Pencil, Trash2, ClipboardList, Search, BookOpen } from "lucide-react";
 import { useKnowledgeBaseList, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
@@ -11,6 +11,23 @@ import { BaseCard } from "@/components/ui/Card";
 import { KnowledgeBaseModal, AddKnowledgeModal } from "./Modal";
 import type { KnowledgeBaseItem } from "@/types/app/knowledgeBase";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
+
+const ITEMS_PER_PAGE = 6;
+
+function getCompactPageItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const pages: Array<number | "start-ellipsis" | "end-ellipsis"> = [1];
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  if (start > 2) pages.push("start-ellipsis");
+  for (let page = start; page <= end; page += 1) pages.push(page);
+  if (end < totalPages - 1) pages.push("end-ellipsis");
+  pages.push(totalPages);
+
+  return pages;
+}
 
 export default function KnowledgeBaseContent() {
   const { data, isLoading, isError, error } = useKnowledgeBaseList();
@@ -24,6 +41,7 @@ export default function KnowledgeBaseContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortMode, setSortMode] = useState<"updated-desc" | "created-desc" | "created-asc" | "title-asc">("updated-desc");
+  const [currentPage, setCurrentPage] = useState(1);
   const [quizResultMessages, setQuizResultMessages] = useState<Record<string, { text: string; isError: boolean }>>(
     {},
   );
@@ -60,6 +78,17 @@ export default function KnowledgeBaseContent() {
       }
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
+  const totalPages = Math.max(1, Math.ceil(visibleItems.length / ITEMS_PER_PAGE));
+  const pageItems = visibleItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const compactPageItems = getCompactPageItems(currentPage, totalPages);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, sortMode]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const handleGenerateQuiz = (articleId: string) => {
     setGeneratingId(articleId);
@@ -197,7 +226,7 @@ export default function KnowledgeBaseContent() {
             </p>
           </BaseCard>
         )}
-        {!isError && visibleItems.map((item) => (
+        {!isError && pageItems.map((item) => (
           <BaseCard key={item.id}>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -260,6 +289,52 @@ export default function KnowledgeBaseContent() {
           </BaseCard>
         ))}
       </div>
+
+      {!isLoading && !isError && visibleItems.length > ITEMS_PER_PAGE && (
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <BaseButton
+            size="sm"
+            radius="sm"
+            variant="flat"
+            className="h-7 min-w-0 rounded-md bg-default-100 px-2.5 text-xs font-medium text-default-600 disabled:opacity-50"
+            isDisabled={currentPage === 1}
+            onPress={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          >
+            ก่อนหน้า
+          </BaseButton>
+          {compactPageItems.map((page) =>
+            typeof page === "number" ? (
+              <BaseButton
+                key={page}
+                size="sm"
+                radius="sm"
+                variant={page === currentPage ? "solid" : "flat"}
+                color={page === currentPage ? "primary" : "default"}
+                className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold shadow-none ${
+                  page === currentPage ? "text-white" : "bg-default-100 text-default-600"
+                }`}
+                onPress={() => setCurrentPage(page)}
+              >
+                {page}
+              </BaseButton>
+            ) : (
+              <span key={page} className="px-1 text-sm text-default-400">
+                ...
+              </span>
+            ),
+          )}
+          <BaseButton
+            size="sm"
+            radius="sm"
+            variant="flat"
+            className="h-7 min-w-0 rounded-md bg-default-100 px-2.5 text-xs font-medium text-default-600 disabled:opacity-50"
+            isDisabled={currentPage === totalPages}
+            onPress={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+          >
+            ถัดไป
+          </BaseButton>
+        </div>
+      )}
 
       <AddKnowledgeModal
         isOpen={isAddOpen}
