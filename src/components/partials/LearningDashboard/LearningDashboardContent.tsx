@@ -112,6 +112,9 @@ export default function LearningDashboardContent() {
     currentLessonPage * LESSONS_PER_PAGE,
   );
   const lessonPaginationItems = getLessonPaginationItems(currentLessonPage, totalLessonPages);
+  const latestRecentQuizzes = [...recentQuizzes]
+    .sort((a, b) => dayjs(b.completedAt).valueOf() - dayjs(a.completedAt).valueOf())
+    .slice(0, 5);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -287,11 +290,11 @@ export default function LearningDashboardContent() {
           <TrendingUp size={20} className="text-default-500" />
           <h2 className="font-medium">แบบทดสอบล่าสุด</h2>
         </div>
-        {recentQuizzes.length === 0 ? (
+        {latestRecentQuizzes.length === 0 ? (
           <p className="text-sm text-default-400">ยังไม่มีประวัติการทำแบบทดสอบ</p>
         ) : (
           <div className="space-y-2">
-            {recentQuizzes.map((quiz) => (
+            {latestRecentQuizzes.map((quiz) => (
               <div
                 key={quiz.id}
                 className="flex items-center justify-between rounded-lg bg-default-50 px-3 py-2"

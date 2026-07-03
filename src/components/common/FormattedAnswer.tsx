@@ -22,25 +22,45 @@ function extractJsonLikeString(value: string, key: "title" | "content") {
   return match?.[1]?.trim() ?? "";
 }
 
-export function getFormattedAnswerDisplay(content: string, fallbackTitle?: string): FormattedAnswerDisplay {
-  const trimmed = content.trim();
-  const jsonCandidate = trimmed
+function stripCodeFence(value: string) {
+  return value
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/```$/i, "")
     .trim();
+}
 
-  if (!jsonCandidate.startsWith("{") || !jsonCandidate.endsWith("}")) {
-    return { title: fallbackTitle, content: trimmed };
+function getJsonCandidate(value: string) {
+  const unfenced = stripCodeFence(value);
+  if (unfenced.startsWith("{") && unfenced.endsWith("}")) return unfenced;
+
+  const firstBrace = unfenced.indexOf("{");
+  const lastBrace = unfenced.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    return unfenced.slice(firstBrace, lastBrace + 1).trim();
   }
+
+  return "";
+}
+
+function parseDisplayJson(value: string, fallbackTitle?: string, depth = 0): FormattedAnswerDisplay | null {
+  if (depth > 2) return null;
+  const jsonCandidate = getJsonCandidate(value);
+  if (!jsonCandidate) return null;
 
   try {
     const parsed = JSON.parse(jsonCandidate) as { title?: unknown; content?: unknown };
     const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
     const body = typeof parsed.content === "string" ? parsed.content.trim() : "";
-    if (!title && !body) return { title: fallbackTitle, content: trimmed };
+
+    if (!title && !body) return null;
+    if (body) {
+      const nested = parseDisplayJson(body, title || fallbackTitle, depth + 1);
+      if (nested) return nested;
+    }
+
     return {
       title: title || fallbackTitle,
-      content: body || trimmed,
+      content: body || stripCodeFence(value),
     };
   } catch {
     const title = extractJsonLikeString(jsonCandidate, "title");
@@ -48,21 +68,17 @@ export function getFormattedAnswerDisplay(content: string, fallbackTitle?: strin
     if (title || body) {
       return {
         title: title || fallbackTitle,
-        content: body || trimmed,
+        content: body || stripCodeFence(value),
       };
     }
-    if (jsonCandidate.startsWith("{") && jsonCandidate.endsWith("}")) {
-      return {
-        title: fallbackTitle,
-        content: jsonCandidate
-          .replace(/[{}"]/g, "")
-          .replace(/\s*,\s*/g, "\n")
-          .replace(/\b(?:title|content)\s*:\s*/gi, "")
-          .trim(),
-      };
-    }
-    return { title: fallbackTitle, content: trimmed };
+    return null;
   }
+}
+
+export function getFormattedAnswerDisplay(content: string, fallbackTitle?: string): FormattedAnswerDisplay {
+  const trimmed = content.trim();
+  const parsed = parseDisplayJson(trimmed, fallbackTitle);
+  return parsed ?? { title: fallbackTitle, content: stripCodeFence(trimmed) };
 }
 
 function normalizeAnswerContent(content: string) {
@@ -178,7 +194,14 @@ function renderInlineText(text: string): ReactNode[] {
         );
       }
       if (part.startsWith("`") && part.endsWith("`")) {
-        return <code key={index}>{part.slice(1, -1)}</code>;
+        return (
+          <code
+            key={index}
+            className="rounded bg-default-100 px-1 py-0.5 text-[0.92em] text-default-700 dark:bg-default-100/20 dark:text-default-200"
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
       }
       return part;
     });
@@ -200,7 +223,7 @@ export function FormattedAnswer({ content, className = "space-y-3" }: FormattedA
         }
         if (block.type === "unordered-list") {
           return (
-            <ul key={index} className="list-disc space-y-1 pl-5">
+            <ul key={index} className="list-disc space-y-1.5 pl-5 leading-7">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex}>{renderInlineText(item)}</li>
               ))}
@@ -212,7 +235,7 @@ export function FormattedAnswer({ content, className = "space-y-3" }: FormattedA
           orderedListStart += block.items.length;
 
           return (
-            <ol key={index} start={start} className="list-decimal space-y-1 pl-5">
+            <ol key={index} start={start} className="list-decimal space-y-1.5 pl-5 leading-7">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex}>{renderInlineText(item)}</li>
               ))}
@@ -221,12 +244,19 @@ export function FormattedAnswer({ content, className = "space-y-3" }: FormattedA
         }
         if (block.type === "code") {
           return (
-            <pre key={index}>
+            <pre
+              key={index}
+              className="overflow-x-auto rounded-lg bg-default-100 p-3 text-xs leading-6 text-default-700 dark:bg-default-100/20 dark:text-default-200"
+            >
               <code>{block.text}</code>
             </pre>
           );
         }
-        return <p key={index}>{renderInlineText(block.text)}</p>;
+        return (
+          <p key={index} className="leading-7">
+            {renderInlineText(block.text)}
+          </p>
+        );
       })}
     </div>
   );

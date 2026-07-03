@@ -229,7 +229,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           </BaseButton>
         </div>
 
-        <div className="lesson-chat-area mb-3 max-h-[420px] space-y-3 overflow-y-auto rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
+        <div className="lesson-chat-area mb-3 space-y-3 rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
           {messages.length === 0 ? (
             <p className="text-sm text-default-400">
               ถามสิ่งที่ยังสงสัยเกี่ยวกับบทเรียนนี้ได้ AI จะใช้เนื้อหาด้านบนเป็นหลัก และอธิบายเสริมเมื่อจำเป็น
@@ -248,7 +248,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
                   }`}
                 >
                   {message.role === "assistant" ? (
-                    <FormattedAnswer content={message.content} />
+                    <FormattedAnswer content={message.content} className="space-y-3 leading-7" />
                   ) : (
                     message.content
                   )}
