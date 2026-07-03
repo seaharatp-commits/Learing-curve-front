@@ -49,38 +49,6 @@ function getUsefulTokens(value: string) {
     .filter((token) => token.length > 1 && !GENERIC_FOLLOW_UP_TOKENS.has(token));
 }
 
-function getKnowledgeTerms(knowledge: ActiveKnowledgeContext) {
-  const rawTerms = [
-    knowledge.title,
-    knowledge.category,
-    knowledge.preview,
-    knowledge.summary ?? "",
-    knowledge.resolution ?? "",
-    ...knowledge.matchedKeywords,
-  ];
-
-  return Array.from(
-    new Set(
-      rawTerms.flatMap((term) => [normalizeText(term), ...getUsefulTokens(term)]).filter((term) => term.length > 2),
-    ),
-  );
-}
-
-function isRelatedToActiveKnowledge(question: string, knowledge: ActiveKnowledgeContext) {
-  const normalizedQuestion = normalizeText(question);
-  const questionTokens = new Set(getUsefulTokens(question));
-  if (!normalizedQuestion || questionTokens.size === 0) return false;
-
-  const title = normalizeText(knowledge.title);
-  if (title && (normalizedQuestion.includes(title) || title.includes(normalizedQuestion))) return true;
-
-  const matchingTerms = getKnowledgeTerms(knowledge).filter(
-    (term) => normalizedQuestion.includes(term) || questionTokens.has(term),
-  );
-
-  return matchingTerms.length >= 2 || matchingTerms.some((term) => term.length >= 5);
-}
-
 function boostConfirmedConfidence(confidenceScore: number) {
   return Math.min(1, Math.max(confidenceScore, confidenceScore + 0.05));
 }
@@ -253,13 +221,8 @@ export default function ChatContent() {
     setMessages((prev) => [...prev, userMessage]);
 
     if (activeKnowledge) {
-      if (isRelatedToActiveKnowledge(content, activeKnowledge)) {
-        const confirmedConfidence = boostConfirmedConfidence(activeKnowledge.confidenceScore);
-        setActiveKnowledge({ ...activeKnowledge, confidenceScore: confirmedConfidence });
-        await sendToAi(content, activeKnowledge.articleId, confirmedConfidence, [userMessage.id]);
-        return;
-      }
-      setActiveKnowledge(null);
+      await sendToAi(content, activeKnowledge.articleId, activeKnowledge.confidenceScore, [userMessage.id]);
+      return;
     }
 
     let matches: RecommendationResult[] = [];
