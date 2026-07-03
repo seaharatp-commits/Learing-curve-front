@@ -4,20 +4,36 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 html {
   font-size: 15px;
+  background: #080b0f;
 }
 
 body {
+  min-height: 100dvh;
   font-family: var(--font-noto-sans-thai), var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.78;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(39, 119, 255, 0.12), transparent 32rem),
+    radial-gradient(circle at 88% 8%, rgba(120, 97, 255, 0.1), transparent 28rem),
+    linear-gradient(135deg, #080b0f 0%, #0d1117 48%, #090c10 100%);
+  background-color: #080b0f;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.32);
 }
 
 button,
@@ -94,4 +110,50 @@ button {
   border-radius: 0.65rem;
   padding: 0.85rem;
   background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: rgba(148, 163, 184, 0.45);
+}
+
+.dark .lc-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 14rem),
+    transparent;
+}
+
+.dark .lc-sidebar {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(18, 23, 30, 0.88), rgba(10, 14, 19, 0.82));
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.035), 0 24px 80px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(20px);
+}
+
+.dark .lc-nav-item {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.dark .lc-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.dark .lc-nav-item-active {
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(59, 130, 246, 0.1));
+  color: #bfdbfe;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }

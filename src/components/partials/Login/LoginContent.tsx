@@ -18,7 +18,9 @@ export default function LoginContent() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,12 +31,20 @@ export default function LoginContent() {
 
     try {
       if (mode === "register") {
+        if (password !== confirmPassword) {
+          setError("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
+          return;
+        }
         await registerUser({ email, name, password });
       }
 
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        setError(
+          result.error === "CredentialsSignin"
+            ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+            : result.error,
+        );
         return;
       }
 
@@ -50,6 +60,7 @@ export default function LoginContent() {
 
   const toggleMode = () => {
     setMode((current) => (current === "login" ? "register" : "login"));
+    setConfirmPassword("");
     setError("");
   };
 
@@ -83,7 +94,10 @@ export default function LoginContent() {
             label="รหัสผ่าน"
             type={showPassword ? "text" : "password"}
             value={password}
-            onValueChange={setPassword}
+            onValueChange={(value) => {
+              setPassword(value);
+              setError("");
+            }}
             minLength={6}
             endContent={
               <button
@@ -97,6 +111,31 @@ export default function LoginContent() {
             }
             isRequired
           />
+          {mode === "register" && (
+            <BaseInput
+              label="ยืนยันรหัสผ่าน"
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onValueChange={(value) => {
+                setConfirmPassword(value);
+                setError("");
+              }}
+              minLength={6}
+              isInvalid={Boolean(confirmPassword && password !== confirmPassword)}
+              errorMessage={confirmPassword && password !== confirmPassword ? "รหัสผ่านไม่ตรงกัน" : undefined}
+              endContent={
+                <button
+                  type="button"
+                  aria-label={showConfirmPassword ? "ซ่อนยืนยันรหัสผ่าน" : "แสดงยืนยันรหัสผ่าน"}
+                  className="text-default-400 hover:text-default-600"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
+              isRequired
+            />
+          )}
           {error && <p className="text-sm text-red-400">{error}</p>}
           <BaseButton type="submit" isLoading={loading} className="w-full">
             {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}

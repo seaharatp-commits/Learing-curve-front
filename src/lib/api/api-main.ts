@@ -1,5 +1,5 @@
 import type { SendMessagePayload, SendMessageResult } from "@/types/app/chat";
-import type { RegisterPayload, RegisterResult } from "@/types/app/auth";
+import type { ChangePasswordPayload, ChangePasswordResult, RegisterPayload, RegisterResult } from "@/types/app/auth";
 import type { HistoryItem } from "@/types/app/history";
 import type {
   KnowledgeBaseFormValues,
@@ -30,6 +30,9 @@ export const sendChatMessageApi = (payload: SendMessagePayload) =>
 
 export const registerApi = (payload: RegisterPayload) =>
   mainClient.post<RegisterResult>("/auth/register", payload);
+
+export const changePasswordApi = (payload: ChangePasswordPayload) =>
+  mainClient.post<ChangePasswordResult>("/auth/change-password", payload);
 
 export const getSessionMessagesApi = (sessionId: string) =>
   mainClient.get<SendMessageResult["messages"]>("/chat", { params: { sessionId } });

@@ -27,7 +27,10 @@ export const authOptions: AuthOptions = {
           });
           const { accessToken, user } = res.data;
           return { id: user.id, email: user.email, name: user.name, role: user.role, accessToken };
-        } catch {
+        } catch (error) {
+          if (axios.isAxiosError(error) && !error.response) {
+            throw new Error("ไม่สามารถเชื่อมต่อ backend ได้ กรุณาตรวจสอบว่า backend กำลังรันอยู่");
+          }
           return null;
         }
       },

@@ -24,3 +24,14 @@ export interface RegisterResult {
     role: "USER" | "ADMIN";
   };
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResult {
+  success: boolean;
+  message: string;
+}

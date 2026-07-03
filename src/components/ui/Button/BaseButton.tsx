@@ -8,7 +8,7 @@ interface BaseButtonProps extends ButtonProps {
 
 export default function BaseButton({
   color = "primary",
-  radius = "lg",
+  radius = "md",
   size = "md",
   text,
   className = "",
@@ -16,7 +16,13 @@ export default function BaseButton({
   ...props
 }: BaseButtonProps) {
   return (
-    <Button color={color} radius={radius} size={size} className={className} {...props}>
+    <Button
+      color={color}
+      radius={radius}
+      size={size}
+      className={`font-medium shadow-sm data-[hover=true]:opacity-95 dark:shadow-[0_10px_28px_rgba(0,0,0,0.24)] ${className}`}
+      {...props}
+    >
       {text ?? children}
     </Button>
   );
