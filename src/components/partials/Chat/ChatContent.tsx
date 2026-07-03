@@ -18,6 +18,9 @@ type ActiveKnowledgeContext = Pick<
 >;
 
 const THINKING_MESSAGE = "AI กำลังคิด...";
+const AI_ERROR_MESSAGE = "AI ตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+const KB_PENDING_HINT =
+  "กรุณาเลือกข้อมูลจากฐานความรู้ก่อน หรือเลือกให้ AI ตอบจากความรู้ทั่วไป";
 const GENERIC_FOLLOW_UP_TOKENS = new Set([
   "ช่วย",
   "บอก",
@@ -94,8 +97,10 @@ export default function ChatContent() {
   const [knowledgeChoices, setKnowledgeChoices] = useState<RecommendationResult[]>([]);
   const [pendingMessageIds, setPendingMessageIds] = useState<string[]>([]);
   const [activeKnowledge, setActiveKnowledge] = useState<ActiveKnowledgeContext | null>(null);
+  const [knowledgePendingHint, setKnowledgePendingHint] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatRunIdRef = useRef(0);
+  const restoredKnowledgeIdRef = useRef<string | null>(null);
   const { mutateAsync, isPending } = useSendMessage();
   const recommendationsMutation = useRecommendations();
   const { data: history, isLoading: isHistoryLoading } = useSessionMessages(initialSessionId);
@@ -106,20 +111,39 @@ export default function ChatContent() {
       const lastKnowledgeAnswer = [...history]
         .reverse()
         .find((message) => message.role === "assistant" && message.sourceType === "KNOWLEDGE_BASE");
-      if (lastKnowledgeAnswer?.sourceArticleId && lastKnowledgeAnswer.sourceArticleTitle) {
+      if (
+        lastKnowledgeAnswer?.sourceArticleId &&
+        lastKnowledgeAnswer.sourceArticleTitle &&
+        restoredKnowledgeIdRef.current !== lastKnowledgeAnswer.sourceArticleId
+      ) {
+        restoredKnowledgeIdRef.current = lastKnowledgeAnswer.sourceArticleId;
         setActiveKnowledge({
           articleId: lastKnowledgeAnswer.sourceArticleId,
           title: lastKnowledgeAnswer.sourceArticleTitle,
-          category: "",
-          preview: "",
+          category: "Knowledge Base",
+          preview: lastKnowledgeAnswer.sourceArticleTitle,
           summary: null,
           resolution: null,
           confidenceScore: lastKnowledgeAnswer.sourceConfidenceScore ?? 0.1,
-          matchedKeywords: [],
+          matchedKeywords: getUsefulTokens(lastKnowledgeAnswer.sourceArticleTitle),
         });
+        recommendationsMutation
+          .mutateAsync({
+            title: lastKnowledgeAnswer.sourceArticleTitle,
+            description: lastKnowledgeAnswer.sourceArticleTitle,
+          })
+          .then((recommendations) => {
+            const restoredKnowledge = recommendations.find(
+              (recommendation) => recommendation.articleId === lastKnowledgeAnswer.sourceArticleId,
+            );
+            if (restoredKnowledge) setActiveKnowledge(restoredKnowledge);
+          })
+          .catch(() => {
+            // Keep the title-based context above if KB metadata cannot be refreshed.
+          });
       }
     }
-  }, [initialSessionId, history]);
+  }, [initialSessionId, history, recommendationsMutation.mutateAsync]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -131,6 +155,11 @@ export default function ChatContent() {
     role,
     content,
     createdAt: new Date().toISOString(),
+  });
+
+  const createErrorMessage = () => ({
+    ...createLocalMessage("assistant", AI_ERROR_MESSAGE),
+    sourceType: "GENERAL_AI" as const,
   });
 
   const sendToAi = async (
@@ -161,8 +190,10 @@ export default function ChatContent() {
       ]);
     } catch (error) {
       if (runId !== chatRunIdRef.current) return;
-      setMessages((prev) => prev.filter((message) => message.id !== thinkingMessage.id));
-      throw error;
+      setMessages((prev) => [
+        ...prev.filter((message) => message.id !== thinkingMessage.id),
+        createErrorMessage(),
+      ]);
     }
   };
 
@@ -180,32 +211,44 @@ export default function ChatContent() {
     const thinkingMessage = createLocalMessage("assistant", THINKING_MESSAGE);
     setMessages((prev) => [...prev, thinkingMessage]);
 
-    const result = await mutateAsync({ sessionId, content });
-    if (runId !== chatRunIdRef.current) return;
-    const [serverUserMessage, serverAssistantMessage] = result.messages;
-    setSessionId(result.session.id);
-    setMessages((prev) => [
-      ...prev.filter(
-        (message) =>
-          message.id !== localUserMessage.id &&
-          message.id !== fallbackMessage.id &&
-          message.id !== thinkingMessage.id,
-      ),
-      serverUserMessage,
-      fallbackMessage,
-      serverAssistantMessage,
-    ]);
+    try {
+      const result = await mutateAsync({ sessionId, content });
+      if (runId !== chatRunIdRef.current) return;
+      const [serverUserMessage, serverAssistantMessage] = result.messages;
+      setSessionId(result.session.id);
+      setMessages((prev) => [
+        ...prev.filter(
+          (message) =>
+            message.id !== localUserMessage.id &&
+            message.id !== fallbackMessage.id &&
+            message.id !== thinkingMessage.id,
+        ),
+        serverUserMessage,
+        fallbackMessage,
+        serverAssistantMessage,
+      ]);
+    } catch {
+      if (runId !== chatRunIdRef.current) return;
+      setMessages((prev) => [
+        ...prev.filter((message) => message.id !== thinkingMessage.id),
+        createErrorMessage(),
+      ]);
+    }
   };
 
   const handleSend = async () => {
     const runId = chatRunIdRef.current;
     const content = input.trim();
     if (!content) return;
-    if (knowledgeChoices.length > 0) return;
+    if (knowledgeChoices.length > 0) {
+      setKnowledgePendingHint(KB_PENDING_HINT);
+      return;
+    }
     setInput("");
     setPendingQuestion("");
     setKnowledgeChoices([]);
     setPendingMessageIds([]);
+    setKnowledgePendingHint("");
     const userMessage = createLocalMessage("user", content);
     setMessages((prev) => [...prev, userMessage]);
 
@@ -239,6 +282,7 @@ export default function ChatContent() {
       );
       setPendingQuestion(content);
       setKnowledgeChoices(matches);
+      setKnowledgePendingHint("");
       setPendingMessageIds([userMessage.id, pendingMessage.id]);
       setMessages((prev) => [...prev, pendingMessage]);
       return;
@@ -252,6 +296,7 @@ export default function ChatContent() {
     const content = pendingQuestion;
     setPendingQuestion("");
     setKnowledgeChoices([]);
+    setKnowledgePendingHint("");
     setMessages((prev) => prev.filter((message) => !pendingMessageIds.includes(message.id)));
     setPendingMessageIds([]);
     const confirmedChoice = choice
@@ -274,6 +319,8 @@ export default function ChatContent() {
     setKnowledgeChoices([]);
     setPendingMessageIds([]);
     setActiveKnowledge(null);
+    restoredKnowledgeIdRef.current = null;
+    setKnowledgePendingHint("");
     recommendationsMutation.reset();
     router.replace("/chat");
   };
@@ -393,6 +440,11 @@ export default function ChatContent() {
               ไม่ตรงกับสิ่งที่ถาม ให้ AI ตอบตามปกติ
             </button>
           </div>
+          {knowledgePendingHint && (
+            <p className="rounded-lg bg-warning-50 px-3 py-2 text-xs text-warning-700">
+              {knowledgePendingHint}
+            </p>
+          )}
         </BaseCard>
       )}
       <div className="flex gap-2">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { ArrowRight, ClipboardList, Trash2 } from "lucide-react";
 import { useDeleteQuiz, useQuizList } from "@/hooks/learning";
@@ -11,12 +12,14 @@ import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMess
 
 export default function QuizListContent() {
   const { data, isLoading, isError, error } = useQuizList();
+  const { data: session } = useSession();
   const deleteQuizMutation = useDeleteQuiz();
   const [deletingQuiz, setDeletingQuiz] = useState<{ id: string; title: string } | null>(null);
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const handleConfirmDelete = () => {
     if (!deletingQuiz) return;
@@ -76,9 +79,9 @@ export default function QuizListContent() {
                     <p className="text-xs text-default-500">
                       {quiz.questionCount} คำถาม
                       {quiz.sourceArticleTitle ? ` · จากบทความ "${quiz.sourceArticleTitle}"` : ""}
-                      {quiz.createdByEmail
+                      {isAdmin && quiz.createdByEmail
                         ? ` · สร้างโดย ${quiz.createdByName ?? quiz.createdByEmail} (${quiz.createdByEmail})`
-                        : " · ไม่ทราบผู้สร้าง"}
+                        : ""}
                     </p>
                   </div>
                 </div>
