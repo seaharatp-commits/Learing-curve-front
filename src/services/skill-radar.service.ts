@@ -4,6 +4,7 @@ import {
   getAdminSkillRadarEventsApi,
   getAdminSkillRadarPositionsApi,
   getMySkillRadarApi,
+  getPositionSkillSuggestionsApi,
   getQuestionSkillSuggestionsApi,
   getSkillRadarPositionsApi,
   setQuestionSkillMappingsApi,
@@ -16,6 +17,7 @@ import type {
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
+  PositionSkillSuggestion,
   QuestionSkillMappingPayload,
   QuestionSkillSuggestion,
   SkillRadarPosition,
@@ -91,5 +93,12 @@ export const getQuestionSkillSuggestions = async (
   questionId: string,
 ): Promise<QuestionSkillSuggestion[]> => {
   const res = await getQuestionSkillSuggestionsApi(questionId);
+  return res.data;
+};
+
+export const getPositionSkillSuggestions = async (
+  positionId: string,
+): Promise<PositionSkillSuggestion[]> => {
+  const res = await getPositionSkillSuggestionsApi(positionId);
   return res.data;
 };

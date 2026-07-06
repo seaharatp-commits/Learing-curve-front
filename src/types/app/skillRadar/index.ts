@@ -76,6 +76,12 @@ export interface QuestionSkillSuggestion {
   weight: number;
 }
 
+export interface PositionSkillSuggestion {
+  name: string;
+  description: string;
+  keywords: string[];
+}
+
 export interface SkillRadarSkillScore {
   id: string;
   name: string;

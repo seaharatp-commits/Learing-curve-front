@@ -9,3 +9,4 @@ export {
 } from "./useAdminSkillRadarPositions";
 export { useAdminSkillRadarEvents, adminSkillRadarEventsQueryKey } from "./useAdminSkillRadarEvents";
 export { useAdminSkillRadarMutations } from "./useAdminSkillRadarMutations";
+export { useSuggestPositionSkills } from "./useSuggestPositionSkills";

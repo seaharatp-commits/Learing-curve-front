@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, BrainCircuit, Pencil, Plus, Save } from "lucide-react";
+import { Activity, BrainCircuit, Pencil, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
@@ -9,6 +9,7 @@ import {
   useAdminSkillRadarEvents,
   useAdminSkillRadarMutations,
   useAdminSkillRadarPositions,
+  useSuggestPositionSkills,
 } from "@/hooks/skillRadar";
 import type {
   AdminSkillScoreEvent,
@@ -18,6 +19,12 @@ import type {
   SkillRadarSkill,
 } from "@/types/app/skillRadar";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
+
+interface EditableSkillSuggestion {
+  name: string;
+  description: string;
+  keywordsText: string;
+}
 
 const emptyPositionForm: PositionPayload = { name: "", description: "", isActive: true };
 const emptySkillForm: PositionSkillPayload = {
@@ -103,6 +110,7 @@ export default function AdminSkillRadarContent() {
     createSkillMutation,
     updateSkillMutation,
   } = useAdminSkillRadarMutations();
+  const suggestPositionSkillsMutation = useSuggestPositionSkills();
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
   const [editingPosition, setEditingPosition] = useState<AdminSkillRadarPosition | null>(null);
   const [positionForm, setPositionForm] = useState<PositionPayload>(emptyPositionForm);
@@ -110,6 +118,8 @@ export default function AdminSkillRadarContent() {
   const [skillForm, setSkillForm] = useState<PositionSkillPayload>(emptySkillForm);
   const [skillKeywordsText, setSkillKeywordsText] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [suggestions, setSuggestions] = useState<EditableSkillSuggestion[]>([]);
+  const [isSavingSuggestions, setIsSavingSuggestions] = useState(false);
 
   const selectedPosition = useMemo(
     () => positions.find((position) => position.id === selectedPositionId) ?? positions[0] ?? null,
@@ -121,6 +131,10 @@ export default function AdminSkillRadarContent() {
       setSelectedPositionId(positions[0].id);
     }
   }, [positions, selectedPositionId]);
+
+  useEffect(() => {
+    setSuggestions([]);
+  }, [selectedPositionId]);
 
   const resetPositionForm = () => {
     setEditingPosition(null);
@@ -221,6 +235,67 @@ export default function AdminSkillRadarContent() {
       updateSkillMutation.mutate({ id: editingSkill.id, payload }, options);
     } else {
       createSkillMutation.mutate({ positionId: selectedPosition.id, payload }, options);
+    }
+  };
+
+  const handleSuggestSkills = () => {
+    if (!selectedPosition) return;
+    setMessage(null);
+    suggestPositionSkillsMutation.mutate(selectedPosition.id, {
+      onSuccess: (data) => {
+        setSuggestions(
+          data.map((suggestion) => ({
+            name: suggestion.name,
+            description: suggestion.description,
+            keywordsText: keywordsToText(suggestion.keywords),
+          })),
+        );
+        setMessage({
+          text: `AI แนะนำ ${data.length} skill แล้ว กรุณาตรวจสอบก่อนกดบันทึก`,
+          isError: false,
+        });
+      },
+      onError: (error: unknown) => {
+        setMessage({ text: getErrorMessage(error, "AI แนะนำ skill ไม่สำเร็จ"), isError: true });
+      },
+    });
+  };
+
+  const updateSuggestion = (index: number, patch: Partial<EditableSkillSuggestion>) => {
+    setSuggestions((prev) =>
+      prev.map((suggestion, i) => (i === index ? { ...suggestion, ...patch } : suggestion)),
+    );
+  };
+
+  const removeSuggestion = (index: number) => {
+    setSuggestions((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveAllSuggestions = async () => {
+    if (!selectedPosition || suggestions.length === 0) return;
+    setIsSavingSuggestions(true);
+    setMessage(null);
+    try {
+      for (const suggestion of suggestions) {
+        const name = suggestion.name.trim();
+        if (!name) continue;
+        await createSkillMutation.mutateAsync({
+          positionId: selectedPosition.id,
+          payload: {
+            name,
+            description: suggestion.description.trim(),
+            keywords: textToKeywords(suggestion.keywordsText),
+            weight: 1,
+            isActive: true,
+          },
+        });
+      }
+      setSuggestions([]);
+      setMessage({ text: "บันทึก Skill ที่แนะนำสำเร็จ", isError: false });
+    } catch (error) {
+      setMessage({ text: getErrorMessage(error, "บันทึก Skill ที่แนะนำไม่สำเร็จ"), isError: true });
+    } finally {
+      setIsSavingSuggestions(false);
     }
   };
 
@@ -350,9 +425,20 @@ export default function AdminSkillRadarContent() {
                   </p>
                 </div>
                 {selectedPosition && (
-                  <BaseButton size="sm" variant="flat" onPress={resetSkillForm}>
-                    เพิ่ม Skill
-                  </BaseButton>
+                  <div className="flex gap-2">
+                    <BaseButton
+                      size="sm"
+                      variant="flat"
+                      startContent={<Sparkles size={14} />}
+                      isLoading={suggestPositionSkillsMutation.isPending}
+                      onPress={handleSuggestSkills}
+                    >
+                      AI Suggest Skills
+                    </BaseButton>
+                    <BaseButton size="sm" variant="flat" onPress={resetSkillForm}>
+                      เพิ่ม Skill
+                    </BaseButton>
+                  </div>
                 )}
               </div>
 
@@ -400,6 +486,64 @@ export default function AdminSkillRadarContent() {
                 </div>
               )}
             </BaseCard>
+
+            {selectedPosition && suggestions.length > 0 && (
+              <BaseCard className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-medium">
+                    Skill ที่ AI แนะนำ ({suggestions.length}) — ตรวจสอบก่อนบันทึก
+                  </h2>
+                  <BaseButton size="sm" variant="flat" onPress={() => setSuggestions([])}>
+                    ยกเลิกทั้งหมด
+                  </BaseButton>
+                </div>
+                <div className="space-y-3">
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="space-y-2 rounded-lg bg-default-50 p-3 dark:bg-default-100/10"
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 space-y-2">
+                          <BaseInput
+                            label="ชื่อ Skill"
+                            value={suggestion.name}
+                            onValueChange={(name) => updateSuggestion(index, { name })}
+                          />
+                          <BaseInput
+                            label="คำอธิบาย"
+                            value={suggestion.description}
+                            onValueChange={(description) => updateSuggestion(index, { description })}
+                          />
+                          <BaseInput
+                            label="Keywords"
+                            placeholder="api, database, auth"
+                            value={suggestion.keywordsText}
+                            onValueChange={(keywordsText) => updateSuggestion(index, { keywordsText })}
+                          />
+                        </div>
+                        <BaseButton
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          color="danger"
+                          onPress={() => removeSuggestion(index)}
+                        >
+                          <Trash2 size={14} />
+                        </BaseButton>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <BaseButton
+                  startContent={<Save size={16} />}
+                  isLoading={isSavingSuggestions}
+                  onPress={handleSaveAllSuggestions}
+                >
+                  บันทึก Skill ทั้งหมดที่แนะนำ
+                </BaseButton>
+              </BaseCard>
+            )}
 
             {selectedPosition && (
               <BaseCard className="space-y-3">

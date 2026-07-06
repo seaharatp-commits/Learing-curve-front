@@ -15,6 +15,7 @@ import type {
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
+  PositionSkillSuggestion,
   QuestionSkillMappingPayload,
   QuestionSkillSuggestion,
   SkillRadarPosition,
@@ -121,6 +122,11 @@ export const setQuestionSkillMappingsApi = (
 export const getQuestionSkillSuggestionsApi = (questionId: string) =>
   mainClient.get<QuestionSkillSuggestion[]>(
     `/skill-radar/questions/${questionId}/skill-suggestions`,
+  );
+
+export const getPositionSkillSuggestionsApi = (positionId: string) =>
+  mainClient.get<PositionSkillSuggestion[]>(
+    `/skill-radar/admin/positions/${positionId}/suggest-skills`,
   );
 
 export const getLessonApi = (lessonId: string) =>
