@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { submitQuizAttempt } from "@/services/learning.service";
 import { LEARNING_DASHBOARD_QUERY_KEY } from "./useLearningDashboard";
+import { quizAttemptsQueryKey } from "./useQuizAttempts";
 import type { SubmitAnswer } from "@/types/app/learning";
 
 export const useSubmitQuizAttempt = (quizId: string) => {
@@ -12,6 +13,7 @@ export const useSubmitQuizAttempt = (quizId: string) => {
     mutationFn: (answers: SubmitAnswer[]) => submitQuizAttempt(quizId, answers),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: LEARNING_DASHBOARD_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: quizAttemptsQueryKey(quizId) });
     },
   });
 };

@@ -1,6 +1,7 @@
 export { useLearningDashboard, LEARNING_DASHBOARD_QUERY_KEY } from "./useLearningDashboard";
 export { useQuizList, QUIZ_LIST_QUERY_KEY } from "./useQuizList";
 export { useQuiz } from "./useQuiz";
+export { useQuizAttempts, quizAttemptsQueryKey } from "./useQuizAttempts";
 export { useSubmitQuizAttempt } from "./useSubmitQuizAttempt";
 export { useGenerateQuiz } from "./useGenerateQuiz";
 export { useLesson } from "./useLesson";

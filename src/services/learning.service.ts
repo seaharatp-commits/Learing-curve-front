@@ -6,6 +6,7 @@ import type {
   QuizForAttempt,
   SubmitAnswer,
   QuizAttemptResult,
+  QuizAttemptHistoryItem,
   GeneratedTopicResult,
   GeneratedLessonQuizResult,
   GenerateLessonFromTopicPayload,
@@ -17,6 +18,7 @@ import {
   markLessonCompletedApi,
   getQuizListApi,
   getQuizForAttemptApi,
+  getQuizAttemptsApi,
   deleteQuizApi,
   submitQuizAttemptApi,
   generateQuizFromArticleApi,
@@ -47,6 +49,11 @@ export const getQuizList = async (): Promise<QuizListItem[]> => {
 
 export const getQuizForAttempt = async (quizId: string): Promise<QuizForAttempt> => {
   const res = await getQuizForAttemptApi(quizId);
+  return res.data;
+};
+
+export const getQuizAttempts = async (quizId: string): Promise<QuizAttemptHistoryItem[]> => {
+  const res = await getQuizAttemptsApi(quizId);
   return res.data;
 };
 

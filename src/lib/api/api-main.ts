@@ -18,6 +18,7 @@ import type {
   QuizForAttempt,
   SubmitAnswer,
   QuizAttemptResult,
+  QuizAttemptHistoryItem,
   GeneratedTopicResult,
   GeneratedLessonQuizResult,
   GenerateLessonFromTopicPayload,
@@ -77,6 +78,9 @@ export const getQuizListApi = () => mainClient.get<QuizListItem[]>("/learning/qu
 
 export const getQuizForAttemptApi = (quizId: string) =>
   mainClient.get<QuizForAttempt>(`/learning/quizzes/${quizId}`);
+
+export const getQuizAttemptsApi = (quizId: string) =>
+  mainClient.get<QuizAttemptHistoryItem[]>(`/learning/quizzes/${quizId}/attempts`);
 
 export const deleteQuizApi = (quizId: string) =>
   mainClient.delete<{ success: boolean }>(`/learning/quizzes/${quizId}`);

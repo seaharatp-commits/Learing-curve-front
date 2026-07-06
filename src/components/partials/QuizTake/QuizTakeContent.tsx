@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
-import { useQuiz, useSubmitQuizAttempt } from "@/hooks/learning";
-import { BaseCard } from "@/components/ui/Card";
+import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { useQuiz, useQuizAttempts, useSubmitQuizAttempt } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
+import { BaseCard } from "@/components/ui/Card";
 import type { QuizAttemptResult } from "@/types/app/learning";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
@@ -18,6 +18,12 @@ interface QuizTakeContentProps {
 export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const router = useRouter();
   const { data: quiz, isLoading, isError, error } = useQuiz(quizId);
+  const {
+    data: attemptHistory = [],
+    isLoading: isAttemptsLoading,
+    isError: isAttemptsError,
+    error: attemptsError,
+  } = useQuizAttempts(quizId);
   const submitMutation = useSubmitQuizAttempt(quizId);
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
@@ -51,6 +57,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   }
 
   const allAnswered = quiz.questions.every((q) => selections[q.id] !== undefined);
+  const resultByQuestionId = new Map(result?.answers.map((a) => [a.questionId, a]) ?? []);
 
   const handleSubmit = () => {
     setSubmitError(null);
@@ -58,15 +65,60 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
       quiz.questions.map((q) => ({ questionId: q.id, selectedIndex: selections[q.id] })),
       {
         onSuccess: (data) => setResult(data),
-        onError: (error) => setSubmitError(getErrorMessage(error, "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")),
+        onError: (error) =>
+          setSubmitError(getErrorMessage(error, "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")),
       },
     );
   };
 
-  const resultByQuestionId = new Map(result?.answers.map((a) => [a.questionId, a]) ?? []);
+  const handleRetry = () => {
+    setSelections({});
+    setResult(null);
+    setSubmitError(null);
+  };
+
+  const historyPanel = (
+    <BaseCard className="lg:sticky lg:top-24">
+      <div className="mb-3">
+        <h2 className="text-base font-semibold">ประวัติการทำแบบทดสอบ</h2>
+      </div>
+
+      {isAttemptsLoading ? (
+        <p className="text-sm text-default-500">กำลังโหลดประวัติ...</p>
+      ) : isAttemptsError ? (
+        <p className="text-sm text-danger-600">
+          {getErrorMessage(attemptsError, "โหลดประวัติการทำแบบทดสอบไม่สำเร็จ")}
+        </p>
+      ) : attemptHistory.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-default-200 p-3 text-sm text-default-500">
+          ยังไม่มีประวัติการทำแบบทดสอบนี้
+        </div>
+      ) : (
+        <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
+          {attemptHistory.slice(0, 8).map((attempt, index) => (
+            <div
+              key={attempt.attemptId}
+              className="rounded-lg bg-default-50 px-3 py-2 text-sm dark:bg-default-100/10"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-medium">ครั้งที่ {attemptHistory.length - index}</p>
+                <span className="text-base font-semibold text-primary">{attempt.score}</span>
+              </div>
+              <p className="text-xs text-default-500">
+                ถูก {attempt.correctCount}/{attempt.totalQuestions} ข้อ
+              </p>
+              <p className="mt-1 text-xs text-default-400">
+                {new Date(attempt.submittedAt).toLocaleString("th-TH")}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </BaseCard>
+  );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <button
         onClick={() => router.push("/quizzes")}
         className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
@@ -75,123 +127,125 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         กลับไปยังรายการแบบทดสอบ
       </button>
 
-      <div>
-        <h1 className="text-2xl font-semibold">{quiz.title}</h1>
-        {result && (
-          <p className="mt-1 text-sm text-default-500">
-            คุณได้คะแนน{" "}
-            <span className="font-semibold text-primary">
-              {result.correctCount}/{result.totalQuestions}
-            </span>{" "}
-            ({result.score} คะแนน)
-          </p>
-        )}
-      </div>
-
-      {result && (
-        <BaseCard className="border-success/30 bg-success/10">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-success-700">
-                ส่งคำตอบสำเร็จ
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <main className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-semibold">{quiz.title}</h1>
+            {result && (
+              <p className="mt-1 text-sm text-default-500">
+                คุณได้คะแนน{" "}
+                <span className="font-semibold text-primary">
+                  {result.correctCount}/{result.totalQuestions}
+                </span>{" "}
+                ({result.score} คะแนน)
               </p>
-              <p className="text-sm text-default-600">
-                คุณตอบถูก {result.correctCount}/{result.totalQuestions} ข้อ ได้ {result.score} คะแนน
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <BaseButton
-                size="sm"
-                variant="flat"
-                onPress={() => {
-                  setSelections({});
-                  setResult(null);
-                  setSubmitError(null);
-                }}
-              >
-                ทำใหม่
-              </BaseButton>
-              <BaseButton size="sm" onPress={() => router.push("/quizzes")}>
-                กลับรายการแบบทดสอบ
-              </BaseButton>
-            </div>
+            )}
           </div>
-        </BaseCard>
-      )}
 
-      <div className="space-y-4">
-        {quiz.questions.map((question, idx) => {
-          const answer = resultByQuestionId.get(question.id);
-          return (
-            <BaseCard key={question.id}>
-              <p className="mb-3 font-medium">
-                {idx + 1}. {question.questionText}
-              </p>
-              <div className="space-y-2">
-                {question.options.map((option, optionIdx) => {
-                  const isSelected = selections[question.id] === optionIdx;
-                  let stateClass = isSelected
-                    ? "border-primary bg-primary/10"
-                    : "border-default-200 hover:bg-default-50 dark:hover:bg-default-100/10";
-
-                  if (answer) {
-                    if (optionIdx === answer.correctIndex) {
-                      stateClass = "border-success bg-success/10";
-                    } else if (optionIdx === answer.selectedIndex) {
-                      stateClass = "border-danger bg-danger/10";
-                    } else {
-                      stateClass = "border-default-200 opacity-60";
-                    }
-                  }
-
-                  return (
-                    <button
-                      key={optionIdx}
-                      disabled={!!result}
-                      onClick={() => {
-                        setSubmitError(null);
-                        setSelections((prev) => ({ ...prev, [question.id]: optionIdx }));
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:cursor-default ${stateClass}`}
-                    >
-                      <span className="font-medium">{OPTION_LABELS[optionIdx]}.</span>
-                      <span className="flex-1">{option}</span>
-                      {answer && optionIdx === answer.correctIndex && (
-                        <CheckCircle2 size={16} className="text-success" />
-                      )}
-                      {answer && optionIdx === answer.selectedIndex && !answer.isCorrect && (
-                        <XCircle size={16} className="text-danger" />
-                      )}
-                    </button>
-                  );
-                })}
+          {result && (
+            <BaseCard className="border-success/30 bg-success/10">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-success-700">ส่งคำตอบสำเร็จ</p>
+                  <p className="text-sm text-default-600">
+                    คุณตอบถูก {result.correctCount}/{result.totalQuestions} ข้อ ได้{" "}
+                    {result.score} คะแนน
+                  </p>
+                  <p className="text-xs text-default-500">
+                    บันทึก attempt แล้วเมื่อ{" "}
+                    {new Date(result.submittedAt).toLocaleString("th-TH")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <BaseButton size="sm" variant="flat" onPress={handleRetry}>
+                    ทำใหม่
+                  </BaseButton>
+                  <BaseButton size="sm" onPress={() => router.push("/quizzes")}>
+                    กลับรายการแบบทดสอบ
+                  </BaseButton>
+                </div>
               </div>
-              {answer?.explanation && (
-                <p className="mt-3 rounded-lg bg-default-50 p-2 text-xs text-default-500 dark:bg-default-100/10">
-                  คำอธิบาย: {answer.explanation}
+            </BaseCard>
+          )}
+
+          <div className="space-y-4">
+            {quiz.questions.map((question, idx) => {
+              const answer = resultByQuestionId.get(question.id);
+
+              return (
+                <BaseCard key={question.id}>
+                  <p className="mb-3 font-medium">
+                    {idx + 1}. {question.questionText}
+                  </p>
+                  <div className="space-y-2">
+                    {question.options.map((option, optionIdx) => {
+                      const isSelected = selections[question.id] === optionIdx;
+                      let stateClass = isSelected
+                        ? "border-primary bg-primary/10"
+                        : "border-default-200 hover:bg-default-50 dark:hover:bg-default-100/10";
+
+                      if (answer) {
+                        if (optionIdx === answer.correctIndex) {
+                          stateClass = "border-success bg-success/10";
+                        } else if (optionIdx === answer.selectedIndex) {
+                          stateClass = "border-danger bg-danger/10";
+                        } else {
+                          stateClass = "border-default-200 opacity-60";
+                        }
+                      }
+
+                      return (
+                        <button
+                          key={optionIdx}
+                          disabled={!!result}
+                          onClick={() => {
+                            setSubmitError(null);
+                            setSelections((prev) => ({ ...prev, [question.id]: optionIdx }));
+                          }}
+                          className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:cursor-default ${stateClass}`}
+                        >
+                          <span className="font-medium">{OPTION_LABELS[optionIdx]}.</span>
+                          <span className="flex-1">{option}</span>
+                          {answer && optionIdx === answer.correctIndex && (
+                            <CheckCircle2 size={16} className="text-success" />
+                          )}
+                          {answer && optionIdx === answer.selectedIndex && !answer.isCorrect && (
+                            <XCircle size={16} className="text-danger" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {answer?.explanation && (
+                    <p className="mt-3 rounded-lg bg-default-50 p-2 text-xs text-default-500 dark:bg-default-100/10">
+                      คำอธิบาย: {answer.explanation}
+                    </p>
+                  )}
+                </BaseCard>
+              );
+            })}
+          </div>
+
+          {!result && (
+            <div className="space-y-2">
+              {submitError && (
+                <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">
+                  {submitError}
                 </p>
               )}
-            </BaseCard>
-          );
-        })}
-      </div>
-
-      {!result && (
-        <div className="space-y-2">
-          {submitError && (
-            <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">
-              {submitError}
-            </p>
+              <BaseButton
+                isDisabled={!allAnswered}
+                isLoading={submitMutation.isPending}
+                onPress={handleSubmit}
+              >
+                ส่งคำตอบ
+              </BaseButton>
+            </div>
           )}
-          <BaseButton
-            isDisabled={!allAnswered}
-            isLoading={submitMutation.isPending}
-            onPress={handleSubmit}
-          >
-            ส่งคำตอบ
-          </BaseButton>
-        </div>
-      )}
+        </main>
+
+        <aside>{historyPanel}</aside>
+      </div>
     </div>
   );
 }
