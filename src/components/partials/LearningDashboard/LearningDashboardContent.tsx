@@ -15,10 +15,12 @@ import {
   Trophy,
 } from "lucide-react";
 import { useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
+import { useMySkillRadar } from "@/hooks/skillRadar";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
+import SkillRadarCard from "./SkillRadarCard";
 
 const LESSONS_PER_PAGE = 6;
 const MAX_VISIBLE_PAGE_BUTTONS = 7;
@@ -53,6 +55,12 @@ function getLessonPaginationItems(currentPage: number, totalPages: number): Pagi
 export default function LearningDashboardContent() {
   const router = useRouter();
   const { data, isLoading, isError, error } = useLearningDashboard();
+  const {
+    data: skillRadar,
+    isLoading: isSkillRadarLoading,
+    isError: isSkillRadarError,
+    error: skillRadarError,
+  } = useMySkillRadar();
   const generateLessonMutation = useGenerateLessonFromTopic();
   const [topic, setTopic] = useState("");
   const [lessonPage, setLessonPage] = useState(1);
@@ -200,6 +208,13 @@ export default function LearningDashboardContent() {
           </div>
         </BaseCard>
       </div>
+
+      <SkillRadarCard
+        data={skillRadar}
+        isLoading={isSkillRadarLoading}
+        isError={isSkillRadarError}
+        error={skillRadarError}
+      />
 
       <BaseCard>
         <div className="mb-3 flex items-center gap-2">

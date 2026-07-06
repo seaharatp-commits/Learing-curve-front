@@ -10,6 +10,7 @@ import type {
   ConfirmKnowledgePayload,
 } from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
+import type { UserSkillRadar } from "@/types/app/skillRadar";
 import type {
   LearningDashboard,
   LessonCompletion,
@@ -67,6 +68,11 @@ export const confirmKnowledgeApi = (payload: ConfirmKnowledgePayload) =>
 
 export const getLearningDashboardApi = () =>
   mainClient.get<LearningDashboard>("/learning/dashboard");
+
+export const getMySkillRadarApi = (positionId?: string) =>
+  mainClient.get<UserSkillRadar>("/skill-radar/me", {
+    params: positionId ? { positionId } : undefined,
+  });
 
 export const getLessonApi = (lessonId: string) =>
   mainClient.get<LessonDetail>(`/learning/lessons/${lessonId}`);
