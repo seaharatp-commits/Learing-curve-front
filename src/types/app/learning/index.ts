@@ -124,9 +124,22 @@ export interface QuizAttemptHistoryItem {
   attemptId: string;
   quizId: string;
   lessonId: string | null;
+  quizTitle: string;
   score: number;
   totalQuestions: number;
   correctCount: number;
   submittedAt: string;
   answers: AnswerResult[];
+  detailAnswers: QuizAttemptDetailAnswer[];
+}
+
+export interface QuizAttemptDetailAnswer {
+  questionId: string;
+  questionText: string;
+  selectedIndex: number | null;
+  selectedAnswer: string | null;
+  correctIndex: number | null;
+  correctAnswer: string | null;
+  isCorrect: boolean;
+  explanation: string | null;
 }

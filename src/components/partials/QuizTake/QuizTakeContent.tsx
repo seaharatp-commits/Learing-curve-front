@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ArrowLeft, CheckCircle2, Eye, XCircle } from "lucide-react";
 import { useQuiz, useQuizAttempts, useSubmitQuizAttempt } from "@/hooks/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import type { QuizAttemptResult } from "@/types/app/learning";
+import type { QuizAttemptHistoryItem, QuizAttemptResult } from "@/types/app/learning";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 const OPTION_LABELS = ["ก", "ข", "ค", "ง"];
@@ -28,6 +29,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedAttempt, setSelectedAttempt] = useState<QuizAttemptHistoryItem | null>(null);
 
   if (isError) {
     return (
@@ -81,6 +83,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     <BaseCard className="lg:sticky lg:top-24">
       <div className="mb-3">
         <h2 className="text-base font-semibold">ประวัติการทำแบบทดสอบ</h2>
+        <p className="text-xs text-default-500">คลิกแต่ละครั้งเพื่อดูคำตอบย้อนหลัง</p>
       </div>
 
       {isAttemptsLoading ? (
@@ -96,9 +99,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
       ) : (
         <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
           {attemptHistory.slice(0, 8).map((attempt, index) => (
-            <div
+            <button
               key={attempt.attemptId}
-              className="rounded-lg bg-default-50 px-3 py-2 text-sm dark:bg-default-100/10"
+              type="button"
+              onClick={() => setSelectedAttempt(attempt)}
+              className="w-full rounded-lg bg-default-50 px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:bg-default-100/10"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="font-medium">ครั้งที่ {attemptHistory.length - index}</p>
@@ -107,10 +112,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
               <p className="text-xs text-default-500">
                 ถูก {attempt.correctCount}/{attempt.totalQuestions} ข้อ
               </p>
-              <p className="mt-1 text-xs text-default-400">
+              <p className="mt-1 flex items-center gap-1 text-xs text-default-400">
+                <Eye size={12} />
                 {new Date(attempt.submittedAt).toLocaleString("th-TH")}
               </p>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -246,6 +252,83 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
 
         <aside>{historyPanel}</aside>
       </div>
+
+      <Modal
+        isOpen={!!selectedAttempt}
+        onClose={() => setSelectedAttempt(null)}
+        size="2xl"
+        scrollBehavior="inside"
+        className="w-[92vw] max-w-[760px]"
+      >
+        <ModalContent>
+          <ModalHeader>รายละเอียดการทำแบบทดสอบ</ModalHeader>
+          <ModalBody>
+            {selectedAttempt && (
+              <div className="space-y-4">
+                <div className="rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
+                  <p className="text-sm text-default-500">แบบทดสอบ</p>
+                  <h3 className="text-lg font-semibold">{selectedAttempt.quizTitle}</h3>
+                  <div className="mt-2 grid gap-2 text-sm text-default-600 sm:grid-cols-3">
+                    <p>วันที่ส่ง: {new Date(selectedAttempt.submittedAt).toLocaleString("th-TH")}</p>
+                    <p>คะแนน: {selectedAttempt.score}</p>
+                    <p>
+                      ถูก {selectedAttempt.correctCount}/{selectedAttempt.totalQuestions} ข้อ
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {selectedAttempt.detailAnswers.map((answer, index) => (
+                    <div
+                      key={`${selectedAttempt.attemptId}-${answer.questionId}`}
+                      className={`rounded-lg border p-3 ${
+                        answer.isCorrect
+                          ? "border-success/30 bg-success/10"
+                          : "border-danger/30 bg-danger/10"
+                      }`}
+                    >
+                      <div className="mb-2 flex items-start justify-between gap-3">
+                        <p className="font-medium">
+                          {index + 1}. {answer.questionText || "คำถามนี้ไม่มีข้อมูล"}
+                        </p>
+                        {answer.isCorrect ? (
+                          <CheckCircle2 size={18} className="shrink-0 text-success" />
+                        ) : (
+                          <XCircle size={18} className="shrink-0 text-danger" />
+                        )}
+                      </div>
+
+                      <div className="grid gap-2 text-sm sm:grid-cols-2">
+                        <div className="rounded-md bg-background/70 p-2">
+                          <p className="text-xs text-default-500">คำตอบของคุณ</p>
+                          <p className={answer.isCorrect ? "text-success-700" : "text-danger-700"}>
+                            {answer.selectedAnswer ?? "ไม่ได้ตอบ"}
+                          </p>
+                        </div>
+                        <div className="rounded-md bg-background/70 p-2">
+                          <p className="text-xs text-default-500">คำตอบที่ถูก</p>
+                          <p className="text-success-700">{answer.correctAnswer ?? "-"}</p>
+                        </div>
+                      </div>
+
+                      {answer.explanation && (
+                        <p className="mt-2 rounded-md bg-background/70 p-2 text-xs text-default-600">
+                          คำอธิบาย: {answer.explanation}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setSelectedAttempt(null)}>
+              ปิด
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
