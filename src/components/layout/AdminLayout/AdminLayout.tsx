@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, BookOpen, LogOut, ShieldCheck } from "lucide-react";
+import { BrainCircuit, LayoutDashboard, BookOpen, LogOut, ShieldCheck } from "lucide-react";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { ADMIN_NAV_ITEMS } from "./AdminLayout.config";
 
-const ICONS = { LayoutDashboard, BookOpen };
+const ICONS = { LayoutDashboard, BookOpen, BrainCircuit };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

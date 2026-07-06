@@ -10,7 +10,13 @@ import type {
   ConfirmKnowledgePayload,
 } from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
-import type { UserSkillRadar } from "@/types/app/skillRadar";
+import type {
+  AdminSkillRadarPosition,
+  PositionPayload,
+  PositionSkillPayload,
+  SkillRadarSkill,
+  UserSkillRadar,
+} from "@/types/app/skillRadar";
 import type {
   LearningDashboard,
   LessonCompletion,
@@ -73,6 +79,21 @@ export const getMySkillRadarApi = (positionId?: string) =>
   mainClient.get<UserSkillRadar>("/skill-radar/me", {
     params: positionId ? { positionId } : undefined,
   });
+
+export const getAdminSkillRadarPositionsApi = () =>
+  mainClient.get<AdminSkillRadarPosition[]>("/skill-radar/admin/positions");
+
+export const createSkillRadarPositionApi = (payload: PositionPayload) =>
+  mainClient.post<AdminSkillRadarPosition>("/skill-radar/admin/positions", payload);
+
+export const updateSkillRadarPositionApi = (id: string, payload: PositionPayload) =>
+  mainClient.patch<AdminSkillRadarPosition>(`/skill-radar/admin/positions/${id}`, payload);
+
+export const createPositionSkillApi = (positionId: string, payload: PositionSkillPayload) =>
+  mainClient.post<SkillRadarSkill>(`/skill-radar/admin/positions/${positionId}/skills`, payload);
+
+export const updatePositionSkillApi = (id: string, payload: PositionSkillPayload) =>
+  mainClient.patch<SkillRadarSkill>(`/skill-radar/admin/skills/${id}`, payload);
 
 export const getLessonApi = (lessonId: string) =>
   mainClient.get<LessonDetail>(`/learning/lessons/${lessonId}`);
