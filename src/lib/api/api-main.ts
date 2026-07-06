@@ -15,6 +15,8 @@ import type {
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
+  QuestionSkillMappingPayload,
+  SkillRadarPosition,
   SkillRadarSkill,
   UserSkillRadar,
 } from "@/types/app/skillRadar";
@@ -81,6 +83,12 @@ export const getMySkillRadarApi = (positionId?: string) =>
     params: positionId ? { positionId } : undefined,
   });
 
+export const getSkillRadarPositionsApi = () =>
+  mainClient.get<SkillRadarPosition[]>("/skill-radar/positions");
+
+export const updateMySkillRadarPositionApi = (positionId: string) =>
+  mainClient.put<UserSkillRadar>("/skill-radar/me/position", { positionId });
+
 export const getAdminSkillRadarPositionsApi = () =>
   mainClient.get<AdminSkillRadarPosition[]>("/skill-radar/admin/positions");
 
@@ -100,6 +108,14 @@ export const createPositionSkillApi = (positionId: string, payload: PositionSkil
 
 export const updatePositionSkillApi = (id: string, payload: PositionSkillPayload) =>
   mainClient.patch<SkillRadarSkill>(`/skill-radar/admin/skills/${id}`, payload);
+
+export const setQuestionSkillMappingsApi = (
+  questionId: string,
+  mappings: QuestionSkillMappingPayload[],
+) =>
+  mainClient.put(`/skill-radar/questions/${questionId}/skills`, {
+    mappings,
+  });
 
 export const getLessonApi = (lessonId: string) =>
   mainClient.get<LessonDetail>(`/learning/lessons/${lessonId}`);

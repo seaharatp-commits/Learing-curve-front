@@ -4,6 +4,9 @@ import {
   getAdminSkillRadarEventsApi,
   getAdminSkillRadarPositionsApi,
   getMySkillRadarApi,
+  getSkillRadarPositionsApi,
+  setQuestionSkillMappingsApi,
+  updateMySkillRadarPositionApi,
   updatePositionSkillApi,
   updateSkillRadarPositionApi,
 } from "@/lib/api/api-main";
@@ -12,12 +15,24 @@ import type {
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
+  QuestionSkillMappingPayload,
+  SkillRadarPosition,
   SkillRadarSkill,
   UserSkillRadar,
 } from "@/types/app/skillRadar";
 
 export const getMySkillRadar = async (positionId?: string): Promise<UserSkillRadar> => {
   const res = await getMySkillRadarApi(positionId);
+  return res.data;
+};
+
+export const getSkillRadarPositions = async (): Promise<SkillRadarPosition[]> => {
+  const res = await getSkillRadarPositionsApi();
+  return res.data;
+};
+
+export const updateMySkillRadarPosition = async (positionId: string): Promise<UserSkillRadar> => {
+  const res = await updateMySkillRadarPositionApi(positionId);
   return res.data;
 };
 
@@ -59,5 +74,13 @@ export const updatePositionSkill = async (
   payload: PositionSkillPayload,
 ): Promise<SkillRadarSkill> => {
   const res = await updatePositionSkillApi(id, payload);
+  return res.data;
+};
+
+export const setQuestionSkillMappings = async (
+  questionId: string,
+  mappings: QuestionSkillMappingPayload[],
+) => {
+  const res = await setQuestionSkillMappingsApi(questionId, mappings);
   return res.data;
 };

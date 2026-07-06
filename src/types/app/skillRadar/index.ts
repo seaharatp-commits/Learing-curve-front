@@ -61,6 +61,11 @@ export interface PositionSkillPayload {
   isActive?: boolean;
 }
 
+export interface QuestionSkillMappingPayload {
+  skillId: string;
+  weight?: number;
+}
+
 export interface SkillRadarSkillScore {
   id: string;
   name: string;

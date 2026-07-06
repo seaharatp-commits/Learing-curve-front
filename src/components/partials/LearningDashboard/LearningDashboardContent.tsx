@@ -15,7 +15,11 @@ import {
   Trophy,
 } from "lucide-react";
 import { useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
-import { useMySkillRadar } from "@/hooks/skillRadar";
+import {
+  useMySkillRadar,
+  useSkillRadarPositions,
+  useUpdateMySkillRadarPosition,
+} from "@/hooks/skillRadar";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
@@ -61,10 +65,18 @@ export default function LearningDashboardContent() {
     isError: isSkillRadarError,
     error: skillRadarError,
   } = useMySkillRadar();
+  const {
+    data: skillRadarPositions,
+    isLoading: isSkillRadarPositionsLoading,
+  } = useSkillRadarPositions();
+  const updateSkillRadarPositionMutation = useUpdateMySkillRadarPosition();
   const generateLessonMutation = useGenerateLessonFromTopic();
   const [topic, setTopic] = useState("");
   const [lessonPage, setLessonPage] = useState(1);
   const [topicMessage, setTopicMessage] = useState<{ text: string; isError: boolean } | null>(
+    null,
+  );
+  const [skillRadarMessage, setSkillRadarMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
 
@@ -89,6 +101,26 @@ export default function LearningDashboardContent() {
         },
       },
     );
+  };
+
+  const handleChangeSkillRadarPosition = (positionId: string) => {
+    if (!positionId || positionId === skillRadar?.position.id) return;
+
+    setSkillRadarMessage(null);
+    updateSkillRadarPositionMutation.mutate(positionId, {
+      onSuccess: (radar) => {
+        setSkillRadarMessage({
+          text: `บันทึก Position เป็น ${radar.position.name} แล้ว`,
+          isError: false,
+        });
+      },
+      onError: (error) => {
+        setSkillRadarMessage({
+          text: getErrorMessage(error, "บันทึก Position ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"),
+          isError: true,
+        });
+      },
+    });
   };
 
   if (isError) {
@@ -214,6 +246,11 @@ export default function LearningDashboardContent() {
         isLoading={isSkillRadarLoading}
         isError={isSkillRadarError}
         error={skillRadarError}
+        positions={skillRadarPositions}
+        isPositionsLoading={isSkillRadarPositionsLoading}
+        isSavingPosition={updateSkillRadarPositionMutation.isPending}
+        positionMessage={skillRadarMessage}
+        onChangePosition={handleChangeSkillRadarPosition}
       />
 
       <BaseCard>

@@ -2,7 +2,7 @@
 
 import { Radar } from "lucide-react";
 import { BaseCard } from "@/components/ui/Card";
-import type { UserSkillRadar } from "@/types/app/skillRadar";
+import type { SkillRadarPosition, UserSkillRadar } from "@/types/app/skillRadar";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 interface SkillRadarCardProps {
@@ -10,6 +10,11 @@ interface SkillRadarCardProps {
   isLoading: boolean;
   isError: boolean;
   error: unknown;
+  positions: SkillRadarPosition[];
+  isPositionsLoading: boolean;
+  isSavingPosition: boolean;
+  positionMessage?: { text: string; isError: boolean } | null;
+  onChangePosition: (positionId: string) => void;
 }
 
 const CHART_SIZE = 240;
@@ -38,7 +43,17 @@ function scoreColor(score: number) {
   return "bg-primary";
 }
 
-export default function SkillRadarCard({ data, isLoading, isError, error }: SkillRadarCardProps) {
+export default function SkillRadarCard({
+  data,
+  isLoading,
+  isError,
+  error,
+  positions,
+  isPositionsLoading,
+  isSavingPosition,
+  positionMessage,
+  onChangePosition,
+}: SkillRadarCardProps) {
   const skills = data?.skills ?? [];
   const hasScores = skills.some((skill) => skill.score > 0);
   const valuePoints =
@@ -64,11 +79,33 @@ export default function SkillRadarCard({ data, isLoading, isError, error }: Skil
             {data?.position.name ?? "Software Engineer"} skill profile ของคุณ
           </p>
         </div>
-        {data && (
-          <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-            {data.position.name}
-          </span>
-        )}
+        <div className="min-w-[180px]">
+          <label className="mb-1 block text-xs font-medium text-default-500">Position</label>
+          <select
+            value={data?.position.id ?? ""}
+            disabled={isLoading || isPositionsLoading || isSavingPosition || positions.length === 0}
+            onChange={(event) => onChangePosition(event.target.value)}
+            className="h-9 w-full rounded-lg border border-default-200 bg-background px-2 text-sm text-foreground outline-none transition-colors hover:border-primary focus:border-primary disabled:cursor-not-allowed disabled:opacity-60 dark:border-default-100/20 dark:bg-default-50/10"
+          >
+            {data && !positions.some((position) => position.id === data.position.id) && (
+              <option value={data.position.id}>{data.position.name}</option>
+            )}
+            {positions.map((position) => (
+              <option key={position.id} value={position.id}>
+                {position.name}
+              </option>
+            ))}
+          </select>
+          {positionMessage && (
+            <p
+              className={`mt-1 text-xs ${
+                positionMessage.isError ? "text-danger-600" : "text-success-600"
+              }`}
+            >
+              {positionMessage.text}
+            </p>
+          )}
+        </div>
       </div>
 
       {isLoading ? (

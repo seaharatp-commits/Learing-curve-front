@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ArrowLeft, CheckCircle2, Eye, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Save, X, XCircle } from "lucide-react";
 import { useQuiz, useQuizAttempts, useSubmitQuizAttempt } from "@/hooks/learning";
+import { useAdminSkillRadarPositions, useSetQuestionSkillMappings } from "@/hooks/skillRadar";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import type { QuizAttemptHistoryItem, QuizAttemptResult } from "@/types/app/learning";
@@ -18,7 +20,10 @@ interface QuizTakeContentProps {
 
 export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
   const { data: quiz, isLoading, isError, error } = useQuiz(quizId);
+  const { data: skillPositions } = useAdminSkillRadarPositions(isAdmin);
   const {
     data: attemptHistory = [],
     isLoading: isAttemptsLoading,
@@ -26,10 +31,39 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     error: attemptsError,
   } = useQuizAttempts(quizId);
   const submitMutation = useSubmitQuizAttempt(quizId);
+  const setQuestionSkillsMutation = useSetQuestionSkillMappings(quizId);
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [selectedAttempt, setSelectedAttempt] = useState<QuizAttemptHistoryItem | null>(null);
+  const [skillMappingState, setSkillMappingState] = useState<Record<string, string[]>>({});
+  const [skillMappingMessage, setSkillMappingMessage] = useState<
+    Record<string, { text: string; isError: boolean } | undefined>
+  >({});
+  const [savingQuestionId, setSavingQuestionId] = useState<string | null>(null);
+
+  const allSkills = useMemo(
+    () =>
+      skillPositions.flatMap((position) =>
+        position.skills.map((skill) => ({
+          ...skill,
+          positionName: position.name,
+        })),
+      ),
+    [skillPositions],
+  );
+
+  useEffect(() => {
+    if (!quiz) return;
+    setSkillMappingState(
+      Object.fromEntries(
+        quiz.questions.map((question) => [
+          question.id,
+          (question.skillMappings ?? []).map((mapping) => mapping.skillId),
+        ]),
+      ),
+    );
+  }, [quiz]);
 
   if (isError) {
     return (
@@ -60,6 +94,60 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
 
   const allAnswered = quiz.questions.every((q) => selections[q.id] !== undefined);
   const resultByQuestionId = new Map(result?.answers.map((a) => [a.questionId, a]) ?? []);
+
+  const getSelectedSkills = (questionId: string) => {
+    const selectedSkillIds = new Set(skillMappingState[questionId] ?? []);
+    return allSkills.filter((skill) => selectedSkillIds.has(skill.id));
+  };
+
+  const handleAddQuestionSkill = (questionId: string, skillId: string) => {
+    if (!skillId) return;
+    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
+    setSkillMappingState((prev) => {
+      const current = prev[questionId] ?? [];
+      if (current.includes(skillId)) return prev;
+      return { ...prev, [questionId]: [...current, skillId] };
+    });
+  };
+
+  const handleRemoveQuestionSkill = (questionId: string, skillId: string) => {
+    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
+    setSkillMappingState((prev) => ({
+      ...prev,
+      [questionId]: (prev[questionId] ?? []).filter((id) => id !== skillId),
+    }));
+  };
+
+  const handleSaveQuestionSkills = (questionId: string) => {
+    const selectedSkillIds = skillMappingState[questionId] ?? [];
+    setSavingQuestionId(questionId);
+    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
+
+    setQuestionSkillsMutation.mutate(
+      {
+        questionId,
+        mappings: selectedSkillIds.map((skillId) => ({ skillId, weight: 1 })),
+      },
+      {
+        onSuccess: () => {
+          setSkillMappingMessage((prev) => ({
+            ...prev,
+            [questionId]: { text: "บันทึก Skill mapping สำเร็จ", isError: false },
+          }));
+        },
+        onError: (error) => {
+          setSkillMappingMessage((prev) => ({
+            ...prev,
+            [questionId]: {
+              text: getErrorMessage(error, "บันทึก Skill mapping ไม่สำเร็จ"),
+              isError: true,
+            },
+          }));
+        },
+        onSettled: () => setSavingQuestionId(null),
+      },
+    );
+  };
 
   const handleSubmit = () => {
     setSubmitError(null);
@@ -226,6 +314,79 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                     <p className="mt-3 rounded-lg bg-default-50 p-2 text-xs text-default-500 dark:bg-default-100/10">
                       คำอธิบาย: {answer.explanation}
                     </p>
+                  )}
+                  {isAdmin && (
+                    <div className="mt-4 rounded-lg border border-default-200 bg-default-50 p-3 dark:border-default-100/20 dark:bg-default-100/10">
+                      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Skill mapping</p>
+                          <p className="text-xs text-default-500">
+                            ผูกคำถามนี้กับ Skill เพื่อให้คะแนน Quiz ส่งเข้า Skill Radar
+                          </p>
+                        </div>
+                        <BaseButton
+                          size="sm"
+                          startContent={<Save size={14} />}
+                          isLoading={savingQuestionId === question.id}
+                          onPress={() => handleSaveQuestionSkills(question.id)}
+                        >
+                          บันทึก
+                        </BaseButton>
+                      </div>
+
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        {getSelectedSkills(question.id).length === 0 ? (
+                          <span className="text-xs text-default-500">ยังไม่ได้ผูก Skill</span>
+                        ) : (
+                          getSelectedSkills(question.id).map((skill) => (
+                            <span
+                              key={`${question.id}-${skill.id}`}
+                              className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs text-primary"
+                            >
+                              {skill.name}
+                              <span className="text-primary/60">/ {skill.positionName}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveQuestionSkill(question.id, skill.id)}
+                                className="rounded p-0.5 hover:bg-primary/10"
+                                aria-label={`Remove ${skill.name}`}
+                              >
+                                <X size={12} />
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+
+                      <select
+                        value=""
+                        onChange={(event) => handleAddQuestionSkill(question.id, event.target.value)}
+                        className="h-9 w-full rounded-lg border border-default-200 bg-background px-2 text-sm text-foreground outline-none transition-colors focus:border-primary dark:border-default-100/20 dark:bg-default-50/10"
+                      >
+                        <option value="">เพิ่ม Skill...</option>
+                        {skillPositions.map((position) => (
+                          <optgroup key={position.id} label={position.name}>
+                            {position.skills.map((skill) => (
+                              <option key={skill.id} value={skill.id}>
+                                {skill.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+
+                      {skillMappingMessage[question.id] && (
+                        <p
+                          className={`mt-2 text-xs ${
+                            skillMappingMessage[question.id]?.isError
+                              ? "text-danger-600"
+                              : "text-success-600"
+                          }`}
+                        >
+                          {skillMappingMessage[question.id]?.text}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </BaseCard>
               );

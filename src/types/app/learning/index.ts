@@ -90,6 +90,13 @@ export interface QuizQuestionForAttempt {
   id: string;
   questionText: string;
   options: string[];
+  skillMappings?: Array<{
+    skillId: string;
+    skillName: string;
+    positionId: string;
+    positionName: string;
+    weight: number;
+  }>;
 }
 
 export interface QuizForAttempt {

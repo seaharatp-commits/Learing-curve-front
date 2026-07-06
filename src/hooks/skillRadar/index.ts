@@ -1,4 +1,7 @@
 export { useMySkillRadar, mySkillRadarQueryKey } from "./useMySkillRadar";
+export { useSkillRadarPositions, SKILL_RADAR_POSITIONS_QUERY_KEY } from "./useSkillRadarPositions";
+export { useUpdateMySkillRadarPosition } from "./useUpdateMySkillRadarPosition";
+export { useSetQuestionSkillMappings } from "./useSetQuestionSkillMappings";
 export {
   useAdminSkillRadarPositions,
   ADMIN_SKILL_RADAR_POSITIONS_QUERY_KEY,
