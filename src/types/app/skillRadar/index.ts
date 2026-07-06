@@ -19,6 +19,34 @@ export interface AdminSkillRadarPosition extends SkillRadarPosition {
   skills: SkillRadarSkill[];
 }
 
+export interface AdminSkillScoreEvent {
+  id: string;
+  userId: string;
+  positionId: string;
+  skillId: string;
+  sourceType: string;
+  sourceId: string | null;
+  scoreDelta: number;
+  scoreBefore: number;
+  scoreAfter: number;
+  confidence: number | null;
+  reason: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  position: {
+    id: string;
+    name: string;
+  };
+  skill: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface PositionPayload {
   name: string;
   description?: string;

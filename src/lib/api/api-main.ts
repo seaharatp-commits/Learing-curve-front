@@ -11,6 +11,7 @@ import type {
 } from "@/types/app/knowledgeBase";
 import type { DashboardStats } from "@/types/app/dashboard";
 import type {
+  AdminSkillScoreEvent,
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
@@ -82,6 +83,11 @@ export const getMySkillRadarApi = (positionId?: string) =>
 
 export const getAdminSkillRadarPositionsApi = () =>
   mainClient.get<AdminSkillRadarPosition[]>("/skill-radar/admin/positions");
+
+export const getAdminSkillRadarEventsApi = (limit = 30) =>
+  mainClient.get<AdminSkillScoreEvent[]>("/skill-radar/admin/events", {
+    params: { limit },
+  });
 
 export const createSkillRadarPositionApi = (payload: PositionPayload) =>
   mainClient.post<AdminSkillRadarPosition>("/skill-radar/admin/positions", payload);

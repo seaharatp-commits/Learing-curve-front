@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BrainCircuit, Pencil, Plus, Save } from "lucide-react";
+import { Activity, BrainCircuit, Pencil, Plus, Save } from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
-import { useAdminSkillRadarMutations, useAdminSkillRadarPositions } from "@/hooks/skillRadar";
+import {
+  useAdminSkillRadarEvents,
+  useAdminSkillRadarMutations,
+  useAdminSkillRadarPositions,
+} from "@/hooks/skillRadar";
 import type {
+  AdminSkillScoreEvent,
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
@@ -34,8 +39,64 @@ function textToKeywords(value: string) {
     .filter(Boolean);
 }
 
+function formatEventDate(value: string) {
+  return new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatSourceType(sourceType: string) {
+  if (sourceType === "QUIZ_ATTEMPT") return "Quiz";
+  if (sourceType === "AI_CHAT_QUESTION") return "AI Chat";
+  return sourceType;
+}
+
+function formatConfidence(confidence: number | null) {
+  if (confidence === null || confidence === undefined) return "-";
+  return `${Math.round(confidence * 100)}%`;
+}
+
+function SkillEvidenceItem({ event }: { event: AdminSkillScoreEvent }) {
+  return (
+    <div className="rounded-lg bg-default-50 p-3 text-sm dark:bg-default-100/10">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="font-medium">
+            {event.skill.name} <span className="text-default-400">/ {event.position.name}</span>
+          </p>
+          <p className="text-xs text-default-500">
+            {event.user.name || event.user.email} · {formatEventDate(event.createdAt)}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="rounded-md bg-primary/10 px-2 py-1 text-primary">
+            {formatSourceType(event.sourceType)}
+          </span>
+          <span className="rounded-md bg-success/10 px-2 py-1 text-success-700">
+            +{event.scoreDelta}
+          </span>
+          <span className="rounded-md bg-default-100 px-2 py-1 text-default-600">
+            confidence {formatConfidence(event.confidence)}
+          </span>
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-default-500">
+        score {Math.round(event.scoreBefore)} → {Math.round(event.scoreAfter)}
+      </p>
+      {event.reason && <p className="mt-2 text-xs text-default-600">{event.reason}</p>}
+    </div>
+  );
+}
+
 export default function AdminSkillRadarContent() {
   const { data: positions, isLoading, isError, error } = useAdminSkillRadarPositions();
+  const {
+    data: events,
+    isLoading: isEventsLoading,
+    isError: isEventsError,
+    error: eventsError,
+  } = useAdminSkillRadarEvents(30);
   const {
     createPositionMutation,
     updatePositionMutation,
@@ -398,6 +459,36 @@ export default function AdminSkillRadarContent() {
           </div>
         </div>
       )}
+
+      <BaseCard>
+        <div className="mb-3 flex items-center gap-2">
+          <Activity size={18} className="text-primary" />
+          <div>
+            <h2 className="font-medium">Recent Skill Evidence</h2>
+            <p className="text-sm text-default-500">
+              à¸”à¸¹à¸§à¹ˆà¸²à¸„à¸°à¹à¸™à¸™ Skill à¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸¡à¸²à¸ˆà¸²à¸ Quiz à¸«à¸£à¸·à¸­ AI Chat à¹ƒà¸”
+            </p>
+          </div>
+        </div>
+
+        {isEventsLoading ? (
+          <p className="text-sm text-default-500">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸” evidence...</p>
+        ) : isEventsError ? (
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(eventsError, "à¹‚à¸«à¸¥à¸” evidence à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ")}
+          </p>
+        ) : events.length === 0 ? (
+          <p className="text-sm text-default-500">
+            à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µ evidence à¸ªà¸³à¸«à¸£à¸±à¸š Skill Radar à¸¥à¸­à¸‡à¸—à¸³ quiz à¸«à¸£à¸·à¸­à¸–à¸²à¸¡ AI Chat à¸à¹ˆà¸­à¸™à¸„à¸£à¸±à¸š
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {events.map((event) => (
+              <SkillEvidenceItem key={event.id} event={event} />
+            ))}
+          </div>
+        )}
+      </BaseCard>
     </div>
   );
 }

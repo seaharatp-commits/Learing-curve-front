@@ -1,12 +1,14 @@
 import {
   createPositionSkillApi,
   createSkillRadarPositionApi,
+  getAdminSkillRadarEventsApi,
   getAdminSkillRadarPositionsApi,
   getMySkillRadarApi,
   updatePositionSkillApi,
   updateSkillRadarPositionApi,
 } from "@/lib/api/api-main";
 import type {
+  AdminSkillScoreEvent,
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
@@ -21,6 +23,11 @@ export const getMySkillRadar = async (positionId?: string): Promise<UserSkillRad
 
 export const getAdminSkillRadarPositions = async (): Promise<AdminSkillRadarPosition[]> => {
   const res = await getAdminSkillRadarPositionsApi();
+  return res.data;
+};
+
+export const getAdminSkillRadarEvents = async (limit = 30): Promise<AdminSkillScoreEvent[]> => {
+  const res = await getAdminSkillRadarEventsApi(limit);
   return res.data;
 };
 
