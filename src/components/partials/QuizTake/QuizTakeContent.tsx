@@ -4,9 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ArrowLeft, CheckCircle2, Eye, Save, X, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Save, Sparkles, X, XCircle } from "lucide-react";
 import { useQuiz, useQuizAttempts, useSubmitQuizAttempt } from "@/hooks/learning";
-import { useAdminSkillRadarPositions, useSetQuestionSkillMappings } from "@/hooks/skillRadar";
+import {
+  useAdminSkillRadarPositions,
+  useSetQuestionSkillMappings,
+  useSuggestQuestionSkillMappings,
+} from "@/hooks/skillRadar";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import type { QuizAttemptHistoryItem, QuizAttemptResult } from "@/types/app/learning";
@@ -32,6 +36,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   } = useQuizAttempts(quizId);
   const submitMutation = useSubmitQuizAttempt(quizId);
   const setQuestionSkillsMutation = useSetQuestionSkillMappings(quizId);
+  const suggestQuestionSkillsMutation = useSuggestQuestionSkillMappings();
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -41,6 +46,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     Record<string, { text: string; isError: boolean } | undefined>
   >({});
   const [savingQuestionId, setSavingQuestionId] = useState<string | null>(null);
+  const [suggestingQuestionId, setSuggestingQuestionId] = useState<string | null>(null);
 
   const allSkills = useMemo(
     () =>
@@ -147,6 +153,49 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         onSettled: () => setSavingQuestionId(null),
       },
     );
+  };
+
+  const handleSuggestQuestionSkills = (questionId: string) => {
+    setSuggestingQuestionId(questionId);
+    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
+
+    suggestQuestionSkillsMutation.mutate(questionId, {
+      onSuccess: (suggestions) => {
+        if (suggestions.length === 0) {
+          setSkillMappingMessage((prev) => ({
+            ...prev,
+            [questionId]: {
+              text: "ยังไม่พบ Skill ที่เข้ากับคำถามนี้ ลองเลือกเองจากรายการ",
+              isError: true,
+            },
+          }));
+          return;
+        }
+
+        const suggestedSkillIds = suggestions.map((suggestion) => suggestion.skillId);
+        setSkillMappingState((prev) => ({
+          ...prev,
+          [questionId]: Array.from(new Set([...(prev[questionId] ?? []), ...suggestedSkillIds])),
+        }));
+        setSkillMappingMessage((prev) => ({
+          ...prev,
+          [questionId]: {
+            text: `แนะนำ ${suggestions.length} Skill แล้ว กรุณาตรวจสอบก่อนกดบันทึก`,
+            isError: false,
+          },
+        }));
+      },
+      onError: (error) => {
+        setSkillMappingMessage((prev) => ({
+          ...prev,
+          [questionId]: {
+            text: getErrorMessage(error, "แนะนำ Skill ไม่สำเร็จ"),
+            isError: true,
+          },
+        }));
+      },
+      onSettled: () => setSuggestingQuestionId(null),
+    });
   };
 
   const handleSubmit = () => {
@@ -324,6 +373,15 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                             ผูกคำถามนี้กับ Skill เพื่อให้คะแนน Quiz ส่งเข้า Skill Radar
                           </p>
                         </div>
+                        <BaseButton
+                          size="sm"
+                          variant="flat"
+                          startContent={<Sparkles size={14} />}
+                          isLoading={suggestingQuestionId === question.id}
+                          onPress={() => handleSuggestQuestionSkills(question.id)}
+                        >
+                          แนะนำ Skill
+                        </BaseButton>
                         <BaseButton
                           size="sm"
                           startContent={<Save size={14} />}

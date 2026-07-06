@@ -16,6 +16,7 @@ import type {
   PositionPayload,
   PositionSkillPayload,
   QuestionSkillMappingPayload,
+  QuestionSkillSuggestion,
   SkillRadarPosition,
   SkillRadarSkill,
   UserSkillRadar,
@@ -116,6 +117,11 @@ export const setQuestionSkillMappingsApi = (
   mainClient.put(`/skill-radar/questions/${questionId}/skills`, {
     mappings,
   });
+
+export const getQuestionSkillSuggestionsApi = (questionId: string) =>
+  mainClient.get<QuestionSkillSuggestion[]>(
+    `/skill-radar/questions/${questionId}/skill-suggestions`,
+  );
 
 export const getLessonApi = (lessonId: string) =>
   mainClient.get<LessonDetail>(`/learning/lessons/${lessonId}`);

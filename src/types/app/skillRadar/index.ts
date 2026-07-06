@@ -66,6 +66,16 @@ export interface QuestionSkillMappingPayload {
   weight?: number;
 }
 
+export interface QuestionSkillSuggestion {
+  skillId: string;
+  skillName: string;
+  positionId: string;
+  positionName: string;
+  confidence: number;
+  reason: string;
+  weight: number;
+}
+
 export interface SkillRadarSkillScore {
   id: string;
   name: string;
