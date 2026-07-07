@@ -1,8 +1,9 @@
 "use client";
 
-import { Radar } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, MessageSquareText, Radar, Sparkles, Target, TrendingUp } from "lucide-react";
 import { BaseCard } from "@/components/ui/Card";
-import type { SkillRadarPosition, UserSkillRadar } from "@/types/app/skillRadar";
+import type { SkillRadarPosition, SkillRadarSkillScore, UserSkillRadar } from "@/types/app/skillRadar";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 interface SkillRadarCardProps {
@@ -43,6 +44,25 @@ function scoreColor(score: number) {
   return "bg-primary";
 }
 
+function getSkillStatus(skill: SkillRadarSkillScore) {
+  if (skill.evidenceCount === 0) return "ยังไม่มีหลักฐาน";
+  if (skill.score >= 75) return "จุดแข็ง";
+  if (skill.score >= 45) return "กำลังพัฒนา";
+  return "ควรฝึกเพิ่ม";
+}
+
+function getRecommendations(skills: SkillRadarSkillScore[]) {
+  const skillsWithEvidence = skills.filter((skill) => skill.evidenceCount > 0);
+  const strengths = [...skillsWithEvidence]
+    .sort((a, b) => b.score - a.score || b.evidenceCount - a.evidenceCount)
+    .slice(0, 2);
+  const needsPractice = [...skills]
+    .sort((a, b) => a.score - b.score || a.evidenceCount - b.evidenceCount)
+    .slice(0, 2);
+
+  return { strengths, needsPractice };
+}
+
 export default function SkillRadarCard({
   data,
   isLoading,
@@ -56,6 +76,7 @@ export default function SkillRadarCard({
 }: SkillRadarCardProps) {
   const skills = data?.skills ?? [];
   const hasScores = skills.some((skill) => skill.score > 0);
+  const { strengths, needsPractice } = getRecommendations(skills);
   const valuePoints =
     skills.length >= 3
       ? skills
@@ -182,7 +203,7 @@ export default function SkillRadarCard({
           <div className="space-y-3">
             {!hasScores && (
               <div className="rounded-lg bg-default-50 px-3 py-2 text-sm text-default-500 dark:bg-default-100/10">
-                คะแนนยังเริ่มต้นที่ 0 หลังจาก Phase scoring เปิดใช้งาน คะแนนจะสะสมจาก quiz และกิจกรรมการเรียน
+                คะแนนยังเริ่มต้นที่ 0 คะแนนจะค่อย ๆ สะสมจาก quiz, คำถาม AI Chat และการเรียนจบบทเรียน
               </div>
             )}
             {skills.map((skill) => (
@@ -199,6 +220,80 @@ export default function SkillRadarCard({
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="lg:col-span-2">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-default-200 bg-default-50/70 p-3 dark:border-default-100/15 dark:bg-default-100/10">
+                <div className="mb-2 flex items-center gap-2">
+                  <TrendingUp size={16} className="text-success-500" />
+                  <h3 className="text-sm font-semibold">จุดแข็งตอนนี้</h3>
+                </div>
+                {strengths.length === 0 ? (
+                  <p className="text-sm text-default-500">
+                    ยังไม่มีหลักฐานพอ ลองทำ quiz หรือถาม AI Chat ในหัวข้อที่สนใจก่อน
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {strengths.map((skill) => (
+                      <div key={skill.id} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium">{skill.name}</span>
+                        <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs text-success-600">
+                          {skill.score}% · {skill.evidenceCount} evidence
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-default-200 bg-default-50/70 p-3 dark:border-default-100/15 dark:bg-default-100/10">
+                <div className="mb-2 flex items-center gap-2">
+                  <Target size={16} className="text-primary-500" />
+                  <h3 className="text-sm font-semibold">ควรพัฒนาต่อ</h3>
+                </div>
+                <div className="space-y-2">
+                  {needsPractice.map((skill) => (
+                    <div key={skill.id} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-medium">{skill.name}</span>
+                      <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs text-primary-600">
+                        {skill.score}% · {getSkillStatus(skill)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-lg border border-primary/20 bg-primary-50/70 p-3 dark:bg-primary-500/10">
+              <div className="mb-2 flex items-center gap-2">
+                <Sparkles size={16} className="text-primary-500" />
+                <h3 className="text-sm font-semibold">แนะนำขั้นตอนถัดไป</h3>
+              </div>
+              <div className="grid gap-2 text-sm md:grid-cols-3">
+                <Link
+                  href="/chat"
+                  className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                >
+                  <MessageSquareText size={16} className="mt-0.5 shrink-0 text-primary" />
+                  <span>ถาม AI Chat เกี่ยวกับ {needsPractice[0]?.name ?? "skill ที่อยากฝึก"}</span>
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                >
+                  <BookOpen size={16} className="mt-0.5 shrink-0 text-primary" />
+                  <span>สร้างบทเรียนใหม่ที่เกี่ยวกับ {needsPractice[0]?.name ?? "หัวข้อที่ยังอ่อน"}</span>
+                </Link>
+                <Link
+                  href="/quizzes"
+                  className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                >
+                  <Target size={16} className="mt-0.5 shrink-0 text-primary" />
+                  <span>ทำ quiz เพื่อเพิ่ม evidence ให้ Radar แม่นขึ้น</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       )}
