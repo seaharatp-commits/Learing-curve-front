@@ -453,7 +453,7 @@ export default function ChatContent() {
                       }}
                       disabledKeys={["share", "group", "rename", "archive"]}
                     >
-                      <DropdownItem key="share" startContent={<Share2 size={16} />}>
+                      {/* <DropdownItem key="share" startContent={<Share2 size={16} />}>
                         Share
                       </DropdownItem>
                       <DropdownItem key="group" startContent={<Users size={16} />}>
@@ -461,13 +461,13 @@ export default function ChatContent() {
                       </DropdownItem>
                       <DropdownItem key="rename" startContent={<Pencil size={16} />}>
                         Rename
-                      </DropdownItem>
+                      </DropdownItem> */}
                       <DropdownItem key="pin" startContent={<Pin size={16} />}>
                         {isPinned ? "Unpin chat" : "Pin chat"}
                       </DropdownItem>
-                      <DropdownItem key="archive" startContent={<Archive size={16} />}>
+                      {/* <DropdownItem key="archive" startContent={<Archive size={16} />}>
                         Archive
-                      </DropdownItem>
+                      </DropdownItem> */}
                       <DropdownItem
                         key="delete"
                         className="text-danger"

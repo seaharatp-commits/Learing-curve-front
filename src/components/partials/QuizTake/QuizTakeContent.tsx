@@ -261,19 +261,23 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="relative mx-auto grid min-h-[calc(100dvh-6.5rem)] w-full max-w-[1508px] grid-cols-1 gap-6 overflow-hidden 2xl:grid-cols-[320px_minmax(0,820px)_320px]">
+      <aside className="hidden min-w-0 2xl:block">
+        <div className="sticky top-24">{historyPanel}</div>
+      </aside>
+
+      <section className="mx-auto flex w-full min-w-0 max-w-[820px] flex-col gap-6 2xl:col-start-2">
       <button
         onClick={() => router.push("/quizzes")}
-        className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
+        className="flex w-fit items-center gap-1 text-sm text-default-500 hover:text-default-700"
       >
         <ArrowLeft size={16} />
         กลับไปยังรายการแบบทดสอบ
       </button>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside>{historyPanel}</aside>
+      <div className="2xl:hidden">{historyPanel}</div>
 
-        <main className="space-y-6">
+      <main className="space-y-6">
           <div>
             <h1 className="text-2xl font-semibold">{quiz.title}</h1>
             {result && (
@@ -470,7 +474,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
             </div>
           )}
         </main>
-      </div>
+      </section>
 
       <Modal
         isOpen={!!selectedAttempt}
