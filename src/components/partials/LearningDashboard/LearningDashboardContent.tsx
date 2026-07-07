@@ -157,7 +157,7 @@ export default function LearningDashboardContent() {
     .slice(0, 5);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">แดชบอร์ดการเรียนรู้</h1>
         <p className="text-sm text-default-500">
@@ -165,16 +165,18 @@ export default function LearningDashboardContent() {
         </p>
       </div>
 
-      <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
-        <form onSubmit={handleGenerateLesson} className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+      <BaseCard className="border-primary/25 bg-primary-50/80 shadow-md shadow-primary/5 dark:bg-primary-500/10">
+        <form onSubmit={handleGenerateLesson} className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
           <BaseInput
             label="อยากเรียนเรื่องอะไร?"
             placeholder="เช่น การเขียน prompt ให้ชัดเจน"
             value={topic}
             onValueChange={setTopic}
+            size="lg"
           />
           <BaseButton
             type="submit"
+            size="lg"
             startContent={<Sparkles size={16} />}
             isLoading={generateLessonMutation.isPending}
           >
@@ -192,13 +194,13 @@ export default function LearningDashboardContent() {
         )}
       </BaseCard>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
           <div className="flex items-center gap-2 text-primary-600">
             <GraduationCap size={20} />
             <h2 className="font-medium">ความก้าวหน้าในการเรียน</h2>
           </div>
-          <p className="mt-3 text-3xl font-semibold">{learningProgress.percentage}%</p>
+          <p className="mt-4 text-5xl font-semibold tracking-tight">{learningProgress.percentage}%</p>
           <p className="mb-2 text-sm text-default-500">
             เรียนจบแล้ว {learningProgress.completedLessons} จาก{" "}
             {learningProgress.totalLessons} บทเรียน
@@ -216,20 +218,20 @@ export default function LearningDashboardContent() {
             <Trophy size={20} />
             <h2 className="font-medium">ผลคะแนนแบบทดสอบ</h2>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <div>
-              <p className="text-2xl font-semibold">{quizPerformance.totalCompleted}</p>
+              <p className="text-4xl font-semibold tracking-tight">{quizPerformance.totalCompleted}</p>
               <p className="text-xs text-default-500">แบบทดสอบที่ทำแล้ว</p>
             </div>
             <div>
-              <p className={`text-2xl font-semibold ${SCORE_COLOR(quizPerformance.averageScore)}`}>
+              <p className={`text-4xl font-semibold tracking-tight ${SCORE_COLOR(quizPerformance.averageScore)}`}>
                 {quizPerformance.averageScore}
               </p>
               <p className="text-xs text-default-500">คะแนนเฉลี่ย</p>
             </div>
             <div>
               <p
-                className={`text-2xl font-semibold ${
+                className={`text-4xl font-semibold tracking-tight ${
                   quizPerformance.latestScore !== null ? SCORE_COLOR(quizPerformance.latestScore) : ""
                 }`}
               >
@@ -253,7 +255,7 @@ export default function LearningDashboardContent() {
         onChangePosition={handleChangeSkillRadarPosition}
       />
 
-      <BaseCard>
+      <BaseCard className="space-y-1">
         <div className="mb-3 flex items-center gap-2">
           <BookOpen size={20} className="text-default-500" />
           <h2 className="font-medium">เลือกบทเรียนที่จะเรียนต่อ</h2>
@@ -264,16 +266,16 @@ export default function LearningDashboardContent() {
           </p>
         ) : (
           <>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {visibleLessons.map((lesson) => (
               <Link
                 key={lesson.lessonId}
                 href={`/lessons/${lesson.lessonId}`}
-                className="rounded-lg bg-default-50 px-3 py-3 transition-colors hover:bg-default-100 dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                className="group cursor-pointer rounded-xl border border-default-200/80 bg-default-50/90 px-4 py-4 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{lesson.title}</p>
+                    <p className="truncate text-base font-semibold text-foreground">{lesson.title}</p>
                     <p className="mt-1 flex items-center gap-1 text-xs text-default-500">
                       {lesson.completed ? (
                         <>
@@ -285,7 +287,10 @@ export default function LearningDashboardContent() {
                       )}
                     </p>
                   </div>
-                  <ArrowRight size={16} className="mt-1 shrink-0 text-default-400" />
+                  <div className="mt-0.5 flex shrink-0 items-center gap-1 text-xs font-medium text-primary opacity-90 transition-transform group-hover:translate-x-0.5">
+                    <span>เริ่มเรียน</span>
+                    <ArrowRight size={16} />
+                  </div>
                 </div>
               </Link>
             ))}
@@ -345,19 +350,27 @@ export default function LearningDashboardContent() {
         {latestRecentQuizzes.length === 0 ? (
           <p className="text-sm text-default-400">ยังไม่มีประวัติการทำแบบทดสอบ</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {latestRecentQuizzes.map((quiz) => (
               <div
                 key={quiz.id}
-                className="flex items-center justify-between rounded-lg bg-default-50 px-3 py-2"
+                className="flex items-center justify-between gap-4 rounded-xl border border-default-200/70 bg-default-50 px-4 py-3 dark:border-default-100/15 dark:bg-default-100/10"
               >
-                <div>
-                  <p className="text-sm font-medium">{quiz.title}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{quiz.title}</p>
                   <p className="text-xs text-default-400">
                     {dayjs(quiz.completedAt).format("DD MMM YYYY HH:mm")}
                   </p>
                 </div>
-                <span className={`text-lg font-semibold ${SCORE_COLOR(quiz.score)}`}>
+                <span
+                  className={`shrink-0 rounded-lg px-3 py-1 text-xl font-semibold ${
+                    quiz.score >= 80
+                      ? "bg-success/15 text-success-600"
+                      : quiz.score >= 60
+                        ? "bg-warning/15 text-warning-600"
+                        : "bg-danger/15 text-danger-600"
+                  }`}
+                >
                   {quiz.score}
                 </span>
               </div>

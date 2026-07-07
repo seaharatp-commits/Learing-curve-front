@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { BookOpen, MessageSquareText, Radar, Sparkles, Target, TrendingUp } from "lucide-react";
 import { BaseCard } from "@/components/ui/Card";
 import type { SkillRadarPosition, SkillRadarSkillScore, UserSkillRadar } from "@/types/app/skillRadar";
@@ -18,10 +19,27 @@ interface SkillRadarCardProps {
   onChangePosition: (positionId: string) => void;
 }
 
-const CHART_SIZE = 240;
+const CHART_SIZE = 320;
 const CENTER = CHART_SIZE / 2;
-const MAX_RADIUS = 88;
+const MAX_RADIUS = 112;
 const GRID_LEVELS = [0.25, 0.5, 0.75, 1];
+const SKILL_LABEL_ALIASES: Record<string, string> = {
+  "System Analysis": "Analysis",
+  "Financial Analysis": "Finance",
+  "Risk Management": "Risk",
+  "Market Research": "Market",
+  "Portfolio Strategy": "Portfolio",
+  "Decision Making": "Decision",
+  "User Research": "Research",
+  "Usability Testing": "Usability",
+  "Design Systems": "Systems",
+  "Financial Reporting": "Reporting",
+  "Resource Management": "Resource",
+  "Stakeholder Management": "Stakeholder",
+  "Performance Analysis": "Performance",
+  "Operating Systems": "OS",
+  "Customer Support": "Support",
+};
 
 function polarPoint(index: number, total: number, radius: number) {
   const angle = -Math.PI / 2 + (index * 2 * Math.PI) / total;
@@ -44,11 +62,8 @@ function scoreColor(score: number) {
   return "bg-primary";
 }
 
-function getSkillStatus(skill: SkillRadarSkillScore) {
-  if (skill.evidenceCount === 0) return "ยังไม่มีหลักฐาน";
-  if (skill.score >= 75) return "จุดแข็ง";
-  if (skill.score >= 45) return "กำลังพัฒนา";
-  return "ควรฝึกเพิ่ม";
+function shortSkillLabel(name: string) {
+  return SKILL_LABEL_ALIASES[name] ?? name;
 }
 
 function getRecommendations(skills: SkillRadarSkillScore[]) {
@@ -56,11 +71,8 @@ function getRecommendations(skills: SkillRadarSkillScore[]) {
   const strengths = [...skillsWithEvidence]
     .sort((a, b) => b.score - a.score || b.evidenceCount - a.evidenceCount)
     .slice(0, 2);
-  const needsPractice = [...skills]
-    .sort((a, b) => a.score - b.score || a.evidenceCount - b.evidenceCount)
-    .slice(0, 2);
 
-  return { strengths, needsPractice };
+  return { strengths };
 }
 
 export default function SkillRadarCard({
@@ -74,9 +86,13 @@ export default function SkillRadarCard({
   positionMessage,
   onChangePosition,
 }: SkillRadarCardProps) {
+  const [hoveredSkillId, setHoveredSkillId] = useState<string | null>(null);
   const skills = data?.skills ?? [];
   const hasScores = skills.some((skill) => skill.score > 0);
-  const { strengths, needsPractice } = getRecommendations(skills);
+  const { strengths } = getRecommendations(skills);
+  const strongestSkill = strengths[0] ?? [...skills].sort((a, b) => b.score - a.score)[0];
+  const highlightedSkillId = hoveredSkillId ?? strongestSkill?.id ?? null;
+  const highlightedSkill = skills.find((skill) => skill.id === highlightedSkillId) ?? strongestSkill;
   const valuePoints =
     skills.length >= 3
       ? skills
@@ -87,20 +103,23 @@ export default function SkillRadarCard({
           })
           .join(" ")
       : "";
+  const insightText = highlightedSkill
+    ? `ตอนนี้ ${highlightedSkill.name} เด่นที่สุดที่ ${highlightedSkill.score}% จาก ${highlightedSkill.evidenceCount} evidence`
+    : "ทำ quiz หรือถาม AI Chat เพื่อเริ่มสะสม evidence ให้ Skill Radar";
 
   return (
-    <BaseCard>
-      <div className="mb-4 flex items-start justify-between gap-3">
+    <BaseCard className="border-primary/20 bg-primary-50/40 dark:bg-primary-500/10">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Radar size={20} className="text-primary-500" />
-            <h2 className="font-medium">Skill Radar</h2>
+            <h2 className="text-lg font-semibold">Skill Radar</h2>
           </div>
           <p className="mt-1 text-sm text-default-500">
             {data?.position.name ?? "Software Engineer"} skill profile ของคุณ
           </p>
         </div>
-        <div className="min-w-[180px]">
+        <div className="min-w-[220px]">
           <label className="mb-1 block text-xs font-medium text-default-500">Position</label>
           <select
             value={data?.position.id ?? ""}
@@ -138,17 +157,21 @@ export default function SkillRadarCard({
       ) : skills.length === 0 ? (
         <p className="text-sm text-default-400">ยังไม่มี skill สำหรับตำแหน่งนี้</p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:items-center">
-          <div className="mx-auto w-full max-w-[280px]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-center">
+          <div className="mx-auto w-full max-w-[460px] rounded-3xl border border-primary/20 bg-background/70 p-5 shadow-lg shadow-primary/5 dark:border-primary/20 dark:bg-default-50/5">
+            <div className="mb-3 rounded-2xl bg-primary/10 px-4 py-3 text-sm text-primary">
+              {insightText}
+            </div>
             {skills.length >= 3 ? (
-              <svg viewBox={`0 0 ${CHART_SIZE} ${CHART_SIZE}`} className="h-auto w-full">
+              <svg viewBox={`0 0 ${CHART_SIZE} ${CHART_SIZE}`} className="h-auto w-full overflow-visible">
                 {GRID_LEVELS.map((level) => (
                   <polygon
                     key={level}
                     points={polygonPoints(skills.length, MAX_RADIUS * level)}
                     fill="none"
                     stroke="currentColor"
-                    strokeOpacity="0.14"
+                    strokeOpacity={level === 1 ? "0.28" : "0.16"}
+                    strokeWidth={level === 1 ? "1.4" : "1"}
                     className="text-default-500"
                   />
                 ))}
@@ -162,7 +185,7 @@ export default function SkillRadarCard({
                       x2={end.x}
                       y2={end.y}
                       stroke="currentColor"
-                      strokeOpacity="0.12"
+                      strokeOpacity="0.16"
                       className="text-default-500"
                     />
                   );
@@ -171,14 +194,41 @@ export default function SkillRadarCard({
                   <polygon
                     points={valuePoints}
                     fill="currentColor"
-                    fillOpacity="0.18"
+                    fillOpacity="0.28"
                     stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-primary"
+                    strokeWidth="3"
+                    className="text-primary drop-shadow-sm transition-all duration-500 ease-out"
                   />
                 )}
                 {skills.map((skill, index) => {
-                  const point = polarPoint(index, skills.length, MAX_RADIUS + 22);
+                  const radius = (Math.max(0, Math.min(100, skill.score)) / 100) * MAX_RADIUS;
+                  const point = polarPoint(index, skills.length, radius);
+                  const isHighlighted = skill.id === highlightedSkillId;
+
+                  return (
+                    <g
+                      key={`dot-${skill.id}`}
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredSkillId(skill.id)}
+                      onMouseLeave={() => setHoveredSkillId(null)}
+                    >
+                      <title>{`${skill.name}: ${skill.score}% · ${skill.evidenceCount} evidence`}</title>
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r={isHighlighted ? 6 : 4.5}
+                        className={`transition-all duration-200 ${
+                          isHighlighted ? "fill-primary stroke-background" : "fill-primary/80 stroke-background"
+                        }`}
+                        strokeWidth="2.5"
+                      />
+                    </g>
+                  );
+                })}
+                {skills.map((skill, index) => {
+                  const point = polarPoint(index, skills.length, MAX_RADIUS + 36);
+                  const label = shortSkillLabel(skill.name);
+                  const isHighlighted = skill.id === highlightedSkillId;
                   return (
                     <text
                       key={skill.id}
@@ -186,9 +236,12 @@ export default function SkillRadarCard({
                       y={point.y}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="fill-current text-[9px] font-medium text-default-600"
+                      className={`fill-current text-[11px] font-semibold transition-colors ${
+                        isHighlighted ? "text-primary" : "text-default-600"
+                      }`}
                     >
-                      {skill.name.length > 12 ? `${skill.name.slice(0, 11)}...` : skill.name}
+                      <title>{`${skill.name}: ${skill.score}% · ${skill.evidenceCount} evidence`}</title>
+                      {label}
                     </text>
                   );
                 })}
@@ -200,31 +253,41 @@ export default function SkillRadarCard({
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             {!hasScores && (
-              <div className="rounded-lg bg-default-50 px-3 py-2 text-sm text-default-500 dark:bg-default-100/10">
+              <div className="rounded-xl bg-default-50 px-3 py-2 text-sm text-default-500 dark:bg-default-100/10 sm:col-span-2 xl:col-span-1">
                 คะแนนยังเริ่มต้นที่ 0 คะแนนจะค่อย ๆ สะสมจาก quiz, คำถาม AI Chat และการเรียนจบบทเรียน
               </div>
             )}
             {skills.map((skill) => (
-              <div key={skill.id}>
+              <button
+                key={skill.id}
+                type="button"
+                onMouseEnter={() => setHoveredSkillId(skill.id)}
+                onMouseLeave={() => setHoveredSkillId(null)}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  skill.id === highlightedSkillId
+                    ? "border-primary/35 bg-primary/10"
+                    : "border-default-200/60 bg-background/35 opacity-85 hover:border-primary/25 hover:bg-primary/5 hover:opacity-100 dark:border-default-100/15 dark:bg-default-50/5"
+                }`}
+              >
                 <div className="mb-1 flex items-center justify-between gap-3 text-sm">
                   <span className="font-medium">{skill.name}</span>
                   <span className="text-default-500">{skill.score}%</span>
                 </div>
-                <div className="h-2 rounded-full bg-default-100 dark:bg-default-100/10">
+                <div className="h-1.5 rounded-full bg-default-100 dark:bg-default-100/10">
                   <div
-                    className={`h-2 rounded-full ${scoreColor(skill.score)}`}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${scoreColor(skill.score)}`}
                     style={{ width: `${Math.max(0, Math.min(100, skill.score))}%` }}
                   />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
-          <div className="lg:col-span-2">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-default-200 bg-default-50/70 p-3 dark:border-default-100/15 dark:bg-default-100/10">
+          <div className="space-y-4 lg:col-span-2">
+            <div className="grid gap-3">
+              <div className="rounded-xl border border-default-200 bg-default-50/70 p-4 dark:border-default-100/15 dark:bg-default-100/10">
                 <div className="mb-2 flex items-center gap-2">
                   <TrendingUp size={16} className="text-success-500" />
                   <h3 className="text-sm font-semibold">จุดแข็งตอนนี้</h3>
@@ -236,36 +299,27 @@ export default function SkillRadarCard({
                 ) : (
                   <div className="space-y-2">
                     {strengths.map((skill) => (
-                      <div key={skill.id} className="flex items-center justify-between gap-3 text-sm">
+                      <button
+                        key={skill.id}
+                        type="button"
+                        onMouseEnter={() => setHoveredSkillId(skill.id)}
+                        onMouseLeave={() => setHoveredSkillId(null)}
+                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                          skill.id === highlightedSkillId ? "bg-success/10" : "hover:bg-success/5"
+                        }`}
+                      >
                         <span className="font-medium">{skill.name}</span>
                         <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs text-success-600">
                           {skill.score}% · {skill.evidenceCount} evidence
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
-
-              <div className="rounded-lg border border-default-200 bg-default-50/70 p-3 dark:border-default-100/15 dark:bg-default-100/10">
-                <div className="mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-primary-500" />
-                  <h3 className="text-sm font-semibold">ควรพัฒนาต่อ</h3>
-                </div>
-                <div className="space-y-2">
-                  {needsPractice.map((skill) => (
-                    <div key={skill.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-medium">{skill.name}</span>
-                      <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs text-primary-600">
-                        {skill.score}% · {getSkillStatus(skill)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            <div className="mt-3 rounded-lg border border-primary/20 bg-primary-50/70 p-3 dark:bg-primary-500/10">
+            <div className="rounded-xl border border-primary/20 bg-primary-50/70 p-4 dark:bg-primary-500/10">
               <div className="mb-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-primary-500" />
                 <h3 className="text-sm font-semibold">แนะนำขั้นตอนถัดไป</h3>
@@ -276,14 +330,14 @@ export default function SkillRadarCard({
                   className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
                 >
                   <MessageSquareText size={16} className="mt-0.5 shrink-0 text-primary" />
-                  <span>ถาม AI Chat เกี่ยวกับ {needsPractice[0]?.name ?? "skill ที่อยากฝึก"}</span>
+                  <span>ถาม AI Chat เพื่อเก็บ evidence เพิ่มให้ Skill Radar</span>
                 </Link>
                 <Link
                   href="/dashboard"
                   className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
                 >
                   <BookOpen size={16} className="mt-0.5 shrink-0 text-primary" />
-                  <span>สร้างบทเรียนใหม่ที่เกี่ยวกับ {needsPractice[0]?.name ?? "หัวข้อที่ยังอ่อน"}</span>
+                  <span>สร้างบทเรียนใหม่จากหัวข้อที่อยากเรียนต่อ</span>
                 </Link>
                 <Link
                   href="/quizzes"
