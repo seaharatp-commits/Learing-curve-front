@@ -57,9 +57,18 @@ function polygonPoints(total: number, radius: number) {
 }
 
 function scoreColor(score: number) {
+  if (score <= 0) return "bg-default-300 dark:bg-default-600";
   if (score >= 75) return "bg-success";
   if (score >= 45) return "bg-warning";
   return "bg-primary";
+}
+
+function scoreTextColor(score: number, isTopSkill: boolean) {
+  if (isTopSkill) return "text-warning-600";
+  if (score <= 0) return "text-default-400";
+  if (score >= 75) return "text-success-600";
+  if (score >= 45) return "text-warning-600";
+  return "text-primary";
 }
 
 function shortSkillLabel(name: string) {
@@ -93,6 +102,8 @@ export default function SkillRadarCard({
   const strongestSkill = strengths[0] ?? [...skills].sort((a, b) => b.score - a.score)[0];
   const highlightedSkillId = hoveredSkillId ?? strongestSkill?.id ?? null;
   const highlightedSkill = skills.find((skill) => skill.id === highlightedSkillId) ?? strongestSkill;
+  const strongestSkillId = strongestSkill?.id ?? null;
+  const lowEvidenceCount = skills.filter((skill) => skill.evidenceCount === 0 || skill.score <= 0).length;
   const valuePoints =
     skills.length >= 3
       ? skills
@@ -106,9 +117,13 @@ export default function SkillRadarCard({
   const insightText = highlightedSkill
     ? `ตอนนี้ ${highlightedSkill.name} เด่นที่สุดที่ ${highlightedSkill.score}% จาก ${highlightedSkill.evidenceCount} evidence`
     : "ทำ quiz หรือถาม AI Chat เพื่อเริ่มสะสม evidence ให้ Skill Radar";
+  const evidenceHint =
+    lowEvidenceCount > 0
+      ? `บาง skill ยังมี evidence น้อย กราฟบางด้านจึงยังแคบ`
+      : "ข้อมูลเริ่มกระจายครบทุก skill แล้ว กราฟจะสะท้อน profile ได้แม่นขึ้นเรื่อย ๆ";
 
   return (
-    <BaseCard className="border-primary/20 bg-primary-50/40 dark:bg-primary-500/10">
+    <BaseCard className="border-primary/15 bg-primary-50/35 dark:bg-primary-500/10">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -136,6 +151,9 @@ export default function SkillRadarCard({
               </option>
             ))}
           </select>
+          <p className="mt-1 text-[11px] leading-4 text-default-400">
+            เลือกสายงานเพื่อเปลี่ยนชุด skill ที่ใช้แสดง profile
+          </p>
           {positionMessage && (
             <p
               className={`mt-1 text-xs ${
@@ -158,9 +176,17 @@ export default function SkillRadarCard({
         <p className="text-sm text-default-400">ยังไม่มี skill สำหรับตำแหน่งนี้</p>
       ) : (
         <div className="grid gap-8 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-center">
-          <div className="mx-auto w-full max-w-[460px] rounded-3xl border border-primary/20 bg-background/70 p-5 shadow-lg shadow-primary/5 dark:border-primary/20 dark:bg-default-50/5">
-            <div className="mb-3 rounded-2xl bg-primary/10 px-4 py-3 text-sm text-primary">
-              {insightText}
+          <div className="mx-auto w-full max-w-[460px] rounded-3xl bg-background/70 p-5 shadow-lg shadow-primary/5 ring-1 ring-default-200/70 dark:bg-default-50/5 dark:ring-default-100/15">
+            <div className="mb-3 space-y-2 rounded-2xl bg-default-50/80 px-4 py-3 text-sm dark:bg-default-100/10">
+              <div className="flex flex-wrap items-center gap-2">
+                {strongestSkill && (
+                  <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-semibold text-warning-600">
+                    Top Skill
+                  </span>
+                )}
+                <p className="font-medium text-foreground">{insightText}</p>
+              </div>
+              <p className="text-xs leading-5 text-default-500">{evidenceHint}</p>
             </div>
             {skills.length >= 3 ? (
               <svg viewBox={`0 0 ${CHART_SIZE} ${CHART_SIZE}`} className="h-auto w-full overflow-visible">
@@ -204,6 +230,7 @@ export default function SkillRadarCard({
                   const radius = (Math.max(0, Math.min(100, skill.score)) / 100) * MAX_RADIUS;
                   const point = polarPoint(index, skills.length, radius);
                   const isHighlighted = skill.id === highlightedSkillId;
+                  const isTopSkill = skill.id === strongestSkillId;
 
                   return (
                     <g
@@ -216,9 +243,13 @@ export default function SkillRadarCard({
                       <circle
                         cx={point.x}
                         cy={point.y}
-                        r={isHighlighted ? 6 : 4.5}
+                        r={isTopSkill ? (isHighlighted ? 7 : 5.5) : isHighlighted ? 6 : 4.5}
                         className={`transition-all duration-200 ${
-                          isHighlighted ? "fill-primary stroke-background" : "fill-primary/80 stroke-background"
+                          isTopSkill
+                            ? "fill-warning stroke-background"
+                            : isHighlighted
+                              ? "fill-primary stroke-background"
+                              : "fill-primary/80 stroke-background"
                         }`}
                         strokeWidth="2.5"
                       />
@@ -229,6 +260,7 @@ export default function SkillRadarCard({
                   const point = polarPoint(index, skills.length, MAX_RADIUS + 36);
                   const label = shortSkillLabel(skill.name);
                   const isHighlighted = skill.id === highlightedSkillId;
+                  const isTopSkill = skill.id === strongestSkillId;
                   return (
                     <text
                       key={skill.id}
@@ -236,8 +268,8 @@ export default function SkillRadarCard({
                       y={point.y}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className={`fill-current text-[11px] font-semibold transition-colors ${
-                        isHighlighted ? "text-primary" : "text-default-600"
+                      className={`fill-current text-[10px] font-semibold transition-colors sm:text-[11px] ${
+                        isTopSkill ? "text-warning-600" : isHighlighted ? "text-primary" : "text-default-600"
                       }`}
                     >
                       <title>{`${skill.name}: ${skill.score}% · ${skill.evidenceCount} evidence`}</title>
@@ -260,28 +292,47 @@ export default function SkillRadarCard({
               </div>
             )}
             {skills.map((skill) => (
+              (() => {
+                const isTopSkill = skill.id === strongestSkillId;
+                return (
               <button
                 key={skill.id}
                 type="button"
                 onMouseEnter={() => setHoveredSkillId(skill.id)}
                 onMouseLeave={() => setHoveredSkillId(null)}
-                className={`rounded-xl border p-3 text-left transition-all ${
+                className={`min-h-[74px] rounded-xl border p-3 text-left transition-all ${
                   skill.id === highlightedSkillId
-                    ? "border-primary/35 bg-primary/10"
-                    : "border-default-200/60 bg-background/35 opacity-85 hover:border-primary/25 hover:bg-primary/5 hover:opacity-100 dark:border-default-100/15 dark:bg-default-50/5"
+                    ? isTopSkill
+                      ? "border-warning/45 bg-warning/10"
+                      : "border-primary/35 bg-primary/10"
+                    : skill.score <= 0 || skill.evidenceCount === 0
+                      ? "border-default-200/45 bg-background/25 opacity-60 hover:border-default-300 hover:bg-default-50/60 hover:opacity-80 dark:border-default-100/10 dark:bg-default-50/5"
+                      : "border-default-200/50 bg-background/30 opacity-80 hover:border-primary/20 hover:bg-primary/5 hover:opacity-100 dark:border-default-100/10 dark:bg-default-50/5"
                 }`}
               >
                 <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                  <span className="font-medium">{skill.name}</span>
-                  <span className="text-default-500">{skill.score}%</span>
+                  <span className="flex min-w-0 items-center gap-2 font-medium">
+                    <span className="truncate">{skill.name}</span>
+                    {isTopSkill && (
+                      <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning-600">
+                        จุดเด่น
+                      </span>
+                    )}
+                  </span>
+                  <span className={scoreTextColor(skill.score, isTopSkill)}>{skill.score}%</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-default-100 dark:bg-default-100/10">
+                <div className="h-1 rounded-full bg-default-100 dark:bg-default-100/10">
                   <div
-                    className={`h-1.5 rounded-full transition-all duration-500 ${scoreColor(skill.score)}`}
+                    className={`h-1 rounded-full transition-all duration-500 ${scoreColor(skill.score)}`}
                     style={{ width: `${Math.max(0, Math.min(100, skill.score))}%` }}
                   />
                 </div>
+                {(skill.evidenceCount === 0 || skill.score <= 0) && (
+                  <p className="mt-1 text-[11px] text-default-400">ยังไม่มี evidence</p>
+                )}
               </button>
+                );
+              })()
             ))}
           </div>
 
@@ -319,32 +370,32 @@ export default function SkillRadarCard({
               </div>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary-50/70 p-4 dark:bg-primary-500/10">
+            <div className="rounded-xl border border-default-200/70 bg-default-50/70 p-3 dark:border-default-100/15 dark:bg-default-100/10">
               <div className="mb-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-primary-500" />
                 <h3 className="text-sm font-semibold">แนะนำขั้นตอนถัดไป</h3>
               </div>
-              <div className="grid gap-2 text-sm md:grid-cols-3">
+              <div className="grid gap-2.5 text-sm md:grid-cols-3">
                 <Link
                   href="/chat"
-                  className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                  className="flex min-h-[58px] items-center gap-2.5 rounded-lg bg-background/70 px-3 py-2.5 leading-5 transition-colors hover:bg-background dark:bg-default-50/5 dark:hover:bg-default-100/15"
                 >
                   <MessageSquareText size={16} className="mt-0.5 shrink-0 text-primary" />
-                  <span>ถาม AI Chat เพื่อเก็บ evidence เพิ่มให้ Skill Radar</span>
+                  <span>ถาม AI เพื่อเพิ่ม evidence</span>
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                  className="flex min-h-[58px] items-center gap-2.5 rounded-lg bg-background/70 px-3 py-2.5 leading-5 transition-colors hover:bg-background dark:bg-default-50/5 dark:hover:bg-default-100/15"
                 >
                   <BookOpen size={16} className="mt-0.5 shrink-0 text-primary" />
-                  <span>สร้างบทเรียนใหม่จากหัวข้อที่อยากเรียนต่อ</span>
+                  <span>สร้างบทเรียนใหม่</span>
                 </Link>
                 <Link
                   href="/quizzes"
-                  className="flex items-start gap-2 rounded-lg bg-background/70 px-3 py-2 transition-colors hover:bg-background dark:bg-default-100/10 dark:hover:bg-default-100/20"
+                  className="flex min-h-[58px] items-center gap-2.5 rounded-lg bg-background/70 px-3 py-2.5 leading-5 transition-colors hover:bg-background dark:bg-default-50/5 dark:hover:bg-default-100/15"
                 >
                   <Target size={16} className="mt-0.5 shrink-0 text-primary" />
-                  <span>ทำ quiz เพื่อเพิ่ม evidence ให้ Radar แม่นขึ้น</span>
+                  <span>ทำ Quiz เพื่อปรับ Radar</span>
                 </Link>
               </div>
             </div>

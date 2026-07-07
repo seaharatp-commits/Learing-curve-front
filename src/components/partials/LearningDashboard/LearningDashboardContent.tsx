@@ -157,7 +157,7 @@ export default function LearningDashboardContent() {
     .slice(0, 5);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-9">
       <div>
         <h1 className="text-2xl font-semibold">แดชบอร์ดการเรียนรู้</h1>
         <p className="text-sm text-default-500">
@@ -165,20 +165,27 @@ export default function LearningDashboardContent() {
         </p>
       </div>
 
-      <BaseCard className="border-primary/25 bg-primary-50/80 shadow-md shadow-primary/5 dark:bg-primary-500/10">
-        <form onSubmit={handleGenerateLesson} className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+      <BaseCard className="border-primary/20 bg-primary-50/75 p-2 shadow-md shadow-primary/5 dark:bg-primary-500/10">
+        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-4 md:flex-row md:items-end md:gap-5">
           <BaseInput
             label="อยากเรียนเรื่องอะไร?"
-            placeholder="เช่น การเขียน prompt ให้ชัดเจน"
+            placeholder="พิมพ์เรื่องที่อยากเรียน เช่น Next.js, Docker, UX/UI"
             value={topic}
             onValueChange={setTopic}
             size="lg"
+            className="min-w-0 flex-1"
+            classNames={{
+              inputWrapper: "min-h-14 rounded-xl px-5",
+              input: "text-sm leading-7 text-foreground placeholder:text-default-400",
+              label: "pb-1.5 text-sm font-semibold text-foreground",
+            }}
           />
           <BaseButton
             type="submit"
             size="lg"
             startContent={<Sparkles size={16} />}
             isLoading={generateLessonMutation.isPending}
+            className="h-14 w-full shrink-0 rounded-xl px-5 md:w-[160px]"
           >
             สร้างบทเรียน
           </BaseButton>
