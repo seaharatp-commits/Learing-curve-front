@@ -31,6 +31,12 @@ import {
 } from "lucide-react";
 import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
+const SUGGESTED_QUESTIONS = [
+  "Next.js ใช้ Ant Design หรือ MUI ดีกว่ากัน?",
+  "ช่วยอธิบาย error นี้แบบเข้าใจง่าย",
+  "วิเคราะห์ขั้นตอนแก้ปัญหานี้ให้หน่อย",
+];
+
 type ActiveKnowledgeContext = Pick<
   RecommendationResult,
   "articleId" | "title" | "category" | "preview" | "summary" | "resolution" | "confidenceScore" | "matchedKeywords"
@@ -380,23 +386,23 @@ export default function ChatContent() {
 
   const historyPanel = (
     <BaseCard className="h-full rounded-none border-0 bg-transparent p-0 shadow-none">
-      <div className="mb-2 flex items-center gap-1 px-1">
+      <div className="mb-3 flex items-center gap-1 px-2">
         <h2 className="text-sm font-semibold">Recents</h2>
         <ChevronDown size={14} className="text-default-400" />
       </div>
 
       {isChatHistoryLoading ? (
-        <p className="px-1 text-sm text-default-500">กำลังโหลดประวัติ...</p>
+        <p className="px-2 text-sm text-default-500">กำลังโหลดประวัติ...</p>
       ) : isChatHistoryError ? (
-        <p className="px-1 text-sm text-danger-600">
+        <p className="px-2 text-sm text-danger-600">
           {extractErrorMessage(chatHistoryError, "โหลดประวัติการสนทนาไม่สำเร็จ")}
         </p>
       ) : chatHistory.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-default-200 p-3 text-sm text-default-500">
+        <div className="mx-2 rounded-lg border border-dashed border-default-200 p-3 text-sm text-default-500">
           ยังไม่มีประวัติการสนทนา
         </div>
       ) : (
-        <div className="max-h-[calc(100dvh-10.5rem)] space-y-0.5 overflow-y-auto pr-1">
+        <div className="max-h-[calc(100dvh-12rem)] space-y-1 overflow-y-auto pr-1">
           {sortedChatHistory.map((item) => {
             const isActive = item.id === sessionId || item.id === initialSessionId;
             const isPinned = pinnedSessionIds.includes(item.id);
@@ -404,10 +410,10 @@ export default function ChatContent() {
               <div key={item.id} className="group relative">
                 <button
                   type="button"
-                  className={`flex h-9 w-full items-center gap-2 rounded-xl px-3 pr-16 text-left text-sm transition-colors ${
+                  className={`flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 py-2 pr-14 text-left text-sm transition-colors ${
                     isActive
-                      ? "bg-default-100 text-foreground dark:bg-default-100/20"
-                      : "text-default-700 hover:bg-default-100/70 dark:text-default-300 dark:hover:bg-default-100/10"
+                      ? "border border-primary/20 bg-primary/10 text-foreground"
+                      : "text-default-700 hover:bg-default-100/80 dark:text-default-300 dark:hover:bg-default-100/10"
                   }`}
                   onClick={() => handleOpenHistory(item.id)}
                   title={`${item.title}\n${item.lastMessage}\n${dayjs(item.updatedAt).format("DD MMM YYYY HH:mm")}`}
@@ -489,11 +495,11 @@ export default function ChatContent() {
 
   return (
     <div className="relative min-h-[calc(100dvh-6.5rem)] w-full min-w-0 overflow-hidden">
-      <aside className="fixed bottom-5 left-6 top-20 z-20 hidden w-[280px] min-w-0 overflow-hidden 2xl:block">
+      <aside className="fixed bottom-5 left-0 top-16 z-20 hidden w-[300px] min-w-0 overflow-hidden border-r border-default-200/70 bg-background/70 px-5 py-5 backdrop-blur-md dark:border-white/10 dark:bg-background/50 2xl:block">
         {historyPanel}
       </aside>
 
-      <section className="mx-auto flex h-[calc(100dvh-7.25rem)] w-full min-w-0 max-w-[820px] flex-col gap-4 overflow-hidden">
+      <section className="mx-auto flex h-[calc(100dvh-8.75rem)] w-full min-w-0 max-w-[820px] flex-col gap-4 overflow-hidden">
       <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">แชทกับ AI ผู้ช่วยแก้ปัญหา</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -516,15 +522,35 @@ export default function ChatContent() {
           </BaseButton>
         </div>
       </div>
-      <BaseCard className="min-h-0 flex-1 overflow-y-auto p-2">
-        <div className="flex flex-col gap-3">
+      <BaseCard className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div className="flex min-h-full flex-col gap-3">
           {isHistoryLoading && (
             <p className="text-center text-sm text-default-400">กำลังโหลดบทสนทนา...</p>
           )}
           {!isHistoryLoading && messages.length === 0 && (
-            <p className="text-center text-sm text-default-400">
-              พิมพ์ปัญหาของคุณเพื่อเริ่มสนทนากับ AI
-            </p>
+            <div className="m-auto flex max-w-md flex-col items-center gap-4 px-4 py-10 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Bot size={24} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">เริ่มคุยกับ AI ผู้ช่วยแก้ปัญหา</h2>
+                <p className="mt-1 text-sm leading-6 text-default-500">
+                  พิมพ์ปัญหา เลือกคำถามตัวอย่าง หรือให้ AI ช่วยอธิบายจากฐานความรู้ของระบบ
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTED_QUESTIONS.map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    onClick={() => setInput(question)}
+                    className="rounded-full border border-default-200 bg-background/80 px-3 py-1.5 text-xs text-default-600 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-default-100/20"
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
           {messages.map((m) => (
             m.role === "assistant" && m.content === THINKING_MESSAGE ? (
@@ -623,7 +649,7 @@ export default function ChatContent() {
           )}
         </BaseCard>
       )}
-      <div className="flex w-full gap-2">
+      <div className="flex w-full items-center gap-2 rounded-2xl border border-default-200 bg-background/85 p-1.5 shadow-sm dark:border-default-100/20 dark:bg-default-50/5">
         <BaseInput
           value={input}
           onValueChange={setInput}
@@ -631,9 +657,19 @@ export default function ChatContent() {
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSend();
           }}
+          variant="flat"
           className="flex-1"
+          classNames={{
+            inputWrapper: "bg-transparent shadow-none",
+            innerWrapper: "bg-transparent",
+          }}
         />
-        <BaseButton isIconOnly isLoading={isBusy} onPress={handleSend}>
+        <BaseButton
+          isIconOnly
+          isLoading={isBusy}
+          onPress={handleSend}
+          className="h-10 w-10 min-w-10 shrink-0 rounded-xl"
+        >
           <Send size={18} />
         </BaseButton>
       </div>
