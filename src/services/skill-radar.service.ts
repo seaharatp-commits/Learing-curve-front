@@ -13,7 +13,8 @@ import {
   updateSkillRadarPositionApi,
 } from "@/lib/api/api-main";
 import type {
-  AdminSkillScoreEvent,
+  AdminSkillScoreEventFilters,
+  AdminSkillScoreEventPage,
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
@@ -45,8 +46,10 @@ export const getAdminSkillRadarPositions = async (): Promise<AdminSkillRadarPosi
   return res.data;
 };
 
-export const getAdminSkillRadarEvents = async (limit = 30): Promise<AdminSkillScoreEvent[]> => {
-  const res = await getAdminSkillRadarEventsApi(limit);
+export const getAdminSkillRadarEvents = async (
+  filters: AdminSkillScoreEventFilters = {},
+): Promise<AdminSkillScoreEventPage> => {
+  const res = await getAdminSkillRadarEventsApi(filters);
   return res.data;
 };
 

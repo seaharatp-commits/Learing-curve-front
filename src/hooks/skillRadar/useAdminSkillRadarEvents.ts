@@ -2,15 +2,21 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getAdminSkillRadarEvents } from "@/services/skill-radar.service";
+import type { AdminSkillScoreEventFilters } from "@/types/app/skillRadar";
 
-export const adminSkillRadarEventsQueryKey = (limit = 30) =>
-  ["adminSkillRadarEvents", limit] as const;
+export const adminSkillRadarEventsQueryKey = (filters: AdminSkillScoreEventFilters = {}) =>
+  ["adminSkillRadarEvents", filters] as const;
 
-export const useAdminSkillRadarEvents = (limit = 30) => {
-  const { data = [], isLoading, isError, error } = useQuery({
-    queryKey: adminSkillRadarEventsQueryKey(limit),
-    queryFn: () => getAdminSkillRadarEvents(limit),
+export const useAdminSkillRadarEvents = (filters: AdminSkillScoreEventFilters = {}) => {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: adminSkillRadarEventsQueryKey(filters),
+    queryFn: () => getAdminSkillRadarEvents(filters),
   });
 
-  return { data, isLoading, isError, error };
+  return {
+    data: data ?? { items: [], total: 0, page: filters.page ?? 1, limit: filters.limit ?? 30, totalPages: 1 },
+    isLoading,
+    isError,
+    error,
+  };
 };

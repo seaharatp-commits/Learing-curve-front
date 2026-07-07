@@ -47,6 +47,24 @@ export interface AdminSkillScoreEvent {
   };
 }
 
+export interface AdminSkillScoreEventFilters {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  positionId?: string;
+  skillId?: string;
+  sourceType?: string;
+  search?: string;
+}
+
+export interface AdminSkillScoreEventPage {
+  items: AdminSkillScoreEvent[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface PositionPayload {
   name: string;
   description?: string;

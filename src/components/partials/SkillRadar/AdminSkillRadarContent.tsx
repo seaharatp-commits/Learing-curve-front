@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, BrainCircuit, Pencil, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import {
+  Activity,
+  BrainCircuit,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
@@ -13,6 +26,7 @@ import {
 } from "@/hooks/skillRadar";
 import type {
   AdminSkillScoreEvent,
+  AdminSkillScoreEventFilters,
   AdminSkillRadarPosition,
   PositionPayload,
   PositionSkillPayload,
@@ -56,6 +70,7 @@ function formatEventDate(value: string) {
 function formatSourceType(sourceType: string) {
   if (sourceType === "QUIZ_ATTEMPT") return "Quiz";
   if (sourceType === "AI_CHAT_QUESTION") return "AI Chat";
+  if (sourceType === "LESSON_COMPLETION") return "Lesson";
   return sourceType;
 }
 
@@ -64,7 +79,57 @@ function formatConfidence(confidence: number | null) {
   return `${Math.round(confidence * 100)}%`;
 }
 
-function SkillEvidenceItem({ event }: { event: AdminSkillScoreEvent }) {
+function escapeCsvCell(value: unknown) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildEventsCsv(events: AdminSkillScoreEvent[]) {
+  const rows = [
+    [
+      "eventId",
+      "user",
+      "email",
+      "position",
+      "skill",
+      "sourceType",
+      "sourceId",
+      "scoreDelta",
+      "scoreBefore",
+      "scoreAfter",
+      "confidence",
+      "reason",
+      "createdAt",
+    ],
+    ...events.map((event) => [
+      event.id,
+      event.user.name ?? "",
+      event.user.email,
+      event.position.name,
+      event.skill.name,
+      event.sourceType,
+      event.sourceId ?? "",
+      event.scoreDelta,
+      event.scoreBefore,
+      event.scoreAfter,
+      event.confidence ?? "",
+      event.reason ?? "",
+      event.createdAt,
+    ]),
+  ];
+
+  return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+}
+
+function SkillEvidenceItem({
+  event,
+  isExpanded,
+  onToggle,
+}: {
+  event: AdminSkillScoreEvent;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div className="rounded-lg bg-default-50 p-3 text-sm dark:bg-default-100/10">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -86,24 +151,57 @@ function SkillEvidenceItem({ event }: { event: AdminSkillScoreEvent }) {
           <span className="rounded-md bg-default-100 px-2 py-1 text-default-600">
             confidence {formatConfidence(event.confidence)}
           </span>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-md bg-default-100 px-2 py-1 text-default-600 hover:bg-default-200"
+            onClick={onToggle}
+          >
+            <Eye size={13} />
+            debug
+          </button>
         </div>
       </div>
       <p className="mt-2 text-xs text-default-500">
         score {Math.round(event.scoreBefore)} → {Math.round(event.scoreAfter)}
       </p>
       {event.reason && <p className="mt-2 text-xs text-default-600">{event.reason}</p>}
+      {isExpanded && (
+        <div className="mt-3 grid gap-2 rounded-md border border-default-200 bg-background/60 p-3 text-xs text-default-500 sm:grid-cols-2">
+          <p>
+            <span className="font-medium text-default-700">Event ID:</span> {event.id}
+          </p>
+          <p>
+            <span className="font-medium text-default-700">User ID:</span> {event.user.id}
+          </p>
+          <p>
+            <span className="font-medium text-default-700">Position ID:</span> {event.position.id}
+          </p>
+          <p>
+            <span className="font-medium text-default-700">Skill ID:</span> {event.skill.id}
+          </p>
+          <p className="sm:col-span-2">
+            <span className="font-medium text-default-700">Source ID:</span>{" "}
+            {event.sourceId ?? "-"}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function AdminSkillRadarContent() {
   const { data: positions, isLoading, isError, error } = useAdminSkillRadarPositions();
+  const [eventFilters, setEventFilters] = useState<AdminSkillScoreEventFilters>({
+    page: 1,
+    limit: 10,
+  });
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const {
-    data: events,
+    data: eventsPage,
     isLoading: isEventsLoading,
     isError: isEventsError,
     error: eventsError,
-  } = useAdminSkillRadarEvents(30);
+  } = useAdminSkillRadarEvents(eventFilters);
   const {
     createPositionMutation,
     updatePositionMutation,
@@ -120,11 +218,25 @@ export default function AdminSkillRadarContent() {
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [suggestions, setSuggestions] = useState<EditableSkillSuggestion[]>([]);
   const [isSavingSuggestions, setIsSavingSuggestions] = useState(false);
+  const events = eventsPage.items;
 
   const selectedPosition = useMemo(
     () => positions.find((position) => position.id === selectedPositionId) ?? positions[0] ?? null,
     [positions, selectedPositionId],
   );
+
+  const eventSkillOptions = useMemo(() => {
+    const filteredPositions = eventFilters.positionId
+      ? positions.filter((position) => position.id === eventFilters.positionId)
+      : positions;
+
+    return filteredPositions.flatMap((position) =>
+      position.skills.map((skill) => ({
+        ...skill,
+        positionName: position.name,
+      })),
+    );
+  }, [eventFilters.positionId, positions]);
 
   useEffect(() => {
     if (!selectedPositionId && positions.length > 0) {
@@ -135,6 +247,33 @@ export default function AdminSkillRadarContent() {
   useEffect(() => {
     setSuggestions([]);
   }, [selectedPositionId]);
+
+  const updateEventFilters = (patch: Partial<AdminSkillScoreEventFilters>) => {
+    setExpandedEventId(null);
+    setEventFilters((prev) => ({
+      ...prev,
+      ...patch,
+      page: patch.page ?? 1,
+      ...(patch.positionId !== undefined ? { skillId: undefined } : {}),
+    }));
+  };
+
+  const clearEventFilters = () => {
+    setExpandedEventId(null);
+    setEventFilters({ page: 1, limit: eventFilters.limit ?? 10 });
+  };
+
+  const exportCurrentEvents = () => {
+    if (events.length === 0) return;
+
+    const blob = new Blob([buildEventsCsv(events)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `skill-radar-evidence-page-${eventsPage.page}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const resetPositionForm = () => {
     setEditingPosition(null);
@@ -608,10 +747,110 @@ export default function AdminSkillRadarContent() {
         <div className="mb-3 flex items-center gap-2">
           <Activity size={18} className="text-primary" />
           <div>
-            <h2 className="font-medium">Recent Skill Evidence</h2>
+            <h2 className="font-medium">Skill Evidence Audit</h2>
             <p className="text-sm text-default-500">
+              ตรวจสอบคะแนน Skill Radar ตามผู้ใช้ ตำแหน่ง skill และแหล่งที่มาของคะแนน
+            </p>
+            <p className="hidden">
               à¸”à¸¹à¸§à¹ˆà¸²à¸„à¸°à¹à¸™à¸™ Skill à¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸¡à¸²à¸ˆà¸²à¸ Quiz à¸«à¸£à¸·à¸­ AI Chat à¹ƒà¸”
             </p>
+          </div>
+        </div>
+
+        <div className="mb-4 flex justify-end">
+          <BaseButton
+            size="sm"
+            variant="flat"
+            startContent={<Download size={14} />}
+            isDisabled={events.length === 0}
+            onPress={exportCurrentEvents}
+          >
+            Export CSV
+          </BaseButton>
+        </div>
+
+        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <BaseInput
+            label="Search"
+            placeholder="ชื่อผู้ใช้, email, skill, reason"
+            value={eventFilters.search ?? ""}
+            onValueChange={(search) => updateEventFilters({ search: search || undefined })}
+          />
+          <BaseInput
+            label="User ID"
+            placeholder="กรองด้วย userId"
+            value={eventFilters.userId ?? ""}
+            onValueChange={(userId) => updateEventFilters({ userId: userId || undefined })}
+          />
+          <label className="flex flex-col gap-1 text-sm text-default-600">
+            Position
+            <select
+              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
+              value={eventFilters.positionId ?? ""}
+              onChange={(event) =>
+                updateEventFilters({ positionId: event.target.value || undefined })
+              }
+            >
+              <option value="">ทั้งหมด</option>
+              {positions.map((position) => (
+                <option key={position.id} value={position.id}>
+                  {position.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-default-600">
+            Skill
+            <select
+              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
+              value={eventFilters.skillId ?? ""}
+              onChange={(event) => updateEventFilters({ skillId: event.target.value || undefined })}
+            >
+              <option value="">ทั้งหมด</option>
+              {eventSkillOptions.map((skill) => (
+                <option key={skill.id} value={skill.id}>
+                  {skill.name} / {skill.positionName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-default-600">
+            Source
+            <select
+              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
+              value={eventFilters.sourceType ?? ""}
+              onChange={(event) =>
+                updateEventFilters({ sourceType: event.target.value || undefined })
+              }
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="QUIZ_ATTEMPT">Quiz</option>
+              <option value="AI_CHAT_QUESTION">AI Chat</option>
+              <option value="LESSON_COMPLETION">Lesson</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-default-600">
+            Per page
+            <select
+              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
+              value={eventFilters.limit ?? 10}
+              onChange={(event) => updateEventFilters({ limit: Number(event.target.value) })}
+            >
+              <option value={10}>10</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </label>
+          <div className="flex items-end">
+            <BaseButton
+              size="sm"
+              variant="flat"
+              startContent={<RotateCcw size={14} />}
+              onPress={clearEventFilters}
+            >
+              Clear filters
+            </BaseButton>
           </div>
         </div>
 
@@ -628,10 +867,42 @@ export default function AdminSkillRadarContent() {
         ) : (
           <div className="space-y-2">
             {events.map((event) => (
-              <SkillEvidenceItem key={event.id} event={event} />
+              <SkillEvidenceItem
+                key={event.id}
+                event={event}
+                isExpanded={expandedEventId === event.id}
+                onToggle={() =>
+                  setExpandedEventId((current) => (current === event.id ? null : event.id))
+                }
+              />
             ))}
           </div>
         )}
+        <div className="mt-4 flex flex-col gap-2 border-t border-default-100 pt-4 text-sm text-default-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            หน้า {eventsPage.page} จาก {eventsPage.totalPages} · ทั้งหมด {eventsPage.total} รายการ
+          </span>
+          <div className="flex items-center gap-2">
+            <BaseButton
+              size="sm"
+              variant="flat"
+              startContent={<ChevronLeft size={14} />}
+              isDisabled={eventsPage.page <= 1 || isEventsLoading}
+              onPress={() => updateEventFilters({ page: eventsPage.page - 1 })}
+            >
+              ก่อนหน้า
+            </BaseButton>
+            <BaseButton
+              size="sm"
+              variant="flat"
+              endContent={<ChevronRight size={14} />}
+              isDisabled={eventsPage.page >= eventsPage.totalPages || isEventsLoading}
+              onPress={() => updateEventFilters({ page: eventsPage.page + 1 })}
+            >
+              ถัดไป
+            </BaseButton>
+          </div>
+        </div>
       </BaseCard>
     </div>
   );
