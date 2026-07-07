@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
-import { Plus, Pencil, Trash2, ClipboardList, Search, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, BookOpen } from "lucide-react";
 import { useKnowledgeBaseList, useKnowledgeBaseMutations } from "@/hooks/knowledgeBase";
-import { useGenerateQuiz } from "@/hooks/learning";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
@@ -32,19 +31,14 @@ function getCompactPageItems(currentPage: number, totalPages: number) {
 export default function KnowledgeBaseContent() {
   const { data, isLoading, isError, error } = useKnowledgeBaseList();
   const { deleteMutation } = useKnowledgeBaseMutations();
-  const generateQuizMutation = useGenerateQuiz();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeBaseItem | undefined>();
   const [deleting, setDeleting] = useState<KnowledgeBaseItem | null>(null);
   const [pageMessage, setPageMessage] = useState<{ text: string; isError: boolean } | null>(null);
-  const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortMode, setSortMode] = useState<"updated-desc" | "created-desc" | "created-asc" | "title-asc">("updated-desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [quizResultMessages, setQuizResultMessages] = useState<Record<string, { text: string; isError: boolean }>>(
-    {},
-  );
 
   const categories = Array.from(new Set(data.map((item) => item.category).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
@@ -89,30 +83,6 @@ export default function KnowledgeBaseContent() {
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
-
-  const handleGenerateQuiz = (articleId: string) => {
-    setGeneratingId(articleId);
-    setPageMessage(null);
-    setQuizResultMessages((prev) => ({ ...prev, [articleId]: undefined as never }));
-    generateQuizMutation.mutate(articleId, {
-      onSuccess: () => {
-        setPageMessage({ text: "สร้างแบบทดสอบจากฐานความรู้สำเร็จแล้ว", isError: false });
-        setQuizResultMessages((prev) => ({
-          ...prev,
-          [articleId]: { text: "สร้างแบบทดสอบสำเร็จแล้ว ดูได้ที่หน้า \"แบบทดสอบ\"", isError: false },
-        }));
-      },
-      onError: (error) => {
-        const message = getErrorMessage(error, "สร้างแบบทดสอบไม่สำเร็จ ลองใหม่อีกครั้ง");
-        setPageMessage({ text: message, isError: true });
-        setQuizResultMessages((prev) => ({
-          ...prev,
-          [articleId]: { text: message, isError: true },
-        }));
-      },
-      onSettled: () => setGeneratingId(null),
-    });
-  };
 
   const handleConfirmDelete = () => {
     if (!deleting) return;
@@ -259,17 +229,6 @@ export default function KnowledgeBaseContent() {
                   isIconOnly
                   size="sm"
                   variant="light"
-                  color="secondary"
-                  isLoading={generatingId === item.id}
-                  onPress={() => handleGenerateQuiz(item.id)}
-                  title="สร้างแบบทดสอบจากบทความนี้"
-                >
-                  <ClipboardList size={14} />
-                </BaseButton>
-                <BaseButton
-                  isIconOnly
-                  size="sm"
-                  variant="light"
                   color="danger"
                   onPress={() => setDeleting(item)}
                 >
@@ -277,15 +236,6 @@ export default function KnowledgeBaseContent() {
                 </BaseButton>
               </div>
             </div>
-            {quizResultMessages[item.id] && (
-              <p
-                className={`mt-2 text-xs ${
-                  quizResultMessages[item.id].isError ? "text-danger-600" : "text-success-600"
-                }`}
-              >
-                {quizResultMessages[item.id].text}
-              </p>
-            )}
           </BaseCard>
         ))}
       </div>
