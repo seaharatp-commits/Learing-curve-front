@@ -270,7 +270,9 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         กลับไปยังรายการแบบทดสอบ
       </button>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside>{historyPanel}</aside>
+
         <main className="space-y-6">
           <div>
             <h1 className="text-2xl font-semibold">{quiz.title}</h1>
@@ -468,8 +470,6 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
             </div>
           )}
         </main>
-
-        <aside>{historyPanel}</aside>
       </div>
 
       <Modal
