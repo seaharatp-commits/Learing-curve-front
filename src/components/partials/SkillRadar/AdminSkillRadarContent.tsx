@@ -71,6 +71,8 @@ function formatSourceType(sourceType: string) {
   if (sourceType === "QUIZ_ATTEMPT") return "Quiz";
   if (sourceType === "AI_CHAT_QUESTION") return "AI Chat";
   if (sourceType === "LESSON_COMPLETION") return "Lesson";
+  if (sourceType === "LESSON_TOPIC_CREATED") return "Lesson Topic";
+  if (sourceType === "LESSON_CHAT_QUESTION") return "Lesson Chat";
   return sourceType;
 }
 
@@ -751,9 +753,6 @@ export default function AdminSkillRadarContent() {
             <p className="text-sm text-default-500">
               ตรวจสอบคะแนน Skill Radar ตามผู้ใช้ ตำแหน่ง skill และแหล่งที่มาของคะแนน
             </p>
-            <p className="hidden">
-              à¸”à¸¹à¸§à¹ˆà¸²à¸„à¸°à¹à¸™à¸™ Skill à¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸¡à¸²à¸ˆà¸²à¸ Quiz à¸«à¸£à¸·à¸­ AI Chat à¹ƒà¸”
-            </p>
           </div>
         </div>
 
@@ -827,6 +826,8 @@ export default function AdminSkillRadarContent() {
               <option value="QUIZ_ATTEMPT">Quiz</option>
               <option value="AI_CHAT_QUESTION">AI Chat</option>
               <option value="LESSON_COMPLETION">Lesson</option>
+              <option value="LESSON_TOPIC_CREATED">Lesson Topic</option>
+              <option value="LESSON_CHAT_QUESTION">Lesson Chat</option>
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm text-default-600">
@@ -855,14 +856,14 @@ export default function AdminSkillRadarContent() {
         </div>
 
         {isEventsLoading ? (
-          <p className="text-sm text-default-500">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸” evidence...</p>
+          <p className="text-sm text-default-500">กำลังโหลด evidence...</p>
         ) : isEventsError ? (
           <p className="text-sm text-danger-600">
-            {getErrorMessage(eventsError, "à¹‚à¸«à¸¥à¸” evidence à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ")}
+            {getErrorMessage(eventsError, "โหลด evidence ไม่สำเร็จ")}
           </p>
         ) : events.length === 0 ? (
           <p className="text-sm text-default-500">
-            à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µ evidence à¸ªà¸³à¸«à¸£à¸±à¸š Skill Radar à¸¥à¸­à¸‡à¸—à¸³ quiz à¸«à¸£à¸·à¸­à¸–à¸²à¸¡ AI Chat à¸à¹ˆà¸­à¸™à¸„à¸£à¸±à¸š
+            ยังไม่มี evidence สำหรับ Skill Radar ลองทำ quiz หรือถาม AI Chat ก่อนครับ
           </p>
         ) : (
           <div className="space-y-2">
