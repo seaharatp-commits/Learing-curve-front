@@ -25,7 +25,20 @@ export interface SendMessagePayload {
   content: string;
 }
 
+export interface RecommendedKnowledgeBase {
+  articleId: string;
+  title: string;
+  preview: string | null;
+  summary?: string | null;
+  confidenceScore: number;
+  matchedSkills: string[];
+  reason: string;
+  whyThisKBIsRelevant: string;
+  shouldRecommend: boolean;
+}
+
 export interface SendMessageResult {
   session: ChatSession;
   messages: ChatMessage[];
+  recommendedKnowledgeBases?: RecommendedKnowledgeBase[];
 }

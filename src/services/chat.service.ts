@@ -8,7 +8,11 @@ const normalizeMessage = (message: ChatMessage): ChatMessage => ({
 
 export const sendChatMessage = async (payload: SendMessagePayload): Promise<SendMessageResult> => {
   const res = await sendChatMessageApi(payload);
-  return { session: res.data.session, messages: res.data.messages.map(normalizeMessage) };
+  return {
+    session: res.data.session,
+    messages: res.data.messages.map(normalizeMessage),
+    recommendedKnowledgeBases: res.data.recommendedKnowledgeBases,
+  };
 };
 
 export const getSessionMessages = async (sessionId: string): Promise<ChatMessage[]> => {
