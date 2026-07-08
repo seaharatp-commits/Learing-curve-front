@@ -150,6 +150,9 @@ export const getQuizAttemptsApi = (quizId: string) =>
 export const deleteQuizApi = (quizId: string) =>
   mainClient.delete<{ success: boolean }>(`/learning/quizzes/${quizId}`);
 
+export const deleteLessonApi = (lessonId: string) =>
+  mainClient.delete<{ success: boolean }>(`/learning/lessons/${lessonId}`);
+
 export const submitQuizAttemptApi = (quizId: string, answers: SubmitAnswer[]) =>
   mainClient.post<QuizAttemptResult>(`/learning/quizzes/${quizId}/attempts`, { answers });
 

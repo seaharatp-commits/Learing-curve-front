@@ -4,17 +4,32 @@ import { useState, type FormEvent } from "react";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Progress } from "@heroui/react";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Progress,
+} from "@heroui/react";
 import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
   GraduationCap,
+  MoreHorizontal,
+  Pencil,
+  PlayCircle,
   Sparkles,
+  Trash2,
   TrendingUp,
   Trophy,
 } from "lucide-react";
-import { useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
+import { useDeleteLesson, useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
 import {
   useMySkillRadar,
   useSkillRadarPositions,
@@ -24,6 +39,7 @@ import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
+import type { LearningLessonItem } from "@/types/app/learning";
 import SkillRadarCard from "./SkillRadarCard";
 
 const LESSONS_PER_PAGE = 6;
@@ -71,6 +87,7 @@ export default function LearningDashboardContent() {
   } = useSkillRadarPositions();
   const updateSkillRadarPositionMutation = useUpdateMySkillRadarPosition();
   const generateLessonMutation = useGenerateLessonFromTopic();
+  const deleteLessonMutation = useDeleteLesson();
   const [topic, setTopic] = useState("");
   const [lessonPage, setLessonPage] = useState(1);
   const [topicMessage, setTopicMessage] = useState<{ text: string; isError: boolean } | null>(
@@ -79,6 +96,41 @@ export default function LearningDashboardContent() {
   const [skillRadarMessage, setSkillRadarMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
+  const [lessonToDelete, setLessonToDelete] = useState<LearningLessonItem | null>(null);
+  const [lessonMessage, setLessonMessage] = useState<{ text: string; isError: boolean } | null>(null);
+
+  const handleLessonMenuAction = (key: React.Key, lesson: LearningLessonItem) => {
+    if (key === "start") {
+      router.push(`/lessons/${lesson.lessonId}`);
+      return;
+    }
+    if (key === "edit") {
+      // TODO: no dedicated lesson-edit page exists yet — route to the lesson view for now.
+      router.push(`/lessons/${lesson.lessonId}`);
+      return;
+    }
+    if (key === "delete") {
+      setLessonMessage(null);
+      setLessonToDelete(lesson);
+    }
+  };
+
+  const handleConfirmDeleteLesson = () => {
+    if (!lessonToDelete) return;
+    const lesson = lessonToDelete;
+    deleteLessonMutation.mutate(lesson.lessonId, {
+      onSuccess: () => {
+        setLessonToDelete(null);
+        setLessonMessage({ text: `ลบบทเรียน "${lesson.title}" สำเร็จแล้ว`, isError: false });
+      },
+      onError: (error) => {
+        setLessonMessage({
+          text: getErrorMessage(error, "ลบบทเรียนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"),
+          isError: true,
+        });
+      },
+    });
+  };
 
   const handleGenerateLesson = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -267,6 +319,13 @@ export default function LearningDashboardContent() {
           <BookOpen size={20} className="text-default-500" />
           <h2 className="font-medium">เลือกบทเรียนที่จะเรียนต่อ</h2>
         </div>
+        {lessonMessage && (
+          <p
+            className={`mb-2 text-xs ${lessonMessage.isError ? "text-danger-600" : "text-success-600"}`}
+          >
+            {lessonMessage.text}
+          </p>
+        )}
         {lessons.length === 0 ? (
           <p className="text-sm text-default-400">
             ยังไม่มีบทเรียน สร้างหัวข้อแรกจากช่องด้านบนได้เลย
@@ -275,31 +334,68 @@ export default function LearningDashboardContent() {
           <>
           <div className="grid gap-4 md:grid-cols-2">
             {visibleLessons.map((lesson) => (
-              <Link
+              <div
                 key={lesson.lessonId}
-                href={`/lessons/${lesson.lessonId}`}
-                className="group cursor-pointer rounded-xl border border-default-200/80 bg-default-50/90 px-4 py-4 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
+                className="group relative rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-foreground">{lesson.title}</p>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-default-500">
-                      {lesson.completed ? (
-                        <>
-                          <CheckCircle2 size={14} className="text-success-600" />
-                          เรียนจบแล้ว
-                        </>
-                      ) : (
-                        "ยังไม่จบ"
-                      )}
-                    </p>
+                <Link
+                  href={`/lessons/${lesson.lessonId}`}
+                  className="block cursor-pointer px-4 py-4"
+                >
+                  <div className="flex items-start justify-between gap-3 pr-7">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-foreground">{lesson.title}</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-default-500">
+                        {lesson.completed ? (
+                          <>
+                            <CheckCircle2 size={14} className="text-success-600" />
+                            เรียนจบแล้ว
+                          </>
+                        ) : (
+                          "ยังไม่จบ"
+                        )}
+                      </p>
+                    </div>
+                    <div className="mt-0.5 flex shrink-0 items-center gap-1 text-xs font-medium text-primary opacity-90 transition-transform group-hover:translate-x-0.5">
+                      <span>เริ่มเรียน</span>
+                      <ArrowRight size={16} />
+                    </div>
                   </div>
-                  <div className="mt-0.5 flex shrink-0 items-center gap-1 text-xs font-medium text-primary opacity-90 transition-transform group-hover:translate-x-0.5">
-                    <span>เริ่มเรียน</span>
-                    <ArrowRight size={16} />
-                  </div>
+                </Link>
+
+                <div className="absolute right-2 top-2">
+                  <Dropdown placement="bottom-end">
+                    <DropdownTrigger>
+                      <button
+                        type="button"
+                        aria-label="ตัวเลือกบทเรียน"
+                        className="rounded-md p-1 text-default-400 opacity-60 transition-colors hover:bg-default-200/70 hover:text-default-600 hover:opacity-100 dark:hover:bg-default-100/20"
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+                    </DropdownTrigger>
+                    <DropdownMenu
+                      aria-label="ตัวเลือกบทเรียน"
+                      onAction={(key) => handleLessonMenuAction(key, lesson)}
+                    >
+                      <DropdownItem key="start" startContent={<PlayCircle size={16} />}>
+                        เริ่มเรียน
+                      </DropdownItem>
+                      <DropdownItem key="edit" startContent={<Pencil size={16} />}>
+                        แก้ไข
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger"
+                        color="danger"
+                        startContent={<Trash2 size={16} />}
+                      >
+                        ลบบทเรียน
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
           {totalLessonPages > 1 && (
@@ -385,6 +481,30 @@ export default function LearningDashboardContent() {
           </div>
         )}
       </BaseCard>
+
+      <Modal isOpen={!!lessonToDelete} onClose={() => setLessonToDelete(null)}>
+        <ModalContent>
+          <ModalHeader>ลบบทเรียนนี้?</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              คุณต้องการลบบทเรียนนี้หรือไม่ การลบนี้ไม่สามารถย้อนกลับได้
+            </p>
+            {lessonToDelete && <p className="font-medium">{lessonToDelete.title}</p>}
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setLessonToDelete(null)}>
+              ยกเลิก
+            </BaseButton>
+            <BaseButton
+              color="danger"
+              isLoading={deleteLessonMutation.isPending}
+              onPress={handleConfirmDeleteLesson}
+            >
+              ลบบทเรียน
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
