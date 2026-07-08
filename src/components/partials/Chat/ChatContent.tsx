@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
-import type { ChatMessage } from "@/types/app/chat";
+import type { ChatMessage, RecommendedKnowledgeBase } from "@/types/app/chat";
 import type { RecommendationResult } from "@/types/app/knowledgeBase";
 import { useSendMessage, useSessionMessages } from "@/hooks/chat";
 import { useHistoryList, useDeleteHistory } from "@/hooks/history";
@@ -93,6 +93,7 @@ export default function ChatContent() {
   const [input, setInput] = useState("");
   const [pendingQuestion, setPendingQuestion] = useState("");
   const [knowledgeChoices, setKnowledgeChoices] = useState<RecommendationResult[]>([]);
+  const [aiRecommendedKnowledgeBases, setAiRecommendedKnowledgeBases] = useState<RecommendedKnowledgeBase[]>([]);
   const [pendingMessageIds, setPendingMessageIds] = useState<string[]>([]);
   const [activeKnowledge, setActiveKnowledge] = useState<ActiveKnowledgeContext | null>(null);
   const [knowledgePendingHint, setKnowledgePendingHint] = useState("");
@@ -204,6 +205,9 @@ export default function ChatContent() {
       });
       if (runId !== chatRunIdRef.current) return;
       setSessionId(result.session.id);
+      setAiRecommendedKnowledgeBases(
+        (result.recommendedKnowledgeBases ?? []).filter((item) => item.shouldRecommend),
+      );
       setMessages((prev) => [
         ...prev.filter(
           (message) =>
@@ -239,6 +243,9 @@ export default function ChatContent() {
       if (runId !== chatRunIdRef.current) return;
       const [serverUserMessage, serverAssistantMessage] = result.messages;
       setSessionId(result.session.id);
+      setAiRecommendedKnowledgeBases(
+        (result.recommendedKnowledgeBases ?? []).filter((item) => item.shouldRecommend),
+      );
       setMessages((prev) => [
         ...prev.filter(
           (message) =>
@@ -270,6 +277,7 @@ export default function ChatContent() {
     setInput("");
     setPendingQuestion("");
     setKnowledgeChoices([]);
+    setAiRecommendedKnowledgeBases([]);
     setPendingMessageIds([]);
     setKnowledgePendingHint("");
     const userMessage = createLocalMessage("user", content);
@@ -314,6 +322,7 @@ export default function ChatContent() {
     const content = pendingQuestion;
     setPendingQuestion("");
     setKnowledgeChoices([]);
+    setAiRecommendedKnowledgeBases([]);
     setKnowledgePendingHint("");
     setMessages((prev) => prev.filter((message) => !pendingMessageIds.includes(message.id)));
     setPendingMessageIds([]);
@@ -335,6 +344,7 @@ export default function ChatContent() {
     setInput("");
     setPendingQuestion("");
     setKnowledgeChoices([]);
+    setAiRecommendedKnowledgeBases([]);
     setPendingMessageIds([]);
     setActiveKnowledge(null);
     restoredKnowledgeIdRef.current = null;
@@ -349,6 +359,7 @@ export default function ChatContent() {
     setMessages([]);
     setPendingQuestion("");
     setKnowledgeChoices([]);
+    setAiRecommendedKnowledgeBases([]);
     setPendingMessageIds([]);
     setKnowledgePendingHint("");
     setActiveKnowledge(null);
@@ -599,6 +610,37 @@ export default function ChatContent() {
           <div ref={bottomRef} />
         </div>
       </BaseCard>
+      {aiRecommendedKnowledgeBases.length > 0 && knowledgeChoices.length === 0 && (
+        <BaseCard className="space-y-2 border-primary/20 bg-primary/5">
+          <div className="flex items-start gap-2">
+            <BookOpen size={17} className="mt-0.5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold">แนะนำจากฐานความรู้</p>
+              <p className="text-xs text-default-500">
+                ข้อมูลนี้เกี่ยวข้องกับคำถาม และอาจช่วยให้ศึกษาต่อได้
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            {aiRecommendedKnowledgeBases.slice(0, 3).map((item) => (
+              <div
+                key={item.articleId}
+                className="rounded-lg border border-default-200 bg-background/70 px-3 py-2 dark:border-default-100/20"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                    {Math.round(item.confidenceScore * 100)}%
+                  </span>
+                </div>
+                <p className="mt-1 line-clamp-2 text-xs text-default-500">
+                  {item.preview || item.summary || item.whyThisKBIsRelevant || item.reason}
+                </p>
+              </div>
+            ))}
+          </div>
+        </BaseCard>
+      )}
       {knowledgeChoices.length > 0 && (
         <BaseCard className="space-y-3 border-primary/30 bg-primary/5">
           <div className="flex items-start gap-2">

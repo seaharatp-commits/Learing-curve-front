@@ -7,6 +7,7 @@ import { Textarea } from "@heroui/react";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   CheckCircle2,
   ClipboardList,
   MessageCircle,
@@ -19,6 +20,7 @@ import {
   useGenerateQuizFromLesson,
   useLesson,
 } from "@/hooks/learning";
+import type { LessonChatResult } from "@/types/app/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { FormattedAnswer, getFormattedAnswerDisplay } from "@/components/common/FormattedAnswer";
@@ -31,6 +33,7 @@ interface LessonContentProps {
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  recommendedKnowledgeBases?: LessonChatResult["recommendedKnowledgeBases"];
 }
 
 const MAX_CHAT_HISTORY_MESSAGES = 12;
@@ -98,7 +101,14 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
       { message: cleanMessage, chatHistory: historyBeforeQuestion },
       {
         onSuccess: (result) => {
-          setMessages((current) => [...current, { role: "assistant", content: result.answer }]);
+          setMessages((current) => [
+            ...current,
+            {
+              role: "assistant",
+              content: result.answer,
+              recommendedKnowledgeBases: result.recommendedKnowledgeBases,
+            },
+          ]);
         },
         onError: (error) => {
           setChatError(getErrorMessage(error));
@@ -248,7 +258,38 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
                   }`}
                 >
                   {message.role === "assistant" ? (
-                    <FormattedAnswer content={message.content} className="space-y-3 leading-7" />
+                    <>
+                      <FormattedAnswer content={message.content} className="space-y-3 leading-7" />
+                      {(message.recommendedKnowledgeBases?.filter((item) => item.shouldRecommend).length ?? 0) > 0 && (
+                        <div className="mt-3 space-y-2 border-t border-default-200/70 pt-3 dark:border-white/10">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                            <BookOpen size={14} />
+                            <span>แนะนำจากฐานความรู้</span>
+                          </div>
+                          {message.recommendedKnowledgeBases
+                            ?.filter((item) => item.shouldRecommend)
+                            .slice(0, 3)
+                            .map((item) => (
+                              <div
+                                key={item.articleId}
+                                className="rounded-lg border border-default-200 bg-background/70 px-3 py-2 text-xs dark:border-default-100/20"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="line-clamp-1 font-medium text-default-700 dark:text-default-200">
+                                    {item.title}
+                                  </p>
+                                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                                    {Math.round(item.confidenceScore * 100)}%
+                                  </span>
+                                </div>
+                                <p className="mt-1 line-clamp-2 text-default-500">
+                                  {item.preview || item.summary || item.whyThisKBIsRelevant || item.reason}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     message.content
                   )}
