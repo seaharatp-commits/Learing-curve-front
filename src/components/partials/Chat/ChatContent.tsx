@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
 import type { ChatMessage, RecommendedKnowledgeBase } from "@/types/app/chat";
 import type { RecommendationResult } from "@/types/app/knowledgeBase";
-import { useSendMessage, useSessionMessages } from "@/hooks/chat";
+import { useSendMessage, useSessionMessages, useSuggestedQuestions } from "@/hooks/chat";
 import { useHistoryList, useDeleteHistory } from "@/hooks/history";
 import { useRecommendations } from "@/hooks/knowledgeBase";
 import { BaseInput } from "@/components/ui/Input";
@@ -31,11 +31,15 @@ import {
 } from "lucide-react";
 import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
-const SUGGESTED_QUESTIONS = [
+// Used only when the suggested-questions API itself fails to respond (network/server
+// error) — the backend already has its own AI-down fallback, so this is a last resort
+// to keep the UI from showing nothing.
+const FALLBACK_SUGGESTED_QUESTIONS = [
   "Next.js ใช้ Ant Design หรือ MUI ดีกว่ากัน?",
   "ช่วยอธิบาย error นี้แบบเข้าใจง่าย",
   "วิเคราะห์ขั้นตอนแก้ปัญหานี้ให้หน่อย",
 ];
+const SUGGESTED_QUESTIONS_DISPLAY_LIMIT = 3;
 
 type ActiveKnowledgeContext = Pick<
   RecommendationResult,
@@ -112,6 +116,17 @@ export default function ChatContent() {
   } = useHistoryList();
   const deleteHistoryMutation = useDeleteHistory();
   const { data: history, isLoading: isHistoryLoading } = useSessionMessages(initialSessionId);
+  const showSuggestedQuestions = !isHistoryLoading && messages.length === 0;
+  const {
+    questions: suggestedQuestions,
+    isLoading: isSuggestedQuestionsLoading,
+    isError: isSuggestedQuestionsError,
+  } = useSuggestedQuestions(showSuggestedQuestions);
+  const displayedSuggestedQuestions = (
+    isSuggestedQuestionsError || suggestedQuestions.length === 0
+      ? FALLBACK_SUGGESTED_QUESTIONS
+      : suggestedQuestions
+  ).slice(0, SUGGESTED_QUESTIONS_DISPLAY_LIMIT);
 
   useEffect(() => {
     if (initialSessionId && history.length > 0) {
@@ -549,18 +564,29 @@ export default function ChatContent() {
                   พิมพ์ปัญหา เลือกคำถามตัวอย่าง หรือให้ AI ช่วยอธิบายจากฐานความรู้ของระบบ
                 </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {SUGGESTED_QUESTIONS.map((question) => (
-                  <button
-                    key={question}
-                    type="button"
-                    onClick={() => setInput(question)}
-                    className="rounded-full border border-default-200 bg-background/80 px-3 py-1.5 text-xs text-default-600 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-default-100/20"
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
+              {isSuggestedQuestionsLoading ? (
+                <div className="flex flex-wrap justify-center gap-2" aria-label="กำลังเตรียมคำถามแนะนำ">
+                  {Array.from({ length: SUGGESTED_QUESTIONS_DISPLAY_LIMIT }).map((_, index) => (
+                    <span
+                      key={index}
+                      className="h-6 w-32 animate-pulse rounded-full bg-default-100 dark:bg-default-100/20"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {displayedSuggestedQuestions.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => setInput(question)}
+                      className="rounded-full border border-default-200 bg-background/80 px-3 py-1.5 text-xs text-default-600 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-default-100/20"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {messages.map((m) => (

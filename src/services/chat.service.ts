@@ -1,5 +1,5 @@
-import type { ChatMessage, SendMessagePayload, SendMessageResult } from "@/types/app/chat";
-import { sendChatMessageApi, getSessionMessagesApi } from "@/lib/api/api-main";
+import type { ChatMessage, SendMessagePayload, SendMessageResult, SuggestedQuestionsResult } from "@/types/app/chat";
+import { sendChatMessageApi, getSessionMessagesApi, getSuggestedQuestionsApi } from "@/lib/api/api-main";
 
 const normalizeMessage = (message: ChatMessage): ChatMessage => ({
   ...message,
@@ -18,4 +18,9 @@ export const sendChatMessage = async (payload: SendMessagePayload): Promise<Send
 export const getSessionMessages = async (sessionId: string): Promise<ChatMessage[]> => {
   const res = await getSessionMessagesApi(sessionId);
   return res.data.map(normalizeMessage);
+};
+
+export const getSuggestedQuestions = async (): Promise<SuggestedQuestionsResult> => {
+  const res = await getSuggestedQuestionsApi();
+  return res.data;
 };

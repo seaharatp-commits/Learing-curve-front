@@ -42,3 +42,7 @@ export interface SendMessageResult {
   messages: ChatMessage[];
   recommendedKnowledgeBases?: RecommendedKnowledgeBase[];
 }
+
+export interface SuggestedQuestionsResult {
+  questions: string[];
+}

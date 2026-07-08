@@ -1,4 +1,4 @@
-import type { SendMessagePayload, SendMessageResult } from "@/types/app/chat";
+import type { SendMessagePayload, SendMessageResult, SuggestedQuestionsResult } from "@/types/app/chat";
 import type { ChangePasswordPayload, ChangePasswordResult, RegisterPayload, RegisterResult } from "@/types/app/auth";
 import type { HistoryItem } from "@/types/app/history";
 import type {
@@ -50,6 +50,9 @@ export const changePasswordApi = (payload: ChangePasswordPayload) =>
 
 export const getSessionMessagesApi = (sessionId: string) =>
   mainClient.get<SendMessageResult["messages"]>("/chat", { params: { sessionId } });
+
+export const getSuggestedQuestionsApi = () =>
+  mainClient.get<SuggestedQuestionsResult>("/chat/suggested-questions");
 
 export const getHistoryListApi = () => mainClient.get<HistoryItem[]>("/history");
 
