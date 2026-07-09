@@ -307,6 +307,7 @@ export default function LearningDashboardContent() {
 
       <CareerAlignmentCard
         level={careerAlignment?.level}
+        alignmentScore={careerAlignment?.alignmentScore}
         strengths={careerAlignment && careerAlignment.strengths.length > 0 ? careerAlignment.strengths : undefined}
         description={careerAlignment?.description}
         quotes={careerAlignment?.quotes}

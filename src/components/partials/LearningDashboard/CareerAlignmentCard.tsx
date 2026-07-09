@@ -5,6 +5,7 @@ import { Award, Sparkles } from "lucide-react";
 
 export type CareerAlignmentCardProps = {
   level?: string;
+  alignmentScore?: number;
   strengths?: string[];
   description?: string;
   quotes?: string[];
@@ -37,6 +38,32 @@ function buildRadarSkillQuotes(strengths: string[]) {
   ];
 }
 
+function getCareerAlignmentSubtitle(level?: string, alignmentScore?: number) {
+  const score = alignmentScore ?? 0;
+
+  if (level === "Advanced" || score >= 82) {
+    return "คุณกำลังเข้าใกล้โปรไฟล์ที่พร้อมใช้งานจริงในสาย Technology";
+  }
+
+  if (level === "Intermediate" || score >= 68) {
+    return "คุณมีทิศทางทักษะที่ชัดขึ้น และกำลังต่อยอดได้อย่างมั่นใจ";
+  }
+
+  if (level === "Junior Strong" || score >= 50) {
+    return "คุณกำลังสร้างความพร้อมที่ดี และเห็นจุดเด่นของตัวเองชัดขึ้น";
+  }
+
+  if (level === "Junior" || score >= 30) {
+    return "คุณกำลังต่อยอดพื้นฐานให้กลายเป็น skill profile ที่ชัดเจนขึ้น";
+  }
+
+  if (level === "Beginner" || score > 0) {
+    return "คุณกำลังเริ่มสะสม evidence และสร้างทิศทางการเติบโตของตัวเอง";
+  }
+
+  return CAREER_ALIGNMENT_SUBTITLE;
+}
+
 // Highlight/AI-insight card that sits above the Skill Radar. Card chrome (blue
 // gradient + glow + badges) stays as the theme accent; the intro text hierarchy
 // uses neutral middle-tone tokens: title strongest -> quote softer -> subtitle
@@ -44,10 +71,13 @@ function buildRadarSkillQuotes(strengths: string[]) {
 // non-judgmental tone — the AI description weaves the level in naturally instead.
 export function CareerAlignmentCard({
   strengths = DEFAULT_STRENGTHS,
+  level,
+  alignmentScore,
   description = DEFAULT_DESCRIPTION,
   quotes,
 }: CareerAlignmentCardProps) {
   const displayStrengths = useMemo(() => (strengths.length > 0 ? strengths : DEFAULT_STRENGTHS), [strengths]);
+  const subtitle = useMemo(() => getCareerAlignmentSubtitle(level, alignmentScore), [alignmentScore, level]);
   const displayQuotes = useMemo(() => {
     const cleanQuotes = (quotes ?? []).map((quote) => quote.trim()).filter(Boolean);
     const radarQuotes = buildRadarSkillQuotes(displayStrengths);
@@ -97,7 +127,7 @@ export function CareerAlignmentCard({
 
             {/* Subtitle: highlighted sub-message */}
             <p className="career-alignment-subtitle mb-3 inline-flex w-fit rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 shadow-sm dark:border-blue-300/20 dark:bg-blue-400/10 dark:text-blue-200 dark:shadow-none">
-              {CAREER_ALIGNMENT_SUBTITLE}
+              {subtitle}
             </p>
 
             {/* Description: existing AI-generated / cached behavior */}
