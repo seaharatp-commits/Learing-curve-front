@@ -14,6 +14,7 @@ import type {
   AdminSkillScoreEventFilters,
   AdminSkillScoreEventPage,
   AdminSkillRadarPosition,
+  CareerReadinessBenchmark,
   PositionPayload,
   PositionSkillPayload,
   PositionSkillSuggestion,
@@ -88,6 +89,9 @@ export const getMySkillRadarApi = (positionId?: string) =>
   mainClient.get<UserSkillRadar>("/skill-radar/me", {
     params: positionId ? { positionId } : undefined,
   });
+
+export const getCareerReadinessBenchmarkApi = () =>
+  mainClient.get<CareerReadinessBenchmark>("/skill-radar/me/career-benchmark");
 
 export const getSkillRadarPositionsApi = () =>
   mainClient.get<SkillRadarPosition[]>("/skill-radar/positions");

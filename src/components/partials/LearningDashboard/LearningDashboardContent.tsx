@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useDeleteLesson, useGenerateLessonFromTopic, useLearningDashboard } from "@/hooks/learning";
 import {
+  useCareerReadinessBenchmark,
   useMySkillRadar,
   useSkillRadarPositions,
   useUpdateMySkillRadarPosition,
@@ -40,6 +41,7 @@ import { BaseCard } from "@/components/ui/Card";
 import { BaseInput } from "@/components/ui/Input";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 import type { LearningLessonItem } from "@/types/app/learning";
+import { CareerReadinessBenchmarkCard } from "./CareerReadinessBenchmarkCard";
 import SkillRadarCard from "./SkillRadarCard";
 
 const LESSONS_PER_PAGE = 6;
@@ -85,6 +87,7 @@ export default function LearningDashboardContent() {
     data: skillRadarPositions,
     isLoading: isSkillRadarPositionsLoading,
   } = useSkillRadarPositions();
+  const { data: careerBenchmark } = useCareerReadinessBenchmark();
   const updateSkillRadarPositionMutation = useUpdateMySkillRadarPosition();
   const generateLessonMutation = useGenerateLessonFromTopic();
   const deleteLessonMutation = useDeleteLesson();
@@ -301,6 +304,12 @@ export default function LearningDashboardContent() {
           </div>
         </BaseCard>
       </div>
+
+      <CareerReadinessBenchmarkCard
+        level={careerBenchmark?.level}
+        strengths={careerBenchmark && careerBenchmark.strengths.length > 0 ? careerBenchmark.strengths : undefined}
+        description={careerBenchmark?.description}
+      />
 
       <SkillRadarCard
         data={skillRadar}

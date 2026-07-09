@@ -112,3 +112,12 @@ export interface UserSkillRadar {
   position: SkillRadarPosition;
   skills: SkillRadarSkillScore[];
 }
+
+export interface CareerReadinessBenchmark {
+  position: string;
+  level: string;
+  readinessScore: number;
+  strengths: string[];
+  description: string;
+  aiGenerated: boolean;
+}
