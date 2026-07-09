@@ -227,7 +227,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
               </p>
             </div>
           </div>
-          <BaseButton
+          {/* <BaseButton
             size="sm"
             color="secondary"
             variant="flat"
@@ -236,7 +236,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
             onPress={handleGenerateQuiz}
           >
             พร้อมแล้ว สร้าง quiz
-          </BaseButton>
+          </BaseButton> */}
         </div>
 
         <div className="lesson-chat-area mb-3 space-y-3 rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
