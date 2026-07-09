@@ -309,6 +309,7 @@ export default function LearningDashboardContent() {
         level={careerAlignment?.level}
         strengths={careerAlignment && careerAlignment.strengths.length > 0 ? careerAlignment.strengths : undefined}
         description={careerAlignment?.description}
+        quotes={careerAlignment?.quotes}
       />
 
       <SkillRadarCard

@@ -1,14 +1,21 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Award, Sparkles } from "lucide-react";
 
 export type CareerAlignmentCardProps = {
   level?: string;
   strengths?: string[];
   description?: string;
+  quotes?: string[];
 };
 
-const CAREER_ALIGNMENT_QUOTE = "คุณไม่จำเป็นต้องเก่งตั้งแต่แรก แต่คุณต้องเริ่มเพื่อที่จะเก่ง";
+const QUOTE_ROTATION_MS = 2200;
+const DEFAULT_QUOTES = [
+  "คุณไม่จำเป็นต้องเก่งตั้งแต่แรก แต่คุณต้องเริ่มเพื่อที่จะเก่ง",
+  "ทุกก้าวเล็ก ๆ ที่เริ่มวันนี้ จะค่อย ๆ สร้างความมั่นใจให้คุณ",
+  "ทักษะที่ชัดขึ้น เริ่มจากการลงมือเรียนรู้อย่างต่อเนื่อง",
+];
 const CAREER_ALIGNMENT_SUBTITLE = "คุณคือ Talent ที่กำลังก้าวขึ้น ในวงการ Technology";
 const DEFAULT_STRENGTHS = ["System Analysis", "FrontEnd", "การตั้งคำถามเชิงวิเคราะห์"];
 const DEFAULT_DESCRIPTION =
@@ -23,8 +30,25 @@ const DEFAULT_DESCRIPTION =
 export function CareerAlignmentCard({
   strengths = DEFAULT_STRENGTHS,
   description = DEFAULT_DESCRIPTION,
+  quotes,
 }: CareerAlignmentCardProps) {
   const displayStrengths = strengths.length > 0 ? strengths : DEFAULT_STRENGTHS;
+  const displayQuotes = useMemo(() => {
+    const cleanQuotes = (quotes ?? []).map((quote) => quote.trim()).filter(Boolean);
+    return cleanQuotes.length > 0 ? cleanQuotes : DEFAULT_QUOTES;
+  }, [quotes]);
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  useEffect(() => {
+    setQuoteIndex(0);
+    if (displayQuotes.length <= 1) return undefined;
+
+    const timer = window.setInterval(() => {
+      setQuoteIndex((current) => (current + 1) % displayQuotes.length);
+    }, QUOTE_ROTATION_MS);
+
+    return () => window.clearInterval(timer);
+  }, [displayQuotes]);
 
   return (
     <section className="career-alignment-card relative overflow-hidden rounded-2xl border border-blue-400 bg-gradient-to-r from-blue-50 via-white to-blue-50/70 p-5 shadow-lg shadow-blue-200/60 dark:border-blue-400/40 dark:bg-slate-950 dark:from-blue-950/45 dark:via-slate-950 dark:to-slate-900 dark:shadow-blue-950/30">
@@ -52,7 +76,7 @@ export function CareerAlignmentCard({
 
             {/* Quote: emotional highlight */}
             <p className="career-alignment-quote relative mb-2 inline-block rounded-xl bg-blue-100/70 px-3 py-2 text-sm font-semibold leading-6 text-blue-900 shadow-sm shadow-blue-200/60 ring-1 ring-blue-200/70 transition duration-700 [text-shadow:0_0_18px_rgba(59,130,246,0.22)] motion-safe:animate-pulse dark:bg-blue-400/10 dark:text-blue-100 dark:shadow-none dark:ring-blue-300/25 dark:[text-shadow:0_0_20px_rgba(147,197,253,0.22)]">
-              “{CAREER_ALIGNMENT_QUOTE}”
+              “{displayQuotes[quoteIndex] ?? DEFAULT_QUOTES[0]}”
             </p>
 
             {/* Subtitle: highlighted sub-message */}

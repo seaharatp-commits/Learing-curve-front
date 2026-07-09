@@ -119,6 +119,7 @@ export interface CareerAlignment {
   alignmentScore: number;
   strengths: string[];
   description: string;
+  quotes: string[];
   nextSteps: string[];
   generatedBy: "ai" | "fallback";
 }
