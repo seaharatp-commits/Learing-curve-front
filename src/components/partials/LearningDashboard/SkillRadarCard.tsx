@@ -197,7 +197,7 @@ export default function SkillRadarCard({
                     fill="none"
                     stroke="currentColor"
                     strokeOpacity={level === 1 ? "0.28" : "0.16"}
-                    strokeWidth={level === 1 ? "1.4" : "1"}
+                    strokeWidth={level === 1 ? "1.1" : "0.8"}
                     className="text-default-500"
                   />
                 ))}
@@ -212,6 +212,7 @@ export default function SkillRadarCard({
                       y2={end.y}
                       stroke="currentColor"
                       strokeOpacity="0.16"
+                      strokeWidth="0.8"
                       className="text-default-500"
                     />
                   );
@@ -220,9 +221,9 @@ export default function SkillRadarCard({
                   <polygon
                     points={valuePoints}
                     fill="currentColor"
-                    fillOpacity="0.28"
+                    fillOpacity="0.22"
                     stroke="currentColor"
-                    strokeWidth="3"
+                    strokeWidth="2.2"
                     className="text-primary drop-shadow-sm transition-all duration-500 ease-out"
                   />
                 )}
@@ -243,7 +244,7 @@ export default function SkillRadarCard({
                       <circle
                         cx={point.x}
                         cy={point.y}
-                        r={isTopSkill ? (isHighlighted ? 7 : 5.5) : isHighlighted ? 6 : 4.5}
+                        r={isTopSkill ? (isHighlighted ? 6 : 5) : isHighlighted ? 5.2 : 4}
                         className={`transition-all duration-200 ${
                           isTopSkill
                             ? "fill-warning stroke-background"
@@ -251,7 +252,7 @@ export default function SkillRadarCard({
                               ? "fill-primary stroke-background"
                               : "fill-primary/80 stroke-background"
                         }`}
-                        strokeWidth="2.5"
+                        strokeWidth="2"
                       />
                     </g>
                   );
@@ -336,6 +337,7 @@ export default function SkillRadarCard({
             ))}
           </div>
 
+          {/*
           <div className="space-y-4 lg:col-span-2">
             <div className="grid gap-3">
               <div className="rounded-xl border border-default-200 bg-default-50/70 p-4 dark:border-default-100/15 dark:bg-default-100/10">
@@ -400,6 +402,7 @@ export default function SkillRadarCard({
               </div>
             </div>
           </div>
+          */}
         </div>
       )}
     </BaseCard>
