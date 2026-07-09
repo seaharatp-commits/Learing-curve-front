@@ -157,3 +157,66 @@ button {
   color: #bfdbfe;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
+
+.dark .career-alignment-card {
+  border-color: rgba(96, 165, 250, 0.48);
+  background:
+    radial-gradient(circle at 98% 0%, rgba(96, 165, 250, 0.16), transparent 18rem),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 13, 22, 0.98) 52%, rgba(15, 23, 42, 0.92));
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42), 0 0 28px rgba(59, 130, 246, 0.16);
+}
+
+.dark .career-alignment-glow {
+  background: rgba(96, 165, 250, 0.18);
+}
+
+.dark .career-alignment-sparkle {
+  color: rgba(147, 197, 253, 0.72);
+}
+
+.dark .career-alignment-icon {
+  border: 1px solid rgba(147, 197, 253, 0.22);
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
+}
+
+.dark .career-alignment-title {
+  color: #dbeafe;
+}
+
+.dark .career-alignment-badge,
+.dark .career-alignment-subtitle {
+  border-color: rgba(147, 197, 253, 0.28);
+  background: rgba(37, 99, 235, 0.14);
+  color: #bfdbfe;
+  box-shadow: none;
+}
+
+.dark .career-alignment-quote {
+  border: 1px solid rgba(147, 197, 253, 0.22);
+  background: rgba(30, 64, 175, 0.22);
+  color: #eff6ff;
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.16);
+}
+
+.dark .career-alignment-description {
+  color: rgba(203, 213, 225, 0.82);
+}
+
+.dark .career-alignment-strengths {
+  border-color: rgba(147, 197, 253, 0.18);
+  background: rgba(15, 23, 42, 0.82);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+}
+
+.dark .career-alignment-strengths-title {
+  color: #86efac;
+}
+
+.dark .career-alignment-strength-item {
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.dark .career-alignment-check {
+  color: #86efac;
+}

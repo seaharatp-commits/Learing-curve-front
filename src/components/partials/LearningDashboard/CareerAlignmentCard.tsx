@@ -27,49 +27,51 @@ export function CareerAlignmentCard({
   const displayStrengths = strengths.length > 0 ? strengths : DEFAULT_STRENGTHS;
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-primary/60 bg-gradient-to-r from-primary-50 via-background to-primary-50/40 p-5 shadow-lg shadow-primary/15 dark:border-primary-400/40 dark:from-primary-500/15 dark:via-default-50/5 dark:to-primary-500/10">
+    <section className="career-alignment-card relative overflow-hidden rounded-2xl border border-blue-400 bg-gradient-to-r from-blue-50 via-white to-blue-50/70 p-5 shadow-lg shadow-blue-200/60 dark:border-blue-400/40 dark:bg-slate-950 dark:from-blue-950/45 dark:via-slate-950 dark:to-slate-900 dark:shadow-blue-950/30">
       {/* soft glow accents */}
-      <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
-      <div className="pointer-events-none absolute right-4 top-4 text-primary-300 dark:text-primary-400/50">
+      <div className="career-alignment-glow pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-300/20 blur-2xl dark:bg-blue-400/15" />
+      <div className="career-alignment-sparkle pointer-events-none absolute right-4 top-4 text-blue-400/70 dark:text-blue-300/60">
         <Sparkles size={18} />
       </div>
 
       <div className="grid gap-5 md:grid-cols-[1.6fr_1fr] md:items-center">
         <div className="flex gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 shadow-inner dark:bg-primary-500/20 dark:text-primary-300">
+          <div className="career-alignment-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 shadow-inner dark:border dark:border-blue-400/20 dark:bg-blue-500/15 dark:text-blue-200">
             <Award size={30} />
           </div>
 
           <div className="min-w-0">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
               {/* Title: strongest text */}
-              <h2 className="text-xl font-bold text-foreground">Career Alignment</h2>
+              <h2 className="career-alignment-title text-xl font-bold text-blue-900 dark:text-blue-100">Career Alignment</h2>
 
-              <span className="rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-600 dark:border-primary-400/30 dark:bg-primary-500/15 dark:text-primary-300">
+              <span className="career-alignment-badge rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-300/30 dark:bg-blue-400/10 dark:text-blue-200">
                 AI Powered
               </span>
             </div>
 
-            {/* Quote: softer than title, darker than subtitle */}
-            <p className="text-sm font-medium leading-6 text-default-600 dark:text-default-300">
+            {/* Quote: emotional highlight */}
+            <p className="career-alignment-quote relative mb-2 inline-block rounded-xl bg-blue-100/70 px-3 py-2 text-sm font-semibold leading-6 text-blue-900 shadow-sm shadow-blue-200/60 ring-1 ring-blue-200/70 transition duration-700 [text-shadow:0_0_18px_rgba(59,130,246,0.22)] motion-safe:animate-pulse dark:bg-blue-400/10 dark:text-blue-100 dark:shadow-none dark:ring-blue-300/25 dark:[text-shadow:0_0_20px_rgba(147,197,253,0.22)]">
               “{CAREER_ALIGNMENT_QUOTE}”
             </p>
 
-            {/* Subtitle: lightest text */}
-            <p className="mb-2 text-xs text-default-500 dark:text-default-400">{CAREER_ALIGNMENT_SUBTITLE}</p>
+            {/* Subtitle: highlighted sub-message */}
+            <p className="career-alignment-subtitle mb-3 inline-flex w-fit rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 shadow-sm dark:border-blue-300/20 dark:bg-blue-400/10 dark:text-blue-200 dark:shadow-none">
+              {CAREER_ALIGNMENT_SUBTITLE}
+            </p>
 
             {/* Description: existing AI-generated / cached behavior */}
-            <p className="max-w-3xl text-sm leading-6 text-default-600 dark:text-default-400">{description}</p>
+            <p className="career-alignment-description max-w-3xl text-xs font-normal leading-6 text-slate-500 dark:text-slate-300/80">{description}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-default-200 bg-background/85 p-4 shadow-sm dark:border-default-100/15 dark:bg-default-50/10">
-          <h3 className="mb-3 text-sm font-bold text-success-600 dark:text-success-500">จุดเด่น</h3>
+        <div className="career-alignment-strengths rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-200/70 dark:border-blue-300/15 dark:bg-slate-900/75 dark:shadow-black/20">
+          <h3 className="career-alignment-strengths-title mb-3 text-sm font-bold text-success-600 dark:text-success-500">จุดเด่น</h3>
 
           <ul className="space-y-2">
             {displayStrengths.map((strength) => (
-              <li key={strength} className="flex items-center gap-2 text-sm text-default-700 dark:text-default-300">
-                <span className="text-success-500">✓</span>
+              <li key={strength} className="career-alignment-strength-item flex items-center gap-2 text-sm text-default-700 dark:text-default-300">
+                <span className="career-alignment-check text-success-500">✓</span>
                 <span>{strength}</span>
               </li>
             ))}
