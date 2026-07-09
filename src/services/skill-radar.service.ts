@@ -3,7 +3,7 @@ import {
   createSkillRadarPositionApi,
   getAdminSkillRadarEventsApi,
   getAdminSkillRadarPositionsApi,
-  getCareerReadinessBenchmarkApi,
+  getCareerAlignmentApi,
   getMySkillRadarApi,
   getPositionSkillSuggestionsApi,
   getQuestionSkillSuggestionsApi,
@@ -17,7 +17,7 @@ import type {
   AdminSkillScoreEventFilters,
   AdminSkillScoreEventPage,
   AdminSkillRadarPosition,
-  CareerReadinessBenchmark,
+  CareerAlignment,
   PositionPayload,
   PositionSkillPayload,
   PositionSkillSuggestion,
@@ -33,8 +33,8 @@ export const getMySkillRadar = async (positionId?: string): Promise<UserSkillRad
   return res.data;
 };
 
-export const getCareerReadinessBenchmark = async (): Promise<CareerReadinessBenchmark> => {
-  const res = await getCareerReadinessBenchmarkApi();
+export const getCareerAlignment = async (): Promise<CareerAlignment> => {
+  const res = await getCareerAlignmentApi();
   return res.data;
 };
 
