@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getSuggestedQuestions } from "@/services/chat.service";
 
 export const useSuggestedQuestions = (enabled = true) => {
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["suggestedQuestions"],
     queryFn: getSuggestedQuestions,
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
-  return { questions: data?.questions ?? [], isLoading, isError };
+  return { questions: data?.questions ?? [], isLoading, isError, refetch };
 };

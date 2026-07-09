@@ -121,6 +121,7 @@ export default function ChatContent() {
     questions: suggestedQuestions,
     isLoading: isSuggestedQuestionsLoading,
     isError: isSuggestedQuestionsError,
+    refetch: refetchSuggestedQuestions,
   } = useSuggestedQuestions(showSuggestedQuestions);
   const displayedSuggestedQuestions = (
     isSuggestedQuestionsError || suggestedQuestions.length === 0
@@ -366,6 +367,7 @@ export default function ChatContent() {
     setKnowledgePendingHint("");
     recommendationsMutation.reset();
     router.replace("/chat");
+    void refetchSuggestedQuestions();
   };
 
   const handleOpenHistory = (selectedSessionId: string) => {
