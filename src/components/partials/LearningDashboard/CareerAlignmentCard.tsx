@@ -22,6 +22,21 @@ const DEFAULT_DESCRIPTION =
   "คุณมีความพร้อมในระดับดี เหมาะสมสำหรับการวิเคราะห์ระบบและการพัฒนา FrontEnd " +
   "รักษาความต่อเนื่องและพัฒนาทักษะอย่างสม่ำเสมอ จะช่วยให้คุณก้าวสู่ระดับถัดไปได้เร็วขึ้น";
 
+function buildRadarSkillQuotes(strengths: string[]) {
+  if (strengths.length === 0) return DEFAULT_QUOTES;
+
+  const [topSkill, secondSkill] = strengths;
+  const pairedSkills = strengths.slice(0, 2).join(" และ ");
+
+  return [
+    `Career Alignment ของคุณกำลังชัดขึ้นจากจุดเด่นด้าน ${topSkill}`,
+    secondSkill
+      ? `${pairedSkills} คือแรงส่งสำคัญในเส้นทางการเรียนรู้ของคุณ`
+      : `${topSkill} คือสัญญาณที่ดีว่าคุณกำลังต่อยอดได้ถูกทาง`,
+    `ทุก evidence ที่เพิ่มขึ้น กำลังทำให้ Radar Skill ด้าน ${topSkill} แข็งแรงขึ้น`,
+  ];
+}
+
 // Highlight/AI-insight card that sits above the Skill Radar. Card chrome (blue
 // gradient + glow + badges) stays as the theme accent; the intro text hierarchy
 // uses neutral middle-tone tokens: title strongest -> quote softer -> subtitle
@@ -32,11 +47,12 @@ export function CareerAlignmentCard({
   description = DEFAULT_DESCRIPTION,
   quotes,
 }: CareerAlignmentCardProps) {
-  const displayStrengths = strengths.length > 0 ? strengths : DEFAULT_STRENGTHS;
+  const displayStrengths = useMemo(() => (strengths.length > 0 ? strengths : DEFAULT_STRENGTHS), [strengths]);
   const displayQuotes = useMemo(() => {
     const cleanQuotes = (quotes ?? []).map((quote) => quote.trim()).filter(Boolean);
-    return cleanQuotes.length > 0 ? cleanQuotes : DEFAULT_QUOTES;
-  }, [quotes]);
+    const radarQuotes = buildRadarSkillQuotes(displayStrengths);
+    return displayStrengths.length > 0 ? radarQuotes : cleanQuotes.length > 0 ? cleanQuotes : DEFAULT_QUOTES;
+  }, [displayStrengths, quotes]);
   const [quoteIndex, setQuoteIndex] = useState(0);
 
   useEffect(() => {
