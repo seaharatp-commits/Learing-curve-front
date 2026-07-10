@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Textarea } from "@heroui/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +22,7 @@ import {
 import type { LessonChatResult } from "@/types/app/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
+import { BaseInput } from "@/components/ui/Input";
 import { FormattedAnswer, getFormattedAnswerDisplay } from "@/components/common/FormattedAnswer";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
@@ -239,10 +239,14 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           </BaseButton> */}
         </div>
 
-        <div className="lesson-chat-area mb-3 space-y-3 rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
+        <div
+          className={`lesson-chat-area mb-3 space-y-3 rounded-lg bg-default-50 p-3 dark:bg-default-100/10 ${
+            messages.length === 0 && !askMutation.isPending ? "hidden" : ""
+          }`}
+        >
           {messages.length === 0 ? (
             <p className="text-sm text-default-400">
-              ถามสิ่งที่ยังสงสัยเกี่ยวกับบทเรียนนี้ได้ AI จะใช้เนื้อหาด้านบนเป็นหลัก และอธิบายเสริมเมื่อจำเป็น
+              {/* ถามสิ่งที่ยังสงสัยเกี่ยวกับบทเรียนนี้ได้ AI จะใช้เนื้อหาด้านบนเป็นหลัก และอธิบายเสริมเมื่อจำเป็น */}
             </p>
           ) : (
             messages.map((message, index) => (
@@ -307,19 +311,36 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
         </div>
 
         <form onSubmit={handleAsk} className="space-y-2">
-          <Textarea
-            minRows={2}
-            radius="lg"
-            variant="bordered"
-            classNames={{
-              input: "text-[0.98rem] leading-7",
-              inputWrapper: "min-h-14",
-            }}
-            value={chatInput}
-            onValueChange={setChatInput}
-            placeholder="ถามต่อ เช่น ขอคำอธิบายเพิ่ม ตัวอย่าง วิธีใช้จริง หรือเรื่องที่เกี่ยวข้องกับบทเรียน"
-          />
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex w-full items-center gap-2 rounded-2xl border border-default-200 bg-background/85 p-1.5 shadow-sm dark:border-default-100/20 dark:bg-default-50/5">
+            <BaseInput
+              value={chatInput}
+              onValueChange={setChatInput}
+              placeholder="ถามต่อ เช่น ขอคำอธิบายเพิ่ม ตัวอย่าง วิธีใช้จริง หรือเรื่องที่เกี่ยวข้องกับบทเรียน"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+              variant="flat"
+              className="flex-1"
+              classNames={{
+                input: "text-[0.98rem]",
+                inputWrapper: "bg-transparent shadow-none",
+                innerWrapper: "bg-transparent",
+              }}
+            />
+            <BaseButton
+              isIconOnly
+              type="submit"
+              isLoading={askMutation.isPending}
+              className="h-10 w-10 min-w-10 shrink-0 rounded-xl"
+              aria-label="ส่งคำถาม"
+            >
+              <Send size={18} />
+            </BaseButton>
+          </div>
+          {(chatError || quizMessage) && (
             <div>
               {chatError && <p className="text-xs text-danger-600">{chatError}</p>}
               {quizMessage && (
@@ -332,14 +353,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
                 </p>
               )}
             </div>
-            <BaseButton
-              type="submit"
-              startContent={<Send size={16} />}
-              isLoading={askMutation.isPending}
-            >
-              ส่งคำถาม
-            </BaseButton>
-          </div>
+          )}
         </form>
       </BaseCard>
 
