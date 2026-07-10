@@ -3,7 +3,7 @@
 import dayjs from "dayjs";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import type { ChatMessage, RecommendedKnowledgeBase } from "@/types/app/chat";
 import type { RecommendationResult } from "@/types/app/knowledgeBase";
 import { useSendMessage, useSessionMessages, useSuggestedQuestions } from "@/hooks/chat";
@@ -102,6 +102,7 @@ export default function ChatContent() {
   const [activeKnowledge, setActiveKnowledge] = useState<ActiveKnowledgeContext | null>(null);
   const [knowledgePendingHint, setKnowledgePendingHint] = useState("");
   const [pinnedSessionIds, setPinnedSessionIds] = useState<string[]>([]);
+  const [deletingHistory, setDeletingHistory] = useState<{ id: string; title: string } | null>(null);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatRunIdRef = useRef(0);
@@ -385,13 +386,17 @@ export default function ChatContent() {
     router.push(`/chat?sessionId=${selectedSessionId}`);
   };
 
-  const handleDeleteHistory = (selectedSessionId: string) => {
+  const handleConfirmDeleteHistory = () => {
+    if (!deletingHistory) return;
+    const selectedSessionId = deletingHistory.id;
     deleteHistoryMutation.mutate(selectedSessionId, {
       onSuccess: () => {
+        setDeletingHistory(null);
         if (selectedSessionId === sessionId || selectedSessionId === initialSessionId) {
           handleNewChat();
         }
       },
+      onError: () => setDeletingHistory(null),
     });
   };
 
@@ -483,7 +488,7 @@ export default function ChatContent() {
                       aria-label="Chat actions"
                       onAction={(key) => {
                         if (key === "pin") handleTogglePinHistory(item.id);
-                        if (key === "delete") handleDeleteHistory(item.id);
+                        if (key === "delete") setDeletingHistory({ id: item.id, title: item.title });
                       }}
                       disabledKeys={["share", "group", "rename", "archive"]}
                     >
@@ -744,6 +749,29 @@ export default function ChatContent() {
         </BaseButton>
       </div>
       </section>
+      <Modal isOpen={!!deletingHistory} onClose={() => setDeletingHistory(null)}>
+        <ModalContent>
+          <ModalHeader>ยืนยันการลบประวัติแชท</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              คุณแน่ใจหรือไม่ว่าต้องการลบประวัติแชทนี้? การลบนี้ไม่สามารถย้อนกลับได้
+            </p>
+            {deletingHistory && <p className="font-medium">{deletingHistory.title}</p>}
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setDeletingHistory(null)}>
+              ยกเลิก
+            </BaseButton>
+            <BaseButton
+              color="danger"
+              isLoading={deleteHistoryMutation.isPending}
+              onPress={handleConfirmDeleteHistory}
+            >
+              ลบประวัติแชท
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
