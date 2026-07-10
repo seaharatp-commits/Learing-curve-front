@@ -232,7 +232,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   }, [totalAttemptPages]);
 
   const historyPanel = (
-    <BaseCard className="lg:sticky lg:top-24">
+    <BaseCard>
       <div className="mb-3">
         <h2 className="text-base font-semibold">ประวัติการทำแบบทดสอบ</h2>
         <p className="text-xs text-default-500">คลิกแต่ละครั้งเพื่อดูคำตอบย้อนหลัง</p>

@@ -87,6 +87,46 @@ function boostConfirmedConfidence(confidenceScore: number) {
   return Math.min(1, Math.max(confidenceScore, confidenceScore + 0.05));
 }
 
+function isRelatedToActiveKnowledge(question: string, knowledge: ActiveKnowledgeContext) {
+  const normalizedQuestion = normalizeText(question);
+  if (!normalizedQuestion) return true;
+
+  const references = [
+    knowledge.title,
+    knowledge.category,
+    knowledge.preview,
+    knowledge.summary,
+    knowledge.resolution,
+    ...(knowledge.matchedKeywords ?? []),
+  ]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map(normalizeText)
+    .filter((value) => value.length > 1);
+
+  if (
+    references.some(
+      (reference) =>
+        normalizedQuestion.includes(reference) || reference.includes(normalizedQuestion),
+    )
+  ) {
+    return true;
+  }
+
+  const questionTokens = getUsefulTokens(question).filter((token) => token.length >= 3);
+  if (questionTokens.some((token) => references.some((reference) => reference.includes(token)))) {
+    return true;
+  }
+
+  const continuationMarkers = [
+    "\u0e40\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e19\u0e35\u0e49",
+    "\u0e2d\u0e31\u0e19\u0e19\u0e35\u0e49",
+    "\u0e41\u0e1a\u0e1a\u0e19\u0e35\u0e49",
+    "\u0e02\u0e31\u0e49\u0e19\u0e15\u0e2d\u0e19\u0e16\u0e31\u0e14\u0e44\u0e1b",
+  ].map(normalizeText);
+
+  return continuationMarkers.some((marker) => normalizedQuestion.includes(marker));
+}
+
 export default function ChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -300,10 +340,12 @@ export default function ChatContent() {
     const userMessage = createLocalMessage("user", content);
     setMessages((prev) => [...prev, userMessage]);
 
-    if (activeKnowledge) {
+    if (activeKnowledge && isRelatedToActiveKnowledge(content, activeKnowledge)) {
       await sendToAi(content, activeKnowledge.articleId, activeKnowledge.confidenceScore, [userMessage.id]);
       return;
     }
+
+    if (activeKnowledge) setActiveKnowledge(null);
 
     let matches: RecommendationResult[] = [];
     try {
