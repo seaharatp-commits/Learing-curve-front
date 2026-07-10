@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -104,6 +104,14 @@ export default function LearningDashboardContent() {
   );
   const [lessonToDelete, setLessonToDelete] = useState<LearningLessonItem | null>(null);
   const [lessonMessage, setLessonMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const totalLessonPagesForState = Math.max(
+    1,
+    Math.ceil((data?.lessons.length ?? 0) / LESSONS_PER_PAGE),
+  );
+
+  useEffect(() => {
+    setLessonPage((page) => Math.min(page, totalLessonPagesForState));
+  }, [totalLessonPagesForState]);
 
   const handleLessonMenuAction = (key: React.Key, lesson: LearningLessonItem) => {
     if (key === "start") {

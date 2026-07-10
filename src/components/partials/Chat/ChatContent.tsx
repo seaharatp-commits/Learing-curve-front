@@ -624,9 +624,9 @@ export default function ChatContent() {
                 </div>
               ) : (
                 <div className="flex flex-wrap justify-center gap-2">
-                  {displayedSuggestedQuestions.map((question) => (
+                  {displayedSuggestedQuestions.map((question, index) => (
                     <button
-                      key={question}
+                      key={`${question}-${index}`}
                       type="button"
                       onClick={() => setInput(question)}
                       className="rounded-full border border-default-200 bg-background/80 px-3 py-1.5 text-xs text-default-600 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-default-100/20"
