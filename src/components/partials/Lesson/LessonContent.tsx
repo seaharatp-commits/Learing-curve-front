@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Bot,
   CheckCircle2,
   ClipboardList,
   MessageCircle,
@@ -41,6 +42,11 @@ const MAX_CHAT_HISTORY_MESSAGE_LENGTH = 800;
 const MAX_CHAT_HISTORY_LENGTH = 5500;
 const MAX_QUIZ_FOCUS_MESSAGES = 4;
 const MAX_QUIZ_FOCUS_LENGTH = 1200;
+const AI_LOADING_MESSAGES = [
+  "AI กำลังคิด...",
+  "กำลังเรียบเรียงคำตอบ...",
+  "กำลังตรวจสอบบริบท...",
+];
 
 function formatChatHistory(messages: ChatMessage[]) {
   const recentMessages = messages.slice(-MAX_CHAT_HISTORY_MESSAGES);
@@ -85,6 +91,20 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   const [chatError, setChatError] = useState<string | null>(null);
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [quizMessage, setQuizMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!askMutation.isPending) {
+      setLoadingMessageIndex(0);
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setLoadingMessageIndex((index) => (index + 1) % AI_LOADING_MESSAGES.length);
+    }, 2200);
+
+    return () => window.clearInterval(intervalId);
+  }, [askMutation.isPending]);
 
   const handleAsk = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -302,9 +322,12 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
             ))
           )}
           {askMutation.isPending && (
-            <div className="flex justify-start">
-              <div className="rounded-lg bg-content1 px-3 py-2 text-sm text-default-400 shadow-sm">
-                กำลังตอบ...
+            <div className="flex items-start justify-start gap-2">
+              <Bot size={20} className="mt-1 text-primary" />
+              <div className="max-w-[min(75%,42rem)] rounded-xl bg-default-100 px-4 py-2 text-sm text-default-600 dark:text-default-300">
+                <p className="font-medium transition-opacity">
+                  {AI_LOADING_MESSAGES[loadingMessageIndex]}
+                </p>
               </div>
             </div>
           )}
