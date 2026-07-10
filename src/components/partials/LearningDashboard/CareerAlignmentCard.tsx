@@ -2,87 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Award, Sparkles } from "lucide-react";
+import { getCareerAlignmentContent } from "./careerAlignmentContent";
 
 export type CareerAlignmentCardProps = {
-  level?: string;
-  alignmentScore?: number;
+  positionName: string;
   strengths?: string[];
   description?: string;
-  quotes?: string[];
 };
 
 const QUOTE_ROTATION_MS = 2200;
-const DEFAULT_QUOTES = [
-  "คุณไม่จำเป็นต้องเก่งตั้งแต่แรก แต่คุณต้องเริ่มเพื่อที่จะเก่ง",
-  "ทุกก้าวเล็ก ๆ ที่เริ่มวันนี้ จะค่อย ๆ สร้างความมั่นใจให้คุณ",
-  "ทักษะที่ชัดขึ้น เริ่มจากการลงมือเรียนรู้อย่างต่อเนื่อง",
-];
-const CAREER_ALIGNMENT_SUBTITLE = "คุณคือ Talent ที่กำลังก้าวขึ้น ในวงการ Technology";
-const DEFAULT_STRENGTHS = ["System Analysis", "FrontEnd", "การตั้งคำถามเชิงวิเคราะห์"];
-const DEFAULT_DESCRIPTION =
-  "คุณมีความพร้อมในระดับดี เหมาะสมสำหรับการวิเคราะห์ระบบและการพัฒนา FrontEnd " +
-  "รักษาความต่อเนื่องและพัฒนาทักษะอย่างสม่ำเสมอ จะช่วยให้คุณก้าวสู่ระดับถัดไปได้เร็วขึ้น";
-
-function buildRadarSkillQuotes(strengths: string[]) {
-  if (strengths.length === 0) return DEFAULT_QUOTES;
-
-  const [topSkill, secondSkill] = strengths;
-  const pairedSkills = strengths.slice(0, 2).join(" และ ");
-
-  return [
-    `Career Alignment ของคุณกำลังชัดขึ้นจากจุดเด่นด้าน ${topSkill}`,
-    secondSkill
-      ? `${pairedSkills} คือแรงส่งสำคัญในเส้นทางการเรียนรู้ของคุณ`
-      : `${topSkill} คือสัญญาณที่ดีว่าคุณกำลังต่อยอดได้ถูกทาง`,
-    `ทุก evidence ที่เพิ่มขึ้น กำลังทำให้ Radar Skill ด้าน ${topSkill} แข็งแรงขึ้น`,
-  ];
-}
-
-function getCareerAlignmentSubtitle(level?: string, alignmentScore?: number) {
-  const score = alignmentScore ?? 0;
-
-  if (level === "Advanced" || score >= 82) {
-    return "คุณกำลังเข้าใกล้โปรไฟล์ที่พร้อมใช้งานจริงในสาย Technology";
-  }
-
-  if (level === "Intermediate" || score >= 68) {
-    return "คุณมีทิศทางทักษะที่ชัดขึ้น และกำลังต่อยอดได้อย่างมั่นใจ";
-  }
-
-  if (level === "Junior Strong" || score >= 50) {
-    return "คุณกำลังสร้างความพร้อมที่ดี และเห็นจุดเด่นของตัวเองชัดขึ้น";
-  }
-
-  if (level === "Junior" || score >= 30) {
-    return "คุณกำลังต่อยอดพื้นฐานให้กลายเป็น skill profile ที่ชัดเจนขึ้น";
-  }
-
-  if (level === "Beginner" || score > 0) {
-    return "คุณกำลังเริ่มสะสม evidence และสร้างทิศทางการเติบโตของตัวเอง";
-  }
-
-  return CAREER_ALIGNMENT_SUBTITLE;
-}
+const EMPTY_STATE_ITEMS = ["ทำ Quiz ที่เกี่ยวข้องกับตำแหน่ง", "ถามคำถามผ่าน AI Chat", "เรียนและทำบทเรียนให้สำเร็จ"];
 
 // Highlight/AI-insight card that sits above the Skill Radar. Card chrome (blue
-// gradient + glow + badges) stays as the theme accent; the intro text hierarchy
-// uses neutral middle-tone tokens: title strongest -> quote softer -> subtitle
-// lightest. `level` is intentionally not shown as a bare label to keep a positive,
-// non-judgmental tone — the AI description weaves the level in naturally instead.
-export function CareerAlignmentCard({
-  strengths = DEFAULT_STRENGTHS,
-  level,
-  alignmentScore,
-  description = DEFAULT_DESCRIPTION,
-  quotes,
-}: CareerAlignmentCardProps) {
-  const displayStrengths = useMemo(() => (strengths.length > 0 ? strengths : DEFAULT_STRENGTHS), [strengths]);
-  const subtitle = useMemo(() => getCareerAlignmentSubtitle(level, alignmentScore), [alignmentScore, level]);
-  const displayQuotes = useMemo(() => {
-    const cleanQuotes = (quotes ?? []).map((quote) => quote.trim()).filter(Boolean);
-    const radarQuotes = buildRadarSkillQuotes(displayStrengths);
-    return displayStrengths.length > 0 ? radarQuotes : cleanQuotes.length > 0 ? cleanQuotes : DEFAULT_QUOTES;
-  }, [displayStrengths, quotes]);
+// gradient + glow + badges/animation) stays as the theme accent regardless of
+// state. Quote/subtitle always come from the position-based config (single
+// source of truth in careerAlignmentContent.ts) so they change immediately
+// when the learner's position changes and never leak content from a previous
+// position. `strengths.length === 0` is the backend-guaranteed signal for "no
+// evidence yet" (calculateCareerAlignment only returns strengths once at least
+// one skill has real evidence) — when true this renders a plain empty state
+// instead of anything that looks like a completed AI analysis.
+export function CareerAlignmentCard({ positionName, strengths = [], description }: CareerAlignmentCardProps) {
+  const hasEvidence = strengths.length > 0;
+  const content = useMemo(() => getCareerAlignmentContent(positionName), [positionName]);
+  const displayQuotes = useMemo(() => [content.quote], [content.quote]);
   const [quoteIndex, setQuoteIndex] = useState(0);
 
   useEffect(() => {
@@ -95,6 +38,11 @@ export function CareerAlignmentCard({
 
     return () => window.clearInterval(timer);
   }, [displayQuotes]);
+
+  const subtitleText = hasEvidence ? content.subtitle : `เริ่มสร้างเส้นทางของคุณในสาย ${positionName}`;
+  const descriptionText = hasEvidence
+    ? description
+    : "ขณะนี้ยังไม่มี Evidence เพียงพอสำหรับวิเคราะห์จุดเด่นและความสอดคล้องกับตำแหน่งนี้";
 
   return (
     <section className="career-alignment-card relative overflow-hidden rounded-2xl border border-blue-400 bg-gradient-to-r from-blue-50 via-white to-blue-50/70 p-5 shadow-lg shadow-blue-200/60 dark:border-blue-400/40 dark:bg-slate-950 dark:from-blue-950/45 dark:via-slate-950 dark:to-slate-900 dark:shadow-blue-950/30">
@@ -113,39 +61,76 @@ export function CareerAlignmentCard({
           <div className="min-w-0">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
               {/* Title: strongest text */}
-              <h2 className="career-alignment-title text-xl font-bold text-blue-900 dark:text-blue-100">Career Alignment</h2>
+              <h2 className="career-alignment-title text-xl font-bold text-blue-900 dark:text-blue-100">
+                Career Alignment
+              </h2>
 
               <span className="career-alignment-badge rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-300/30 dark:bg-blue-400/10 dark:text-blue-200">
                 AI Powered
               </span>
             </div>
 
-            {/* Quote: emotional highlight */}
+            {/* Quote: position-based, emotional highlight */}
             <p className="career-alignment-quote relative mb-2 inline-block rounded-xl bg-blue-100/70 px-3 py-2 text-sm font-semibold leading-6 text-blue-900 shadow-sm shadow-blue-200/60 ring-1 ring-blue-200/70 transition duration-700 [text-shadow:0_0_18px_rgba(59,130,246,0.22)] motion-safe:animate-pulse dark:bg-blue-400/10 dark:text-blue-100 dark:shadow-none dark:ring-blue-300/25 dark:[text-shadow:0_0_20px_rgba(147,197,253,0.22)]">
-              “{displayQuotes[quoteIndex] ?? DEFAULT_QUOTES[0]}”
+              “{displayQuotes[quoteIndex] ?? content.quote}”
             </p>
 
-            {/* Subtitle: highlighted sub-message */}
+            {/* Subtitle: highlighted sub-message, position-based */}
             <p className="career-alignment-subtitle mb-3 inline-flex w-fit rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 shadow-sm dark:border-blue-300/20 dark:bg-blue-400/10 dark:text-blue-200 dark:shadow-none">
-              {subtitle}
+              {subtitleText}
             </p>
 
-            {/* Description: existing AI-generated / cached behavior */}
-            <p className="career-alignment-description max-w-3xl text-xs font-normal leading-6 text-slate-500 dark:text-slate-300/80">{description}</p>
+            {/* Description: existing AI-generated / cached behavior when evidence exists,
+                plain empty-state copy otherwise. Never a mock summary. */}
+            <p className="career-alignment-description max-w-3xl text-xs font-normal leading-6 text-slate-500 dark:text-slate-300/80">
+              {descriptionText}
+            </p>
+            {!hasEvidence && (
+              <p className="career-alignment-empty-support mt-1 max-w-3xl text-xs font-normal leading-6 text-slate-500 dark:text-slate-300/80">
+                เริ่มทำ Quiz ถามคำถามผ่าน AI Chat หรือเรียนบทเรียน เพื่อให้ระบบรู้จักทักษะของคุณมากขึ้น
+              </p>
+            )}
           </div>
         </div>
 
         <div className="career-alignment-strengths rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-200/70 dark:border-blue-300/15 dark:bg-slate-900/75 dark:shadow-black/20">
-          <h3 className="career-alignment-strengths-title mb-3 text-sm font-bold text-success-600 dark:text-success-500">จุดเด่น</h3>
-
-          <ul className="space-y-2">
-            {displayStrengths.map((strength) => (
-              <li key={strength} className="career-alignment-strength-item flex items-center gap-2 text-sm text-default-700 dark:text-default-300">
-                <span className="career-alignment-check text-success-500">✓</span>
-                <span>{strength}</span>
-              </li>
-            ))}
-          </ul>
+          {hasEvidence ? (
+            <>
+              <h3 className="career-alignment-strengths-title mb-3 text-sm font-bold text-success-600 dark:text-success-500">
+                จุดเด่น
+              </h3>
+              <ul className="space-y-2">
+                {strengths.map((strength) => (
+                  <li
+                    key={strength}
+                    className="career-alignment-strength-item flex items-center gap-2 text-sm text-default-700 dark:text-default-300"
+                  >
+                    <span className="career-alignment-check text-success-500">✓</span>
+                    <span>{strength}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <h3 className="career-alignment-strengths-title mb-3 text-sm font-bold text-default-600 dark:text-default-400">
+                เริ่มสร้างโปรไฟล์ทักษะ
+              </h3>
+              <ul className="space-y-2">
+                {EMPTY_STATE_ITEMS.map((item, index) => (
+                  <li
+                    key={item}
+                    className="career-alignment-strength-item flex items-center gap-2 text-sm text-default-700 dark:text-default-300"
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-default-200 text-[11px] font-semibold text-default-600 dark:bg-default-100/20 dark:text-default-300">
+                      {index + 1}
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </div>
     </section>

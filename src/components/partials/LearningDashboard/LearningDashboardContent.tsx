@@ -90,7 +90,6 @@ export default function LearningDashboardContent() {
     data: careerAlignment,
     isLoading: isCareerAlignmentLoading,
     isError: isCareerAlignmentError,
-    error: careerAlignmentError,
   } = useCareerAlignment();
   const updateSkillRadarPositionMutation = useUpdateMySkillRadarPosition();
   const generateLessonMutation = useGenerateLessonFromTopic();
@@ -305,22 +304,22 @@ export default function LearningDashboardContent() {
       </div>
 
       {isCareerAlignmentLoading ? (
-        <BaseCard>
-          <p className="text-sm text-default-400">กำลังโหลด Career Alignment...</p>
+        <BaseCard className="space-y-3">
+          <div className="h-5 w-40 animate-pulse rounded-full bg-default-100 dark:bg-default-100/20" />
+          <div className="h-4 w-72 max-w-full animate-pulse rounded-full bg-default-100 dark:bg-default-100/20" />
+          <div className="h-4 w-56 max-w-full animate-pulse rounded-full bg-default-100 dark:bg-default-100/20" />
         </BaseCard>
       ) : isCareerAlignmentError ? (
         <BaseCard>
           <p className="text-sm text-danger-600">
-            {getErrorMessage(careerAlignmentError, "โหลด Career Alignment ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+            ไม่สามารถโหลดข้อมูล Career Alignment ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง
           </p>
         </BaseCard>
       ) : careerAlignment ? (
         <CareerAlignmentCard
-          level={careerAlignment.level}
-          alignmentScore={careerAlignment.alignmentScore}
-          strengths={careerAlignment.strengths.length > 0 ? careerAlignment.strengths : undefined}
+          positionName={careerAlignment.position}
+          strengths={careerAlignment.strengths}
           description={careerAlignment.description}
-          quotes={careerAlignment.quotes}
         />
       ) : null}
 

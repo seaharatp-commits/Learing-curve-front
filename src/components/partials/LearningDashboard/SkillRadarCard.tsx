@@ -99,7 +99,9 @@ export default function SkillRadarCard({
   const skills = data?.skills ?? [];
   const hasScores = skills.some((skill) => skill.score > 0);
   const { strengths } = getRecommendations(skills);
-  const strongestSkill = strengths[0] ?? [...skills].sort((a, b) => b.score - a.score)[0];
+  // No fallback to an arbitrary 0%/no-evidence skill here — if nothing has
+  // evidence yet, there is no real "top skill" to show (see empty-state below).
+  const strongestSkill = strengths[0];
   const highlightedSkillId = hoveredSkillId ?? strongestSkill?.id ?? null;
   const highlightedSkill = skills.find((skill) => skill.id === highlightedSkillId) ?? strongestSkill;
   const strongestSkillId = strongestSkill?.id ?? null;
@@ -178,15 +180,24 @@ export default function SkillRadarCard({
         <div className="grid gap-8 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-center">
           <div className="mx-auto w-full max-w-[460px] rounded-3xl bg-background/70 p-5 shadow-lg shadow-primary/5 ring-1 ring-default-200/70 dark:bg-default-50/5 dark:ring-default-100/15">
             <div className="mb-3 space-y-2 rounded-2xl bg-default-50/80 px-4 py-3 text-sm dark:bg-default-100/10">
-              <div className="flex flex-wrap items-center gap-2">
-                {strongestSkill && (
-                  <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-semibold text-warning-600">
-                    Top Skill
-                  </span>
-                )}
-                <p className="font-medium text-foreground">{insightText}</p>
-              </div>
-              <p className="text-xs leading-5 text-default-500">{evidenceHint}</p>
+              {strongestSkill ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-semibold text-warning-600">
+                      Top Skill
+                    </span>
+                    <p className="font-medium text-foreground">{insightText}</p>
+                  </div>
+                  <p className="text-xs leading-5 text-default-500">{evidenceHint}</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-foreground">ยังไม่พบ Top Skill</p>
+                  <p className="text-xs leading-5 text-default-500">
+                    เริ่มเก็บ Evidence เพื่อให้ระบบค้นพบทักษะที่โดดเด่นของคุณ
+                  </p>
+                </>
+              )}
             </div>
             {skills.length >= 3 ? (
               <svg viewBox={`0 0 ${CHART_SIZE} ${CHART_SIZE}`} className="h-auto w-full overflow-visible">
