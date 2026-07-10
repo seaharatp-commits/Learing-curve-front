@@ -15,6 +15,7 @@ import {
   ModalFooter,
   ModalHeader,
   Progress,
+  Textarea,
 } from "@heroui/react";
 import {
   ArrowRight,
@@ -37,7 +38,6 @@ import {
 } from "@/hooks/skillRadar";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import { BaseInput } from "@/components/ui/Input";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 import type { LearningLessonItem } from "@/types/app/learning";
 import { CareerAlignmentCard } from "./CareerAlignmentCard";
@@ -228,17 +228,27 @@ export default function LearningDashboardContent() {
 
       <BaseCard className="border-primary/20 bg-primary-50/75 p-2 shadow-md shadow-primary/5 dark:bg-primary-500/10">
         <form onSubmit={handleGenerateLesson} className="flex flex-col gap-4 md:flex-row md:items-end md:gap-5">
-          <BaseInput
+          <Textarea
             label="อยากเรียนเรื่องอะไร?"
             placeholder="พิมพ์เรื่องที่อยากเรียน เช่น Next.js, Docker, UX/UI"
             value={topic}
             onValueChange={setTopic}
             size="lg"
+            minRows={1}
+            maxRows={4}
+            radius="lg"
+            variant="bordered"
             className="min-w-0 flex-1"
             classNames={{
               inputWrapper: "min-h-14 rounded-xl px-5",
-              input: "text-sm leading-7 text-foreground placeholder:text-default-400",
+              input: "resize-none text-sm leading-7 text-foreground placeholder:text-default-400",
               label: "pb-1.5 text-sm font-semibold text-foreground",
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
             }}
           />
           <BaseButton

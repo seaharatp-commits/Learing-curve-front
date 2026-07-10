@@ -3,14 +3,13 @@
 import dayjs from "dayjs";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea } from "@heroui/react";
 import type { ChatMessage, RecommendedKnowledgeBase } from "@/types/app/chat";
 import type { RecommendationResult } from "@/types/app/knowledgeBase";
 import { useSendMessage, useSessionMessages, useSuggestedQuestions } from "@/hooks/chat";
 import { useHistoryList, useDeleteHistory } from "@/hooks/history";
 import { useRecommendations } from "@/hooks/knowledgeBase";
 import { useMySkillRadar } from "@/hooks/skillRadar";
-import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import { FormattedAnswer } from "@/components/common/FormattedAnswer";
@@ -821,16 +820,23 @@ export default function ChatContent() {
         </BaseCard>
       )}
       <div className="flex w-full items-center gap-2 rounded-2xl border border-default-200 bg-background/85 p-1.5 shadow-sm dark:border-default-100/20 dark:bg-default-50/5">
-        <BaseInput
+        <Textarea
           value={input}
           onValueChange={setInput}
           placeholder="พิมพ์ข้อความที่นี่..."
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleSend();
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
           }}
+          minRows={1}
+          maxRows={5}
+          radius="lg"
           variant="flat"
           className="flex-1"
           classNames={{
+            input: "resize-none",
             inputWrapper: "bg-transparent shadow-none",
             innerWrapper: "bg-transparent",
           }}

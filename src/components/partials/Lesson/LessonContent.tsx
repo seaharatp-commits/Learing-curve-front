@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Textarea } from "@heroui/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,7 +24,6 @@ import {
 import type { LessonChatResult } from "@/types/app/learning";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
-import { BaseInput } from "@/components/ui/Input";
 import { FormattedAnswer, getFormattedAnswerDisplay } from "@/components/common/FormattedAnswer";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
@@ -315,7 +315,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
                       )}
                     </>
                   ) : (
-                    message.content
+                    <div className="whitespace-pre-line">{message.content}</div>
                   )}
                 </div>
               </div>
@@ -335,20 +335,23 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
 
         <form onSubmit={handleAsk} className="space-y-2">
           <div className="flex w-full items-center gap-2 rounded-2xl border border-default-200 bg-background/85 p-1.5 shadow-sm dark:border-default-100/20 dark:bg-default-50/5">
-            <BaseInput
+            <Textarea
               value={chatInput}
               onValueChange={setChatInput}
               placeholder="ถามต่อ เช่น ขอคำอธิบายเพิ่ม ตัวอย่าง วิธีใช้จริง หรือเรื่องที่เกี่ยวข้องกับบทเรียน"
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
+                if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
                   event.currentTarget.form?.requestSubmit();
                 }
               }}
+              minRows={1}
+              maxRows={5}
+              radius="lg"
               variant="flat"
               className="flex-1"
               classNames={{
-                input: "text-[0.98rem]",
+                input: "resize-none text-[0.98rem]",
                 inputWrapper: "bg-transparent shadow-none",
                 innerWrapper: "bg-transparent",
               }}
