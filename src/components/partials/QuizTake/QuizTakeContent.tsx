@@ -1,22 +1,18 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ArrowLeft, CheckCircle2, Eye, Save, Sparkles, X, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, XCircle } from "lucide-react";
 import { useQuiz, useQuizAttempts, useSubmitQuizAttempt } from "@/hooks/learning";
-import {
-  useAdminSkillRadarPositions,
-  useSetQuestionSkillMappings,
-  useSuggestQuestionSkillMappings,
-} from "@/hooks/skillRadar";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import type { QuizAttemptHistoryItem, QuizAttemptResult } from "@/types/app/learning";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
+import { AdminQuestionSkillMappingPanel } from "./AdminQuestionSkillMappingPanel";
 
-const OPTION_LABELS = ["ก", "ข", "ค", "ง"];
+const OPTION_LABELS = ["à¸", "à¸‚", "à¸„", "à¸‡"];
 const ATTEMPTS_PER_PAGE = 8;
 
 interface QuizTakeContentProps {
@@ -28,7 +24,6 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const { data: quiz, isLoading, isError, error } = useQuiz(quizId);
-  const { data: skillPositions } = useAdminSkillRadarPositions(isAdmin);
   const {
     data: attemptHistory = [],
     isLoading: isAttemptsLoading,
@@ -36,42 +31,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     error: attemptsError,
   } = useQuizAttempts(quizId);
   const submitMutation = useSubmitQuizAttempt(quizId);
-  const setQuestionSkillsMutation = useSetQuestionSkillMappings(quizId);
-  const suggestQuestionSkillsMutation = useSuggestQuestionSkillMappings();
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [selectedAttempt, setSelectedAttempt] = useState<QuizAttemptHistoryItem | null>(null);
   const [attemptPage, setAttemptPage] = useState(1);
-  const [skillMappingState, setSkillMappingState] = useState<Record<string, string[]>>({});
-  const [skillMappingMessage, setSkillMappingMessage] = useState<
-    Record<string, { text: string; isError: boolean } | undefined>
-  >({});
-  const [savingQuestionId, setSavingQuestionId] = useState<string | null>(null);
-  const [suggestingQuestionId, setSuggestingQuestionId] = useState<string | null>(null);
-
-  const allSkills = useMemo(
-    () =>
-      skillPositions.flatMap((position) =>
-        position.skills.map((skill) => ({
-          ...skill,
-          positionName: position.name,
-        })),
-      ),
-    [skillPositions],
-  );
-
-  useEffect(() => {
-    if (!quiz) return;
-    setSkillMappingState(
-      Object.fromEntries(
-        quiz.questions.map((question) => [
-          question.id,
-          (question.skillMappings ?? []).map((mapping) => mapping.skillId),
-        ]),
-      ),
-    );
-  }, [quiz]);
 
   const totalAttemptPages = Math.max(1, Math.ceil(attemptHistory.length / ATTEMPTS_PER_PAGE));
   const currentAttemptPage = Math.min(attemptPage, totalAttemptPages);
@@ -94,11 +58,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
           className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
         >
           <ArrowLeft size={16} />
-          กลับไปยังรายการแบบทดสอบ
+          à¸à¸¥à¸±à¸šà¹„à¸›à¸¢à¸±à¸‡à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š
         </button>
         <BaseCard>
           <p className="text-sm text-danger-600">
-            {getErrorMessage(error, "โหลดแบบทดสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+            {getErrorMessage(error, "à¹‚à¸«à¸¥à¸”à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡")}
           </p>
         </BaseCard>
       </div>
@@ -108,110 +72,13 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   if (isLoading || !quiz) {
     return (
       <div className="mx-auto max-w-3xl">
-        <p className="text-default-400">กำลังโหลดแบบทดสอบ...</p>
+        <p className="text-default-400">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š...</p>
       </div>
     );
   }
 
   const allAnswered = quiz.questions.every((q) => selections[q.id] !== undefined);
   const resultByQuestionId = new Map(result?.answers.map((a) => [a.questionId, a]) ?? []);
-
-  const getSelectedSkills = (questionId: string) => {
-    const selectedSkillIds = new Set(skillMappingState[questionId] ?? []);
-    return allSkills.filter((skill) => selectedSkillIds.has(skill.id));
-  };
-
-  const handleAddQuestionSkill = (questionId: string, skillId: string) => {
-    if (!skillId) return;
-    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
-    setSkillMappingState((prev) => {
-      const current = prev[questionId] ?? [];
-      if (current.includes(skillId)) return prev;
-      return { ...prev, [questionId]: [...current, skillId] };
-    });
-  };
-
-  const handleRemoveQuestionSkill = (questionId: string, skillId: string) => {
-    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
-    setSkillMappingState((prev) => ({
-      ...prev,
-      [questionId]: (prev[questionId] ?? []).filter((id) => id !== skillId),
-    }));
-  };
-
-  const handleSaveQuestionSkills = (questionId: string) => {
-    const selectedSkillIds = skillMappingState[questionId] ?? [];
-    setSavingQuestionId(questionId);
-    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
-
-    setQuestionSkillsMutation.mutate(
-      {
-        questionId,
-        mappings: selectedSkillIds.map((skillId) => ({ skillId, weight: 1 })),
-      },
-      {
-        onSuccess: () => {
-          setSkillMappingMessage((prev) => ({
-            ...prev,
-            [questionId]: { text: "บันทึก Skill mapping สำเร็จ", isError: false },
-          }));
-        },
-        onError: (error) => {
-          setSkillMappingMessage((prev) => ({
-            ...prev,
-            [questionId]: {
-              text: getErrorMessage(error, "บันทึก Skill mapping ไม่สำเร็จ"),
-              isError: true,
-            },
-          }));
-        },
-        onSettled: () => setSavingQuestionId(null),
-      },
-    );
-  };
-
-  const handleSuggestQuestionSkills = (questionId: string) => {
-    setSuggestingQuestionId(questionId);
-    setSkillMappingMessage((prev) => ({ ...prev, [questionId]: undefined }));
-
-    suggestQuestionSkillsMutation.mutate(questionId, {
-      onSuccess: (suggestions) => {
-        if (suggestions.length === 0) {
-          setSkillMappingMessage((prev) => ({
-            ...prev,
-            [questionId]: {
-              text: "ยังไม่พบ Skill ที่เข้ากับคำถามนี้ ลองเลือกเองจากรายการ",
-              isError: true,
-            },
-          }));
-          return;
-        }
-
-        const suggestedSkillIds = suggestions.map((suggestion) => suggestion.skillId);
-        setSkillMappingState((prev) => ({
-          ...prev,
-          [questionId]: Array.from(new Set([...(prev[questionId] ?? []), ...suggestedSkillIds])),
-        }));
-        setSkillMappingMessage((prev) => ({
-          ...prev,
-          [questionId]: {
-            text: `แนะนำ ${suggestions.length} Skill แล้ว กรุณาตรวจสอบก่อนกดบันทึก`,
-            isError: false,
-          },
-        }));
-      },
-      onError: (error) => {
-        setSkillMappingMessage((prev) => ({
-          ...prev,
-          [questionId]: {
-            text: getErrorMessage(error, "แนะนำ Skill ไม่สำเร็จ"),
-            isError: true,
-          },
-        }));
-      },
-      onSettled: () => setSuggestingQuestionId(null),
-    });
-  };
 
   const handleSubmit = () => {
     setSubmitError(null);
@@ -220,7 +87,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
       {
         onSuccess: (data) => setResult(data),
         onError: (error) =>
-          setSubmitError(getErrorMessage(error, "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")),
+          setSubmitError(getErrorMessage(error, "à¸ªà¹ˆà¸‡à¸„à¸³à¸•à¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡")),
       },
     );
   };
@@ -234,19 +101,19 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const historyPanel = (
     <BaseCard>
       <div className="mb-3">
-        <h2 className="text-base font-semibold">ประวัติการทำแบบทดสอบ</h2>
-        <p className="text-xs text-default-500">คลิกแต่ละครั้งเพื่อดูคำตอบย้อนหลัง</p>
+        <h2 className="text-base font-semibold">à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š</h2>
+        <p className="text-xs text-default-500">à¸„à¸¥à¸´à¸à¹à¸•à¹ˆà¸¥à¸°à¸„à¸£à¸±à¹‰à¸‡à¹€à¸žà¸·à¹ˆà¸­à¸”à¸¹à¸„à¸³à¸•à¸­à¸šà¸¢à¹‰à¸­à¸™à¸«à¸¥à¸±à¸‡</p>
       </div>
 
       {isAttemptsLoading ? (
-        <p className="text-sm text-default-500">กำลังโหลดประวัติ...</p>
+        <p className="text-sm text-default-500">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸›à¸£à¸°à¸§à¸±à¸•à¸´...</p>
       ) : isAttemptsError ? (
         <p className="text-sm text-danger-600">
-          {getErrorMessage(attemptsError, "โหลดประวัติการทำแบบทดสอบไม่สำเร็จ")}
+          {getErrorMessage(attemptsError, "à¹‚à¸«à¸¥à¸”à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ")}
         </p>
       ) : attemptHistory.length === 0 ? (
         <div className="rounded-lg border border-dashed border-default-200 p-3 text-sm text-default-500">
-          ยังไม่มีประวัติการทำแบบทดสอบนี้
+          à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸šà¸™à¸µà¹‰
         </div>
       ) : (
         <div>
@@ -262,11 +129,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                   className="w-full rounded-lg bg-default-50 px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:bg-default-100/10"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">ครั้งที่ {attemptNumber}</p>
+                    <p className="font-medium">à¸„à¸£à¸±à¹‰à¸‡à¸—à¸µà¹ˆ {attemptNumber}</p>
                     <span className="text-base font-semibold text-primary">{attempt.score}</span>
                   </div>
                   <p className="text-xs text-default-500">
-                    ถูก {attempt.correctCount}/{attempt.totalQuestions} ข้อ
+                    à¸–à¸¹à¸ {attempt.correctCount}/{attempt.totalQuestions} à¸‚à¹‰à¸­
                   </p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-default-400">
                     <Eye size={12} />
@@ -285,7 +152,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                 isDisabled={currentAttemptPage === 1}
                 onPress={() => setAttemptPage((page) => Math.max(1, page - 1))}
               >
-                ก่อนหน้า
+                à¸à¹ˆà¸­à¸™à¸«à¸™à¹‰à¸²
               </BaseButton>
               <span>
                 {currentAttemptPage}/{totalAttemptPages}
@@ -296,7 +163,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                 isDisabled={currentAttemptPage === totalAttemptPages}
                 onPress={() => setAttemptPage((page) => Math.min(totalAttemptPages, page + 1))}
               >
-                ถัดไป
+                à¸–à¸±à¸”à¹„à¸›
               </BaseButton>
             </div>
           )}
@@ -317,7 +184,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         className="flex w-fit items-center gap-1 text-sm text-default-500 hover:text-default-700"
       >
         <ArrowLeft size={16} />
-        กลับไปยังรายการแบบทดสอบ
+        à¸à¸¥à¸±à¸šà¹„à¸›à¸¢à¸±à¸‡à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š
       </button>
 
       <div className="2xl:hidden">{historyPanel}</div>
@@ -327,11 +194,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
             <h1 className="text-2xl font-semibold">{quiz.title}</h1>
             {result && (
               <p className="mt-1 text-sm text-default-500">
-                คุณได้คะแนน{" "}
+                à¸„à¸¸à¸“à¹„à¸”à¹‰à¸„à¸°à¹à¸™à¸™{" "}
                 <span className="font-semibold text-primary">
                   {result.correctCount}/{result.totalQuestions}
                 </span>{" "}
-                ({result.score} คะแนน)
+                ({result.score} à¸„à¸°à¹à¸™à¸™)
               </p>
             )}
           </div>
@@ -340,22 +207,22 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
             <BaseCard className="border-success/30 bg-success/10">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-success-700">ส่งคำตอบสำเร็จ</p>
+                  <p className="text-sm font-semibold text-success-700">à¸ªà¹ˆà¸‡à¸„à¸³à¸•à¸­à¸šà¸ªà¸³à¹€à¸£à¹‡à¸ˆ</p>
                   <p className="text-sm text-default-600">
-                    คุณตอบถูก {result.correctCount}/{result.totalQuestions} ข้อ ได้{" "}
-                    {result.score} คะแนน
+                    à¸„à¸¸à¸“à¸•à¸­à¸šà¸–à¸¹à¸ {result.correctCount}/{result.totalQuestions} à¸‚à¹‰à¸­ à¹„à¸”à¹‰{" "}
+                    {result.score} à¸„à¸°à¹à¸™à¸™
                   </p>
                   <p className="text-xs text-default-500">
-                    บันทึก attempt แล้วเมื่อ{" "}
+                    à¸šà¸±à¸™à¸—à¸¶à¸ attempt à¹à¸¥à¹‰à¸§à¹€à¸¡à¸·à¹ˆà¸­{" "}
                     {new Date(result.submittedAt).toLocaleString("th-TH")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <BaseButton size="sm" variant="flat" onPress={handleRetry}>
-                    ทำใหม่
+                    à¸—à¸³à¹ƒà¸«à¸¡à¹ˆ
                   </BaseButton>
                   <BaseButton size="sm" onPress={() => router.push("/quizzes")}>
-                    กลับรายการแบบทดสอบ
+                    à¸à¸¥à¸±à¸šà¸£à¸²à¸¢à¸à¸²à¸£à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š
                   </BaseButton>
                 </div>
               </div>
@@ -412,90 +279,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                   </div>
                   {answer?.explanation && (
                     <p className="mt-3 rounded-lg bg-default-50 p-2 text-xs text-default-500 dark:bg-default-100/10">
-                      คำอธิบาย: {answer.explanation}
+                      à¸„à¸³à¸­à¸˜à¸´à¸šà¸²à¸¢: {answer.explanation}
                     </p>
                   )}
                   {isAdmin && (
-                    <div className="mt-4 rounded-lg border border-default-200 bg-default-50 p-3 dark:border-default-100/20 dark:bg-default-100/10">
-                      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm font-medium">Skill mapping</p>
-                          <p className="text-xs text-default-500">
-                            ผูกคำถามนี้กับ Skill เพื่อให้คะแนน Quiz ส่งเข้า Skill Radar
-                          </p>
-                        </div>
-                        <BaseButton
-                          size="sm"
-                          variant="flat"
-                          startContent={<Sparkles size={14} />}
-                          isLoading={suggestingQuestionId === question.id}
-                          onPress={() => handleSuggestQuestionSkills(question.id)}
-                        >
-                          แนะนำ Skill
-                        </BaseButton>
-                        <BaseButton
-                          size="sm"
-                          startContent={<Save size={14} />}
-                          isLoading={savingQuestionId === question.id}
-                          onPress={() => handleSaveQuestionSkills(question.id)}
-                        >
-                          บันทึก
-                        </BaseButton>
-                      </div>
-
-                      <div className="mb-2 flex flex-wrap gap-2">
-                        {getSelectedSkills(question.id).length === 0 ? (
-                          <span className="text-xs text-default-500">ยังไม่ได้ผูก Skill</span>
-                        ) : (
-                          getSelectedSkills(question.id).map((skill) => (
-                            <span
-                              key={`${question.id}-${skill.id}`}
-                              className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs text-primary"
-                            >
-                              {skill.name}
-                              <span className="text-primary/60">/ {skill.positionName}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveQuestionSkill(question.id, skill.id)}
-                                className="rounded p-0.5 hover:bg-primary/10"
-                                aria-label={`Remove ${skill.name}`}
-                              >
-                                <X size={12} />
-                              </button>
-                            </span>
-                          ))
-                        )}
-                      </div>
-
-                      <select
-                        value=""
-                        onChange={(event) => handleAddQuestionSkill(question.id, event.target.value)}
-                        className="h-9 w-full rounded-lg border border-default-200 bg-background px-2 text-sm text-foreground outline-none transition-colors focus:border-primary dark:border-default-100/20 dark:bg-default-50/10"
-                      >
-                        <option value="">เพิ่ม Skill...</option>
-                        {skillPositions.map((position) => (
-                          <optgroup key={position.id} label={position.name}>
-                            {position.skills.map((skill) => (
-                              <option key={skill.id} value={skill.id}>
-                                {skill.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-
-                      {skillMappingMessage[question.id] && (
-                        <p
-                          className={`mt-2 text-xs ${
-                            skillMappingMessage[question.id]?.isError
-                              ? "text-danger-600"
-                              : "text-success-600"
-                          }`}
-                        >
-                          {skillMappingMessage[question.id]?.text}
-                        </p>
-                      )}
-                    </div>
+                    <AdminQuestionSkillMappingPanel quizId={quizId} question={question} />
                   )}
                 </BaseCard>
               );
@@ -514,7 +302,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                 isLoading={submitMutation.isPending}
                 onPress={handleSubmit}
               >
-                ส่งคำตอบ
+                à¸ªà¹ˆà¸‡à¸„à¸³à¸•à¸­à¸š
               </BaseButton>
             </div>
           )}
@@ -529,18 +317,18 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         className="w-[92vw] max-w-[760px]"
       >
         <ModalContent>
-          <ModalHeader>รายละเอียดการทำแบบทดสอบ</ModalHeader>
+          <ModalHeader>à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š</ModalHeader>
           <ModalBody>
             {selectedAttempt && (
               <div className="space-y-4">
                 <div className="rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
-                  <p className="text-sm text-default-500">แบบทดสอบ</p>
+                  <p className="text-sm text-default-500">à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š</p>
                   <h3 className="text-lg font-semibold">{selectedAttempt.quizTitle}</h3>
                   <div className="mt-2 grid gap-2 text-sm text-default-600 sm:grid-cols-3">
-                    <p>วันที่ส่ง: {new Date(selectedAttempt.submittedAt).toLocaleString("th-TH")}</p>
-                    <p>คะแนน: {selectedAttempt.score}</p>
+                    <p>à¸§à¸±à¸™à¸—à¸µà¹ˆà¸ªà¹ˆà¸‡: {new Date(selectedAttempt.submittedAt).toLocaleString("th-TH")}</p>
+                    <p>à¸„à¸°à¹à¸™à¸™: {selectedAttempt.score}</p>
                     <p>
-                      ถูก {selectedAttempt.correctCount}/{selectedAttempt.totalQuestions} ข้อ
+                      à¸–à¸¹à¸ {selectedAttempt.correctCount}/{selectedAttempt.totalQuestions} à¸‚à¹‰à¸­
                     </p>
                   </div>
                 </div>
@@ -557,7 +345,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                     >
                       <div className="mb-2 flex items-start justify-between gap-3">
                         <p className="font-medium">
-                          {index + 1}. {answer.questionText || "คำถามนี้ไม่มีข้อมูล"}
+                          {index + 1}. {answer.questionText || "à¸„à¸³à¸–à¸²à¸¡à¸™à¸µà¹‰à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥"}
                         </p>
                         {answer.isCorrect ? (
                           <CheckCircle2 size={18} className="shrink-0 text-success" />
@@ -568,20 +356,20 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
 
                       <div className="grid gap-2 text-sm sm:grid-cols-2">
                         <div className="rounded-md bg-background/70 p-2">
-                          <p className="text-xs text-default-500">คำตอบของคุณ</p>
+                          <p className="text-xs text-default-500">à¸„à¸³à¸•à¸­à¸šà¸‚à¸­à¸‡à¸„à¸¸à¸“</p>
                           <p className={answer.isCorrect ? "text-success-700" : "text-danger-700"}>
-                            {answer.selectedAnswer ?? "ไม่ได้ตอบ"}
+                            {answer.selectedAnswer ?? "à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸•à¸­à¸š"}
                           </p>
                         </div>
                         <div className="rounded-md bg-background/70 p-2">
-                          <p className="text-xs text-default-500">คำตอบที่ถูก</p>
+                          <p className="text-xs text-default-500">à¸„à¸³à¸•à¸­à¸šà¸—à¸µà¹ˆà¸–à¸¹à¸</p>
                           <p className="text-success-700">{answer.correctAnswer ?? "-"}</p>
                         </div>
                       </div>
 
                       {answer.explanation && (
                         <p className="mt-2 rounded-md bg-background/70 p-2 text-xs text-default-600">
-                          คำอธิบาย: {answer.explanation}
+                          à¸„à¸³à¸­à¸˜à¸´à¸šà¸²à¸¢: {answer.explanation}
                         </p>
                       )}
                     </div>
@@ -592,7 +380,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
           </ModalBody>
           <ModalFooter>
             <BaseButton variant="light" onPress={() => setSelectedAttempt(null)}>
-              ปิด
+              à¸›à¸´à¸”
             </BaseButton>
           </ModalFooter>
         </ModalContent>
