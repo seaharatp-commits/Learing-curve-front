@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ import type { QuizAttemptHistoryItem, QuizAttemptResult } from "@/types/app/lear
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 import { AdminQuestionSkillMappingPanel } from "./AdminQuestionSkillMappingPanel";
 
-const OPTION_LABELS = ["à¸", "à¸‚", "à¸„", "à¸‡"];
+const OPTION_LABELS = ["ก", "ข", "ค", "ง"];
 const ATTEMPTS_PER_PAGE = 8;
 
 interface QuizTakeContentProps {
@@ -58,11 +58,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
           className="flex items-center gap-1 text-sm text-default-500 hover:text-default-700"
         >
           <ArrowLeft size={16} />
-          à¸à¸¥à¸±à¸šà¹„à¸›à¸¢à¸±à¸‡à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š
+          กลับไปยังรายการแบบทดสอบ
         </button>
         <BaseCard>
           <p className="text-sm text-danger-600">
-            {getErrorMessage(error, "à¹‚à¸«à¸¥à¸”à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡")}
+            {getErrorMessage(error, "โหลดแบบทดสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
           </p>
         </BaseCard>
       </div>
@@ -72,7 +72,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   if (isLoading || !quiz) {
     return (
       <div className="mx-auto max-w-3xl">
-        <p className="text-default-400">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š...</p>
+        <p className="text-default-400">กำลังโหลดแบบทดสอบ...</p>
       </div>
     );
   }
@@ -87,7 +87,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
       {
         onSuccess: (data) => setResult(data),
         onError: (error) =>
-          setSubmitError(getErrorMessage(error, "à¸ªà¹ˆà¸‡à¸„à¸³à¸•à¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡")),
+          setSubmitError(getErrorMessage(error, "ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")),
       },
     );
   };
@@ -101,19 +101,19 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const historyPanel = (
     <BaseCard>
       <div className="mb-3">
-        <h2 className="text-base font-semibold">à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š</h2>
-        <p className="text-xs text-default-500">à¸„à¸¥à¸´à¸à¹à¸•à¹ˆà¸¥à¸°à¸„à¸£à¸±à¹‰à¸‡à¹€à¸žà¸·à¹ˆà¸­à¸”à¸¹à¸„à¸³à¸•à¸­à¸šà¸¢à¹‰à¸­à¸™à¸«à¸¥à¸±à¸‡</p>
+        <h2 className="text-base font-semibold">ประวัติการทำแบบทดสอบ</h2>
+        <p className="text-xs text-default-500">คลิกแต่ละครั้งเพื่อดูคำตอบย้อนหลัง</p>
       </div>
 
       {isAttemptsLoading ? (
-        <p className="text-sm text-default-500">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸›à¸£à¸°à¸§à¸±à¸•à¸´...</p>
+        <p className="text-sm text-default-500">กำลังโหลดประวัติ...</p>
       ) : isAttemptsError ? (
         <p className="text-sm text-danger-600">
-          {getErrorMessage(attemptsError, "à¹‚à¸«à¸¥à¸”à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ")}
+          {getErrorMessage(attemptsError, "โหลดประวัติการทำแบบทดสอบไม่สำเร็จ")}
         </p>
       ) : attemptHistory.length === 0 ? (
         <div className="rounded-lg border border-dashed border-default-200 p-3 text-sm text-default-500">
-          à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸šà¸™à¸µà¹‰
+          ยังไม่มีประวัติการทำแบบทดสอบนี้
         </div>
       ) : (
         <div>
@@ -129,11 +129,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                   className="w-full rounded-lg bg-default-50 px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:bg-default-100/10"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">à¸„à¸£à¸±à¹‰à¸‡à¸—à¸µà¹ˆ {attemptNumber}</p>
+                    <p className="font-medium">ครั้งที่ {attemptNumber}</p>
                     <span className="text-base font-semibold text-primary">{attempt.score}</span>
                   </div>
                   <p className="text-xs text-default-500">
-                    à¸–à¸¹à¸ {attempt.correctCount}/{attempt.totalQuestions} à¸‚à¹‰à¸­
+                    ถูก {attempt.correctCount}/{attempt.totalQuestions} ข้อ
                   </p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-default-400">
                     <Eye size={12} />
@@ -152,7 +152,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                 isDisabled={currentAttemptPage === 1}
                 onPress={() => setAttemptPage((page) => Math.max(1, page - 1))}
               >
-                à¸à¹ˆà¸­à¸™à¸«à¸™à¹‰à¸²
+                ก่อนหน้า
               </BaseButton>
               <span>
                 {currentAttemptPage}/{totalAttemptPages}
@@ -163,7 +163,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                 isDisabled={currentAttemptPage === totalAttemptPages}
                 onPress={() => setAttemptPage((page) => Math.min(totalAttemptPages, page + 1))}
               >
-                à¸–à¸±à¸”à¹„à¸›
+                ถัดไป
               </BaseButton>
             </div>
           )}
@@ -184,7 +184,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         className="flex w-fit items-center gap-1 text-sm text-default-500 hover:text-default-700"
       >
         <ArrowLeft size={16} />
-        à¸à¸¥à¸±à¸šà¹„à¸›à¸¢à¸±à¸‡à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š
+        กลับไปยังรายการแบบทดสอบ
       </button>
 
       <div className="2xl:hidden">{historyPanel}</div>
@@ -194,11 +194,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
             <h1 className="text-2xl font-semibold">{quiz.title}</h1>
             {result && (
               <p className="mt-1 text-sm text-default-500">
-                à¸„à¸¸à¸“à¹„à¸”à¹‰à¸„à¸°à¹à¸™à¸™{" "}
+                คุณได้คะแนน{" "}
                 <span className="font-semibold text-primary">
                   {result.correctCount}/{result.totalQuestions}
                 </span>{" "}
-                ({result.score} à¸„à¸°à¹à¸™à¸™)
+                ({result.score} คะแนน)
               </p>
             )}
           </div>
@@ -207,22 +207,22 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
             <BaseCard className="border-success/30 bg-success/10">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-success-700">à¸ªà¹ˆà¸‡à¸„à¸³à¸•à¸­à¸šà¸ªà¸³à¹€à¸£à¹‡à¸ˆ</p>
+                  <p className="text-sm font-semibold text-success-700">ส่งคำตอบสำเร็จ</p>
                   <p className="text-sm text-default-600">
-                    à¸„à¸¸à¸“à¸•à¸­à¸šà¸–à¸¹à¸ {result.correctCount}/{result.totalQuestions} à¸‚à¹‰à¸­ à¹„à¸”à¹‰{" "}
-                    {result.score} à¸„à¸°à¹à¸™à¸™
+                    คุณตอบถูก {result.correctCount}/{result.totalQuestions} ข้อ ได้{" "}
+                    {result.score} คะแนน
                   </p>
                   <p className="text-xs text-default-500">
-                    à¸šà¸±à¸™à¸—à¸¶à¸ attempt à¹à¸¥à¹‰à¸§à¹€à¸¡à¸·à¹ˆà¸­{" "}
+                    บันทึก attempt แล้วเมื่อ{" "}
                     {new Date(result.submittedAt).toLocaleString("th-TH")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <BaseButton size="sm" variant="flat" onPress={handleRetry}>
-                    à¸—à¸³à¹ƒà¸«à¸¡à¹ˆ
+                    ทำใหม่
                   </BaseButton>
                   <BaseButton size="sm" onPress={() => router.push("/quizzes")}>
-                    à¸à¸¥à¸±à¸šà¸£à¸²à¸¢à¸à¸²à¸£à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š
+                    กลับรายการแบบทดสอบ
                   </BaseButton>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                   </div>
                   {answer?.explanation && (
                     <p className="mt-3 rounded-lg bg-default-50 p-2 text-xs text-default-500 dark:bg-default-100/10">
-                      à¸„à¸³à¸­à¸˜à¸´à¸šà¸²à¸¢: {answer.explanation}
+                      คำอธิบาย: {answer.explanation}
                     </p>
                   )}
                   {isAdmin && (
@@ -302,7 +302,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                 isLoading={submitMutation.isPending}
                 onPress={handleSubmit}
               >
-                à¸ªà¹ˆà¸‡à¸„à¸³à¸•à¸­à¸š
+                ส่งคำตอบ
               </BaseButton>
             </div>
           )}
@@ -317,18 +317,18 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
         className="w-[92vw] max-w-[760px]"
       >
         <ModalContent>
-          <ModalHeader>à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¸à¸²à¸£à¸—à¸³à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š</ModalHeader>
+          <ModalHeader>รายละเอียดการทำแบบทดสอบ</ModalHeader>
           <ModalBody>
             {selectedAttempt && (
               <div className="space-y-4">
                 <div className="rounded-lg bg-default-50 p-3 dark:bg-default-100/10">
-                  <p className="text-sm text-default-500">à¹à¸šà¸šà¸—à¸”à¸ªà¸­à¸š</p>
+                  <p className="text-sm text-default-500">แบบทดสอบ</p>
                   <h3 className="text-lg font-semibold">{selectedAttempt.quizTitle}</h3>
                   <div className="mt-2 grid gap-2 text-sm text-default-600 sm:grid-cols-3">
-                    <p>à¸§à¸±à¸™à¸—à¸µà¹ˆà¸ªà¹ˆà¸‡: {new Date(selectedAttempt.submittedAt).toLocaleString("th-TH")}</p>
-                    <p>à¸„à¸°à¹à¸™à¸™: {selectedAttempt.score}</p>
+                    <p>วันที่ส่ง: {new Date(selectedAttempt.submittedAt).toLocaleString("th-TH")}</p>
+                    <p>คะแนน: {selectedAttempt.score}</p>
                     <p>
-                      à¸–à¸¹à¸ {selectedAttempt.correctCount}/{selectedAttempt.totalQuestions} à¸‚à¹‰à¸­
+                      ถูก {selectedAttempt.correctCount}/{selectedAttempt.totalQuestions} ข้อ
                     </p>
                   </div>
                 </div>
@@ -345,7 +345,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                     >
                       <div className="mb-2 flex items-start justify-between gap-3">
                         <p className="font-medium">
-                          {index + 1}. {answer.questionText || "à¸„à¸³à¸–à¸²à¸¡à¸™à¸µà¹‰à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥"}
+                          {index + 1}. {answer.questionText || "คำถามนี้ไม่มีข้อมูล"}
                         </p>
                         {answer.isCorrect ? (
                           <CheckCircle2 size={18} className="shrink-0 text-success" />
@@ -356,20 +356,20 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
 
                       <div className="grid gap-2 text-sm sm:grid-cols-2">
                         <div className="rounded-md bg-background/70 p-2">
-                          <p className="text-xs text-default-500">à¸„à¸³à¸•à¸­à¸šà¸‚à¸­à¸‡à¸„à¸¸à¸“</p>
+                          <p className="text-xs text-default-500">คำตอบของคุณ</p>
                           <p className={answer.isCorrect ? "text-success-700" : "text-danger-700"}>
-                            {answer.selectedAnswer ?? "à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸•à¸­à¸š"}
+                            {answer.selectedAnswer ?? "ไม่ได้ตอบ"}
                           </p>
                         </div>
                         <div className="rounded-md bg-background/70 p-2">
-                          <p className="text-xs text-default-500">à¸„à¸³à¸•à¸­à¸šà¸—à¸µà¹ˆà¸–à¸¹à¸</p>
+                          <p className="text-xs text-default-500">คำตอบที่ถูก</p>
                           <p className="text-success-700">{answer.correctAnswer ?? "-"}</p>
                         </div>
                       </div>
 
                       {answer.explanation && (
                         <p className="mt-2 rounded-md bg-background/70 p-2 text-xs text-default-600">
-                          à¸„à¸³à¸­à¸˜à¸´à¸šà¸²à¸¢: {answer.explanation}
+                          คำอธิบาย: {answer.explanation}
                         </p>
                       )}
                     </div>
@@ -380,7 +380,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
           </ModalBody>
           <ModalFooter>
             <BaseButton variant="light" onPress={() => setSelectedAttempt(null)}>
-              à¸›à¸´à¸”
+              ปิด
             </BaseButton>
           </ModalFooter>
         </ModalContent>
