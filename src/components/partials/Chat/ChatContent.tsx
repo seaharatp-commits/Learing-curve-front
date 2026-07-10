@@ -255,6 +255,7 @@ export default function ChatContent() {
     knowledgeBaseArticleId?: string,
     knowledgeBaseConfidenceScore?: number,
     localMessageIdsToReplace: string[] = [],
+    suppressRecommendedKnowledgeBases = false,
   ) => {
     const runId = chatRunIdRef.current;
     const thinkingMessage = createLocalMessage("assistant", THINKING_MESSAGE);
@@ -270,7 +271,9 @@ export default function ChatContent() {
       if (runId !== chatRunIdRef.current) return;
       setSessionId(result.session.id);
       setAiRecommendedKnowledgeBases(
-        (result.recommendedKnowledgeBases ?? []).filter((item) => item.shouldRecommend),
+        suppressRecommendedKnowledgeBases
+          ? []
+          : (result.recommendedKnowledgeBases ?? []).filter((item) => item.shouldRecommend),
       );
       setMessages((prev) => [
         ...prev.filter(
@@ -347,12 +350,16 @@ export default function ChatContent() {
     const userMessage = createLocalMessage("user", content);
     setMessages((prev) => [...prev, userMessage]);
 
-    if (activeKnowledge && isRelatedToActiveKnowledge(content, activeKnowledge)) {
-      await sendToAi(content, activeKnowledge.articleId, activeKnowledge.confidenceScore, [userMessage.id]);
+    if (activeKnowledge) {
+      await sendToAi(
+        content,
+        activeKnowledge.articleId,
+        activeKnowledge.confidenceScore,
+        [userMessage.id],
+        true,
+      );
       return;
     }
-
-    if (activeKnowledge) setActiveKnowledge(null);
 
     let matches: RecommendationResult[] = [];
     try {
@@ -400,6 +407,8 @@ export default function ChatContent() {
       content,
       confirmedChoice?.articleId,
       confirmedChoice?.confidenceScore,
+      [],
+      Boolean(confirmedChoice),
     );
   };
 
@@ -692,7 +701,7 @@ export default function ChatContent() {
           <div ref={bottomRef} />
         </div>
       </BaseCard>
-      {aiRecommendedKnowledgeBases.length > 0 && knowledgeChoices.length === 0 && (
+      {aiRecommendedKnowledgeBases.length > 0 && knowledgeChoices.length === 0 && !activeKnowledge && (
         <BaseCard className="space-y-2 border-primary/20 bg-primary/5">
           <div className="flex items-start gap-2">
             <BookOpen size={17} className="mt-0.5 text-primary" />
