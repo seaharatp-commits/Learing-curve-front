@@ -18,14 +18,37 @@ interface FormattedAnswerDisplay {
 }
 
 function extractJsonLikeString(value: string, key: "title" | "content") {
-  const match = value.match(new RegExp(`["']?${key}["']?\\s*:\\s*["']([\\s\\S]*?)["']\\s*(?:,|})`, "i"));
-  return match?.[1]?.trim() ?? "";
+  const match = value.match(new RegExp(`["']?${key}["']?\\s*:\\s*("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*')`, "i"));
+  const rawValue = match?.[1];
+  if (!rawValue) return "";
+
+  if (rawValue.startsWith('"')) {
+    try {
+      return (JSON.parse(rawValue) as string).trim();
+    } catch {
+      return rawValue.slice(1, -1).trim();
+    }
+  }
+
+  return rawValue.slice(1, -1).replace(/\\'/g, "'").trim();
 }
 
 function stripCodeFence(value: string) {
   return value
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```$/i, "")
+    .replace(/^```[a-z0-9_-]*\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function normalizeMarkdownArtifacts(value: string) {
+  return value
+    .replace(/\r\n/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/^\s*[-*_]{3,}\s*$/gm, "")
+    .replace(/([.!?:])\s+(\d+[.)]\s+)/g, "$1\n$2")
+    .replace(/([^\n])\s+(\d+[.)]\s+)/g, "$1\n$2")
+    .replace(/([^\n])\s+([-*\u2022]\s+)/g, "$1\n$2")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -87,10 +110,7 @@ function normalizeAnswerContent(content: string) {
 }
 
 function parseAnswerBlocks(content: string): AnswerBlock[] {
-  const normalizedContent = normalizeAnswerContent(content)
-    .replace(/\r\n/g, "\n")
-    .replace(/([.!?:])\s+(\d+[.)]\s+)/g, "$1\n$2")
-    .replace(/([^\n])\s+([-*\u2022]\s+)/g, "$1\n$2");
+  const normalizedContent = normalizeMarkdownArtifacts(normalizeAnswerContent(content));
   const lines = normalizedContent.split("\n");
   const blocks: AnswerBlock[] = [];
   let paragraph: string[] = [];
@@ -209,7 +229,6 @@ function renderInlineText(text: string): ReactNode[] {
 
 export function FormattedAnswer({ content, className = "space-y-3" }: FormattedAnswerProps) {
   const blocks = parseAnswerBlocks(content);
-  let orderedListStart = 1;
 
   return (
     <div className={className}>
@@ -231,11 +250,8 @@ export function FormattedAnswer({ content, className = "space-y-3" }: FormattedA
           );
         }
         if (block.type === "ordered-list") {
-          const start = orderedListStart;
-          orderedListStart += block.items.length;
-
           return (
-            <ol key={index} start={start} className="list-decimal space-y-1.5 pl-5 leading-7">
+            <ol key={index} className="list-decimal space-y-1.5 pl-5 leading-7">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex}>{renderInlineText(item)}</li>
               ))}
