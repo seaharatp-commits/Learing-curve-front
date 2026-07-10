@@ -104,7 +104,7 @@ export function CareerAlignmentCard({
         <Sparkles size={18} />
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[1.6fr_1fr] md:items-center">
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center">
         <div className="flex gap-4">
           <div className="career-alignment-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 shadow-inner dark:border dark:border-blue-400/20 dark:bg-blue-500/15 dark:text-blue-200">
             <Award size={30} />
