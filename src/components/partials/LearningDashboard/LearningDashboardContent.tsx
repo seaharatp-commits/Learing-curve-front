@@ -320,6 +320,7 @@ export default function LearningDashboardContent() {
           positionName={careerAlignment.position}
           strengths={careerAlignment.strengths}
           description={careerAlignment.description}
+          quotes={careerAlignment.quotes}
         />
       ) : null}
 

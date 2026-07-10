@@ -2,6 +2,10 @@
 @plugin "../../heroui.plugin.ts";
 @source "../../node_modules/@heroui/theme/dist/**/*.js";
 
+@theme inline {
+  --font-sans: var(--font-inter), var(--font-noto-sans-thai), system-ui, sans-serif;
+}
+
 html,
 body {
   min-height: 100%;
@@ -15,8 +19,8 @@ html {
 body {
   min-height: 100dvh;
   font-family:
-    var(--font-noto-sans-thai, "Noto Sans Thai"),
     var(--font-inter, Inter),
+    var(--font-noto-sans-thai, "Noto Sans Thai"),
     "Leelawadee UI",
     Tahoma,
     "Segoe UI",
@@ -54,10 +58,14 @@ button {
   font-weight: 500;
 }
 
+svg text {
+  font-family: inherit;
+}
+
 .thai-readable {
   font-family:
-    var(--font-noto-sans-thai, "Noto Sans Thai"),
     var(--font-inter, Inter),
+    var(--font-noto-sans-thai, "Noto Sans Thai"),
     "Leelawadee UI",
     Tahoma,
     "Segoe UI",

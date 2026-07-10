@@ -8,9 +8,10 @@ export type CareerAlignmentCardProps = {
   positionName: string;
   strengths?: string[];
   description?: string;
+  quotes?: string[];
 };
 
-const QUOTE_ROTATION_MS = 2200;
+const QUOTE_ROTATION_MS = 2500;
 const EMPTY_STATE_ITEMS = ["ทำ Quiz ที่เกี่ยวข้องกับตำแหน่ง", "ถามคำถามผ่าน AI Chat", "เรียนและทำบทเรียนให้สำเร็จ"];
 
 // Highlight/AI-insight card that sits above the Skill Radar. Card chrome (blue
@@ -22,10 +23,16 @@ const EMPTY_STATE_ITEMS = ["ทำ Quiz ที่เกี่ยวข้อง�
 // evidence yet" (calculateCareerAlignment only returns strengths once at least
 // one skill has real evidence) — when true this renders a plain empty state
 // instead of anything that looks like a completed AI analysis.
-export function CareerAlignmentCard({ positionName, strengths = [], description }: CareerAlignmentCardProps) {
+export function CareerAlignmentCard({ positionName, strengths = [], description, quotes = [] }: CareerAlignmentCardProps) {
   const hasEvidence = strengths.length > 0;
   const content = useMemo(() => getCareerAlignmentContent(positionName), [positionName]);
-  const displayQuotes = useMemo(() => [content.quote], [content.quote]);
+  const displayQuotes = useMemo(() => {
+    const uniqueQuotes = Array.from(
+      new Set(quotes.map((quote) => quote.trim()).filter((quote) => quote.length > 0)),
+    ).slice(0, 4);
+
+    return uniqueQuotes.length > 0 ? uniqueQuotes : [content.quote];
+  }, [content.quote, quotes]);
   const [quoteIndex, setQuoteIndex] = useState(0);
 
   useEffect(() => {
@@ -61,7 +68,7 @@ export function CareerAlignmentCard({ positionName, strengths = [], description 
           <div className="min-w-0">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
               {/* Title: strongest text */}
-              <h2 className="career-alignment-title text-xl font-bold text-blue-900 dark:text-blue-100">
+              <h2 className="career-alignment-title text-xl font-semibold text-blue-900 dark:text-blue-100">
                 Career Alignment
               </h2>
 
@@ -96,7 +103,7 @@ export function CareerAlignmentCard({ positionName, strengths = [], description 
         <div className="career-alignment-strengths rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-200/70 dark:border-blue-300/15 dark:bg-slate-900/75 dark:shadow-black/20">
           {hasEvidence ? (
             <>
-              <h3 className="career-alignment-strengths-title mb-3 text-sm font-bold text-success-600 dark:text-success-500">
+              <h3 className="career-alignment-strengths-title mb-3 text-sm font-semibold text-success-600 dark:text-success-500">
                 จุดเด่น
               </h3>
               <ul className="space-y-2">
@@ -113,7 +120,7 @@ export function CareerAlignmentCard({ positionName, strengths = [], description 
             </>
           ) : (
             <>
-              <h3 className="career-alignment-strengths-title mb-3 text-sm font-bold text-default-600 dark:text-default-400">
+              <h3 className="career-alignment-strengths-title mb-3 text-sm font-semibold text-default-600 dark:text-default-400">
                 เริ่มสร้างโปรไฟล์ทักษะ
               </h3>
               <ul className="space-y-2">
