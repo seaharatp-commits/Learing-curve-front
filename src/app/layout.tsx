@@ -1,19 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Thai } from "next/font/google";
 import { AppProviders } from "@/context/HeroUIProviders";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const notoSansThai = Noto_Sans_Thai({
-  subsets: ["thai", "latin"],
-  variable: "--font-noto-sans-thai",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Learning Curve",
@@ -37,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${notoSansThai.variable} ${inter.variable} bg-background text-foreground`}>
+      <body className="bg-background text-foreground">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
