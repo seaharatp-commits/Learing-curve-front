@@ -42,10 +42,16 @@ const FALLBACK_SUGGESTED_QUESTIONS = [
 ];
 const SUGGESTED_QUESTIONS_DISPLAY_LIMIT = 3;
 
-type ActiveKnowledgeContext = Pick<
-  RecommendationResult,
-  "articleId" | "title" | "category" | "preview" | "summary" | "resolution" | "confidenceScore" | "matchedKeywords"
->;
+interface ActiveKnowledgeContext {
+  articleId: string;
+  title: string;
+  category?: string | null;
+  preview?: string | null;
+  summary?: string | null;
+  resolution?: string | null;
+  confidenceScore: number;
+  matchedKeywords?: string[];
+}
 
 const THINKING_MESSAGE = "AI กำลังคิด...";
 const AI_LOADING_MESSAGES = [
@@ -412,6 +418,35 @@ export default function ChatContent() {
     );
   };
 
+  const handleActivateRecommendedKnowledge = async (item: RecommendedKnowledgeBase) => {
+    const selectedKnowledge = {
+      articleId: item.articleId,
+      title: item.title,
+      category: "Knowledge Base",
+      preview: item.preview,
+      summary: item.summary ?? item.whyThisKBIsRelevant ?? item.reason,
+      resolution: null,
+      confidenceScore: item.confidenceScore,
+      matchedKeywords: item.matchedSkills,
+    };
+    const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
+
+    setActiveKnowledge(selectedKnowledge);
+    setAiRecommendedKnowledgeBases([]);
+    setKnowledgeChoices([]);
+    setKnowledgePendingHint("");
+
+    if (latestUserMessage) {
+      await sendToAi(
+        latestUserMessage.content,
+        selectedKnowledge.articleId,
+        selectedKnowledge.confidenceScore,
+        [],
+        true,
+      );
+    }
+  };
+
   const handleNewChat = () => {
     chatRunIdRef.current += 1;
     setSessionId(undefined);
@@ -714,9 +749,12 @@ export default function ChatContent() {
           </div>
           <div className="grid gap-2">
             {aiRecommendedKnowledgeBases.slice(0, 3).map((item) => (
-              <div
+              <button
                 key={item.articleId}
-                className="rounded-lg border border-default-200 bg-background/70 px-3 py-2 dark:border-default-100/20"
+                type="button"
+                disabled={isBusy}
+                onClick={() => handleActivateRecommendedKnowledge(item)}
+                className="rounded-lg border border-default-200 bg-background/70 px-3 py-2 text-left transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-default-100/20"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
@@ -727,7 +765,7 @@ export default function ChatContent() {
                 <p className="mt-1 line-clamp-2 text-xs text-default-500">
                   {item.preview || item.summary || item.whyThisKBIsRelevant || item.reason}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </BaseCard>
