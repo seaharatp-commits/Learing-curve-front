@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   GraduationCap,
   MoreHorizontal,
-  Pencil,
   PlayCircle,
   Sparkles,
   Trash2,
@@ -109,11 +108,6 @@ export default function LearningDashboardContent() {
 
   const handleLessonMenuAction = (key: React.Key, lesson: LearningLessonItem) => {
     if (key === "start") {
-      router.push(`/lessons/${lesson.lessonId}`);
-      return;
-    }
-    if (key === "edit") {
-      // TODO: no dedicated lesson-edit page exists yet — route to the lesson view for now.
       router.push(`/lessons/${lesson.lessonId}`);
       return;
     }
@@ -408,9 +402,6 @@ export default function LearningDashboardContent() {
                     >
                       <DropdownItem key="start" startContent={<PlayCircle size={16} />}>
                         เริ่มเรียน
-                      </DropdownItem>
-                      <DropdownItem key="edit" startContent={<Pencil size={16} />}>
-                        แก้ไข
                       </DropdownItem>
                       <DropdownItem
                         key="delete"
