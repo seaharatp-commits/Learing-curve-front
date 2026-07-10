@@ -9,6 +9,7 @@ import type { RecommendationResult } from "@/types/app/knowledgeBase";
 import { useSendMessage, useSessionMessages, useSuggestedQuestions } from "@/hooks/chat";
 import { useHistoryList, useDeleteHistory } from "@/hooks/history";
 import { useRecommendations } from "@/hooks/knowledgeBase";
+import { useMySkillRadar } from "@/hooks/skillRadar";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
@@ -150,6 +151,10 @@ export default function ChatContent() {
   const { mutateAsync, isPending } = useSendMessage();
   const recommendationsMutation = useRecommendations();
   const {
+    data: skillRadar,
+    isLoading: isSkillRadarLoading,
+  } = useMySkillRadar();
+  const {
     data: chatHistory,
     isLoading: isChatHistoryLoading,
     isError: isChatHistoryError,
@@ -157,13 +162,15 @@ export default function ChatContent() {
   } = useHistoryList();
   const deleteHistoryMutation = useDeleteHistory();
   const { data: history, isLoading: isHistoryLoading } = useSessionMessages(initialSessionId);
-  const showSuggestedQuestions = !isHistoryLoading && messages.length === 0;
+  const currentPositionId = skillRadar?.position.id;
+  const showSuggestedQuestions =
+    !isHistoryLoading && !isSkillRadarLoading && Boolean(currentPositionId) && messages.length === 0;
   const {
     questions: suggestedQuestions,
     isLoading: isSuggestedQuestionsLoading,
     isError: isSuggestedQuestionsError,
     refetch: refetchSuggestedQuestions,
-  } = useSuggestedQuestions(showSuggestedQuestions);
+  } = useSuggestedQuestions(showSuggestedQuestions, currentPositionId);
   const displayedSuggestedQuestions = (
     isSuggestedQuestionsError || suggestedQuestions.length === 0
       ? FALLBACK_SUGGESTED_QUESTIONS

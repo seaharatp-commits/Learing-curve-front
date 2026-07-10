@@ -5,6 +5,7 @@ import { sendChatMessage } from "@/services/chat.service";
 import type { SendMessagePayload } from "@/types/app/chat";
 import { HISTORY_LIST_QUERY_KEY } from "@/hooks/history/useHistoryList";
 import { CAREER_ALIGNMENT_QUERY_KEY, mySkillRadarQueryKey } from "@/hooks/skillRadar";
+import { SUGGESTED_QUESTIONS_QUERY_ROOT } from "./useSuggestedQuestions";
 
 export const useSendMessage = () => {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export const useSendMessage = () => {
       queryClient.invalidateQueries({ queryKey: HISTORY_LIST_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: mySkillRadarQueryKey() });
       queryClient.invalidateQueries({ queryKey: CAREER_ALIGNMENT_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: SUGGESTED_QUESTIONS_QUERY_ROOT });
     },
   });
   return mutation;
