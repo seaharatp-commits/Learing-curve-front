@@ -73,6 +73,19 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     );
   }, [quiz]);
 
+  const totalAttemptPages = Math.max(1, Math.ceil(attemptHistory.length / ATTEMPTS_PER_PAGE));
+  const currentAttemptPage = Math.min(attemptPage, totalAttemptPages);
+  const attemptStartIndex = (currentAttemptPage - 1) * ATTEMPTS_PER_PAGE;
+  const visibleAttemptHistory = attemptHistory.slice(attemptStartIndex, attemptStartIndex + ATTEMPTS_PER_PAGE);
+
+  useEffect(() => {
+    setAttemptPage(1);
+  }, [quizId]);
+
+  useEffect(() => {
+    setAttemptPage((page) => Math.min(page, totalAttemptPages));
+  }, [totalAttemptPages]);
+
   if (isError) {
     return (
       <div className="mx-auto max-w-3xl space-y-3">
@@ -217,19 +230,6 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     setResult(null);
     setSubmitError(null);
   };
-
-  const totalAttemptPages = Math.max(1, Math.ceil(attemptHistory.length / ATTEMPTS_PER_PAGE));
-  const currentAttemptPage = Math.min(attemptPage, totalAttemptPages);
-  const attemptStartIndex = (currentAttemptPage - 1) * ATTEMPTS_PER_PAGE;
-  const visibleAttemptHistory = attemptHistory.slice(attemptStartIndex, attemptStartIndex + ATTEMPTS_PER_PAGE);
-
-  useEffect(() => {
-    setAttemptPage(1);
-  }, [quizId]);
-
-  useEffect(() => {
-    setAttemptPage((page) => Math.min(page, totalAttemptPages));
-  }, [totalAttemptPages]);
 
   const historyPanel = (
     <BaseCard>
