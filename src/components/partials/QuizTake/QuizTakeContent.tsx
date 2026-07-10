@@ -17,6 +17,7 @@ import type { QuizAttemptHistoryItem, QuizAttemptResult } from "@/types/app/lear
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
 
 const OPTION_LABELS = ["ก", "ข", "ค", "ง"];
+const ATTEMPTS_PER_PAGE = 8;
 
 interface QuizTakeContentProps {
   quizId: string;
@@ -41,6 +42,7 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [selectedAttempt, setSelectedAttempt] = useState<QuizAttemptHistoryItem | null>(null);
+  const [attemptPage, setAttemptPage] = useState(1);
   const [skillMappingState, setSkillMappingState] = useState<Record<string, string[]>>({});
   const [skillMappingMessage, setSkillMappingMessage] = useState<
     Record<string, { text: string; isError: boolean } | undefined>
@@ -216,6 +218,19 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
     setSubmitError(null);
   };
 
+  const totalAttemptPages = Math.max(1, Math.ceil(attemptHistory.length / ATTEMPTS_PER_PAGE));
+  const currentAttemptPage = Math.min(attemptPage, totalAttemptPages);
+  const attemptStartIndex = (currentAttemptPage - 1) * ATTEMPTS_PER_PAGE;
+  const visibleAttemptHistory = attemptHistory.slice(attemptStartIndex, attemptStartIndex + ATTEMPTS_PER_PAGE);
+
+  useEffect(() => {
+    setAttemptPage(1);
+  }, [quizId]);
+
+  useEffect(() => {
+    setAttemptPage((page) => Math.min(page, totalAttemptPages));
+  }, [totalAttemptPages]);
+
   const historyPanel = (
     <BaseCard className="lg:sticky lg:top-24">
       <div className="mb-3">
@@ -234,27 +249,57 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
           ยังไม่มีประวัติการทำแบบทดสอบนี้
         </div>
       ) : (
-        <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
-          {attemptHistory.slice(0, 8).map((attempt, index) => (
-            <button
-              key={attempt.attemptId}
-              type="button"
-              onClick={() => setSelectedAttempt(attempt)}
-              className="w-full rounded-lg bg-default-50 px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:bg-default-100/10"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-medium">ครั้งที่ {attemptHistory.length - index}</p>
-                <span className="text-base font-semibold text-primary">{attempt.score}</span>
-              </div>
-              <p className="text-xs text-default-500">
-                ถูก {attempt.correctCount}/{attempt.totalQuestions} ข้อ
-              </p>
-              <p className="mt-1 flex items-center gap-1 text-xs text-default-400">
-                <Eye size={12} />
-                {new Date(attempt.submittedAt).toLocaleString("th-TH")}
-              </p>
-            </button>
-          ))}
+        <div>
+          <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
+            {visibleAttemptHistory.map((attempt, index) => {
+              const attemptNumber = attemptHistory.length - (attemptStartIndex + index);
+
+              return (
+                <button
+                  key={attempt.attemptId}
+                  type="button"
+                  onClick={() => setSelectedAttempt(attempt)}
+                  className="w-full rounded-lg bg-default-50 px-3 py-2 text-left text-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:bg-default-100/10"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">ครั้งที่ {attemptNumber}</p>
+                    <span className="text-base font-semibold text-primary">{attempt.score}</span>
+                  </div>
+                  <p className="text-xs text-default-500">
+                    ถูก {attempt.correctCount}/{attempt.totalQuestions} ข้อ
+                  </p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-default-400">
+                    <Eye size={12} />
+                    {new Date(attempt.submittedAt).toLocaleString("th-TH")}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {totalAttemptPages > 1 && (
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-default-200 pt-3 text-xs text-default-500 dark:border-default-100/20">
+              <BaseButton
+                size="sm"
+                variant="flat"
+                isDisabled={currentAttemptPage === 1}
+                onPress={() => setAttemptPage((page) => Math.max(1, page - 1))}
+              >
+                ก่อนหน้า
+              </BaseButton>
+              <span>
+                {currentAttemptPage}/{totalAttemptPages}
+              </span>
+              <BaseButton
+                size="sm"
+                variant="flat"
+                isDisabled={currentAttemptPage === totalAttemptPages}
+                onPress={() => setAttemptPage((page) => Math.min(totalAttemptPages, page + 1))}
+              >
+                ถัดไป
+              </BaseButton>
+            </div>
+          )}
         </div>
       )}
     </BaseCard>
