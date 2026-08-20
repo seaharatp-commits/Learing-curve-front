@@ -117,10 +117,11 @@ export default function LoginContent() {
               <button
                 type="button"
                 aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
-                className="text-default-400 hover:text-default-600"
+                aria-pressed={showPassword}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md p-0 text-default-400 transition-colors hover:bg-default-100 hover:text-default-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:bg-white/10 dark:hover:text-default-200"
                 onClick={() => setShowPassword((current) => !current)}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
               </button>
             }
             isRequired
@@ -141,10 +142,11 @@ export default function LoginContent() {
                 <button
                   type="button"
                   aria-label={showConfirmPassword ? "ซ่อนยืนยันรหัสผ่าน" : "แสดงยืนยันรหัสผ่าน"}
-                  className="text-default-400 hover:text-default-600"
+                  aria-pressed={showConfirmPassword}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md p-0 text-default-400 transition-colors hover:bg-default-100 hover:text-default-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:bg-white/10 dark:hover:text-default-200"
                   onClick={() => setShowConfirmPassword((current) => !current)}
                 >
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showConfirmPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
                 </button>
               }
               isRequired
