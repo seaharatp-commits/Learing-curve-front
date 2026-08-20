@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { BookOpen, Eye, EyeOff, Sparkles } from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseCard } from "@/components/ui/Card";
@@ -65,14 +65,28 @@ export default function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <BaseCard className="w-full max-w-md p-2">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary-50 via-background to-background px-4 py-8 dark:from-primary-950/30 dark:via-background dark:to-background sm:px-6">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary-200/35 blur-3xl dark:bg-primary-500/10" />
+      <div className="pointer-events-none absolute -bottom-32 -right-24 h-80 w-80 rounded-full bg-secondary-200/25 blur-3xl dark:bg-secondary-500/10" />
+
+      <BaseCard className="relative w-full max-w-md overflow-hidden border-primary/15 bg-content1/95 shadow-xl shadow-primary/10 dark:border-white/10 dark:bg-[#11161d]/90">
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-primary-400 to-secondary" />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 sm:p-8">
           <div className="mb-2 text-center">
-            <h1 className="text-2xl font-semibold">
-              {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15 dark:bg-primary/15 dark:ring-primary/25">
+              {mode === "login" ? <BookOpen size={24} /> : <Sparkles size={24} />}
+            </div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              Learning Curve
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {mode === "login" ? "ยินดีต้อนรับกลับมา" : "เริ่มเส้นทางการเรียนรู้"}
             </h1>
-            <p className="text-sm text-default-500">Learning Curve</p>
+            <p className="mt-1 text-sm text-default-500">
+              {mode === "login"
+                ? "เข้าสู่ระบบเพื่อเรียนต่อจากจุดเดิมของคุณ"
+                : "สร้างบัญชีเพื่อเริ่มเรียนรู้ในแบบของคุณ"}
+            </p>
           </div>
           {mode === "register" && (
             <BaseInput
@@ -136,20 +150,30 @@ export default function LoginContent() {
               isRequired
             />
           )}
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <BaseButton type="submit" isLoading={loading} className="w-full">
+          {error && (
+            <p
+              role="alert"
+              aria-live="polite"
+              className="rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700 dark:border-danger-400/20 dark:bg-danger-500/10 dark:text-danger-300"
+            >
+              {error}
+            </p>
+          )}
+          <BaseButton type="submit" isLoading={loading} size="lg" className="mt-1 h-11 w-full rounded-xl">
             {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
           </BaseButton>
           <button
             type="button"
-            className="text-center text-sm text-primary hover:underline"
+            className="text-center text-sm font-medium text-primary transition-colors hover:text-primary-600 hover:underline dark:hover:text-primary-300"
             onClick={toggleMode}
           >
             {mode === "login" ? "ยังไม่มีบัญชี? สมัครสมาชิก" : "มีบัญชีแล้ว? เข้าสู่ระบบ"}
           </button>
-          <p className="text-center text-xs text-default-400">บัญชีแอดมินเดิมยังใช้งานได้ตามปกติ</p>
+          <p className="border-t border-default-200/70 pt-3 text-center text-xs leading-5 text-default-400 dark:border-white/10">
+            บัญชีแอดมินเดิมยังใช้งานได้ตามปกติ
+          </p>
         </form>
       </BaseCard>
-    </div>
+    </main>
   );
 }
