@@ -125,7 +125,7 @@ export default function SkillRadarCard({
       : "ข้อมูลเริ่มกระจายครบทุก skill แล้ว กราฟจะสะท้อน profile ได้แม่นขึ้นเรื่อย ๆ";
 
   return (
-    <BaseCard className="border-primary/15 bg-primary-50/35 dark:bg-primary-500/10">
+    <BaseCard className="overflow-hidden border-primary/20 bg-primary-50/30 dark:bg-primary-500/10">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export default function SkillRadarCard({
             {data?.position.name ?? "Software Engineer"} skill profile ของคุณ
           </p>
         </div>
-        <div className="min-w-[220px]">
+        <div className="w-full sm:min-w-[220px] sm:w-auto">
           <label className="mb-1 block text-xs font-medium text-default-500">Position</label>
           <select
             value={data?.position.id ?? ""}
@@ -177,8 +177,8 @@ export default function SkillRadarCard({
       ) : skills.length === 0 ? (
         <p className="text-sm text-default-400">ยังไม่มี skill สำหรับตำแหน่งนี้</p>
       ) : (
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-center">
-          <div className="mx-auto w-full max-w-[460px] rounded-3xl bg-background/70 p-5 shadow-lg shadow-primary/5 ring-1 ring-default-200/70 dark:bg-default-50/5 dark:ring-default-100/15">
+        <div className="grid gap-7 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-center">
+          <div className="mx-auto w-full max-w-[460px] rounded-2xl bg-background/70 p-4 shadow-lg shadow-primary/5 ring-1 ring-default-200/70 sm:p-5 dark:bg-default-50/5 dark:ring-default-100/15">
             <div className="mb-3 space-y-2 rounded-2xl bg-default-50/80 px-4 py-3 text-sm dark:bg-default-100/10">
               {strongestSkill ? (
                 <>
@@ -298,6 +298,10 @@ export default function SkillRadarCard({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="flex items-center justify-between px-1 text-xs text-default-500 sm:col-span-2 xl:col-span-1">
+              <span className="font-medium text-default-600 dark:text-default-300">รายละเอียด Skill</span>
+              <span>คะแนนสะสม</span>
+            </div>
             {!hasScores && (
               <div className="rounded-xl bg-default-50 px-3 py-2 text-sm text-default-500 dark:bg-default-100/10 sm:col-span-2 xl:col-span-1">
                 คะแนนยังเริ่มต้นที่ 0 คะแนนจะค่อย ๆ สะสมจาก quiz, คำถาม AI Chat และการเรียนจบบทเรียน
@@ -312,7 +316,8 @@ export default function SkillRadarCard({
                 type="button"
                 onMouseEnter={() => setHoveredSkillId(skill.id)}
                 onMouseLeave={() => setHoveredSkillId(null)}
-                className={`min-h-[74px] rounded-xl border p-3 text-left transition-all ${
+                aria-label={`ดูรายละเอียด ${skill.name}`}
+                className={`min-h-[68px] rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                   skill.id === highlightedSkillId
                     ? isTopSkill
                       ? "border-warning/45 bg-warning/10"

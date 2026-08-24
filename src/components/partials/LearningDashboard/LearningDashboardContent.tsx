@@ -218,16 +218,19 @@ export default function LearningDashboardContent() {
     .slice(0, 5);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-9">
-      <div>
-        <h1 className="text-2xl font-semibold">แดชบอร์ดการเรียนรู้</h1>
-        <p className="text-sm text-default-500">
+    <div className="mx-auto max-w-6xl space-y-8 lg:space-y-10">
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-500">
+          Learning overview
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">แดชบอร์ดการเรียนรู้</h1>
+        <p className="max-w-2xl text-sm text-default-500">
           ภาพรวมความก้าวหน้าและผลคะแนนแบบทดสอบของคุณ
         </p>
       </div>
 
-      <BaseCard className="border-primary/20 bg-primary-50/75 p-2 shadow-md shadow-primary/5 dark:bg-primary-500/10">
-        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-4 md:flex-row md:items-end md:gap-5">
+      <BaseCard className="border-primary/25 bg-primary-50/75 p-4 shadow-md shadow-primary/5 sm:p-5 dark:bg-primary-500/10">
+        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-4 md:flex-row md:items-end">
           <Textarea
             label="อยากเรียนเรื่องอะไร?"
             placeholder="พิมพ์เรื่องที่อยากเรียน เช่น Next.js, Docker, UX/UI"
@@ -240,7 +243,7 @@ export default function LearningDashboardContent() {
             variant="bordered"
             className="min-w-0 flex-1"
             classNames={{
-              inputWrapper: "min-h-14 rounded-xl px-5",
+              inputWrapper: "min-h-14 rounded-xl px-5 shadow-sm",
               input: "resize-none text-sm leading-7 text-foreground placeholder:text-default-400",
               label: "pb-1.5 text-sm font-semibold text-foreground",
             }}
@@ -256,11 +259,16 @@ export default function LearningDashboardContent() {
             size="lg"
             startContent={<Sparkles size={16} />}
             isLoading={generateLessonMutation.isPending}
-            className="h-14 w-full shrink-0 rounded-xl px-5 md:w-[160px]"
+            className="h-14 w-full shrink-0 rounded-xl px-5 shadow-md shadow-primary/15 md:w-[160px]"
           >
             สร้างบทเรียน
           </BaseButton>
         </form>
+        {/* {!topicMessage && (
+          <p className="mt-3 text-xs text-default-500">
+            พิมพ์หัวข้อสั้น ๆ แล้วกด Enter เพื่อเริ่มสร้างบทเรียนได้ทันที
+          </p>
+        )} */}
         {topicMessage && (
           <p
             className={`mt-2 text-xs ${
@@ -273,13 +281,13 @@ export default function LearningDashboardContent() {
       </BaseCard>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <BaseCard className="bg-primary-50/60 dark:bg-primary-500/10">
-          <div className="flex items-center gap-2 text-primary-600">
+        <BaseCard className="h-full bg-primary-50/60 dark:bg-primary-500/10">
+          <div className="flex items-center gap-2 text-sm font-semibold text-primary-600">
             <GraduationCap size={20} />
-            <h2 className="font-medium">ความก้าวหน้าในการเรียน</h2>
+            <h2>ความก้าวหน้าในการเรียน</h2>
           </div>
-          <p className="mt-4 text-5xl font-semibold tracking-tight">{learningProgress.percentage}%</p>
-          <p className="mb-2 text-sm text-default-500">
+          <p className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">{learningProgress.percentage}%</p>
+          <p className="mb-3 text-sm text-default-500">
             เรียนจบแล้ว {learningProgress.completedLessons} จาก{" "}
             {learningProgress.totalLessons} บทเรียน
           </p>
@@ -291,12 +299,12 @@ export default function LearningDashboardContent() {
           />
         </BaseCard>
 
-        <BaseCard className="bg-secondary-50/60 dark:bg-secondary-500/10">
-          <div className="flex items-center gap-2 text-secondary-600">
+        <BaseCard className="h-full bg-secondary-50/60 dark:bg-secondary-500/10">
+          <div className="flex items-center gap-2 text-sm font-semibold text-secondary-600">
             <Trophy size={20} />
-            <h2 className="font-medium">ผลคะแนนแบบทดสอบ</h2>
+            <h2>ผลคะแนนแบบทดสอบ</h2>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+          <div className="mt-5 grid grid-cols-3 gap-3 text-center">
             <div>
               <p className="text-4xl font-semibold tracking-tight">{quizPerformance.totalCompleted}</p>
               <p className="text-xs text-default-500">แบบทดสอบที่ทำแล้ว</p>
@@ -355,9 +363,21 @@ export default function LearningDashboardContent() {
       />
 
       <BaseCard className="space-y-1">
-        <div className="mb-3 flex items-center gap-2">
-          <BookOpen size={20} className="text-default-500" />
-          <h2 className="font-medium">เลือกบทเรียนที่จะเรียนต่อ</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="rounded-lg bg-primary/10 p-1.5 text-primary">
+              <BookOpen size={18} />
+            </span>
+            <div>
+              <h2 className="text-base font-semibold">เลือกบทเรียนที่จะเรียนต่อ</h2>
+              <p className="text-xs text-default-500">เลือกหัวข้อที่อยากเรียนต่อได้ตามจังหวะของคุณ</p>
+            </div>
+          </div>
+          {lessons.length > 0 && (
+            <span className="shrink-0 rounded-full bg-default-100 px-2.5 py-1 text-xs text-default-500 dark:bg-default-100/10">
+              {lessons.length} บทเรียน
+            </span>
+          )}
         </div>
         {lessonMessage && (
           <p
@@ -376,7 +396,7 @@ export default function LearningDashboardContent() {
             {visibleLessons.map((lesson) => (
               <div
                 key={lesson.lessonId}
-                className="group relative rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
+                className="group relative min-h-[112px] rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
               >
                 <Link
                   href={`/lessons/${lesson.lessonId}`}
@@ -384,7 +404,7 @@ export default function LearningDashboardContent() {
                 >
                   <div className="flex items-start justify-between gap-3 pr-7">
                     <div className="min-w-0">
-                      <p className="truncate text-base font-semibold text-foreground">{lesson.title}</p>
+                      <p className="line-clamp-2 text-base font-semibold leading-6 text-foreground">{lesson.title}</p>
                       <p className="mt-1 flex items-center gap-1 text-xs text-default-500">
                         {lesson.completed ? (
                           <>
@@ -483,9 +503,14 @@ export default function LearningDashboardContent() {
       </BaseCard>
 
       <BaseCard>
-        <div className="mb-3 flex items-center gap-2">
-          <TrendingUp size={20} className="text-default-500" />
-          <h2 className="font-medium">แบบทดสอบล่าสุด</h2>
+        <div className="mb-4 flex items-center gap-2">
+          <span className="rounded-lg bg-secondary/10 p-1.5 text-secondary-600">
+            <TrendingUp size={18} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold">แบบทดสอบล่าสุด</h2>
+            <p className="text-xs text-default-500">สรุปผลการทำแบบทดสอบ 5 ครั้งล่าสุด</p>
+          </div>
         </div>
         {latestRecentQuizzes.length === 0 ? (
           <p className="text-sm text-default-400">ยังไม่มีประวัติการทำแบบทดสอบ</p>
@@ -494,7 +519,7 @@ export default function LearningDashboardContent() {
             {latestRecentQuizzes.map((quiz) => (
               <div
                 key={quiz.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-default-200/70 bg-default-50 px-4 py-3 dark:border-default-100/15 dark:bg-default-100/10"
+                className="flex items-center justify-between gap-4 rounded-xl border border-default-200/70 bg-default-50 px-4 py-3 transition-colors hover:border-secondary/35 hover:bg-secondary/5 dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-secondary/10"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{quiz.title}</p>
@@ -503,7 +528,7 @@ export default function LearningDashboardContent() {
                   </p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-lg px-3 py-1 text-xl font-semibold ${
+                  className={`min-w-14 shrink-0 rounded-lg px-3 py-1 text-center text-xl font-semibold ${
                     quiz.score >= 80
                       ? "bg-success/15 text-success-600"
                       : quiz.score >= 60

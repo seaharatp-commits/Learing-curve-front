@@ -33,7 +33,7 @@ const CAREER_ALIGNMENT_CONTENT_BY_POSITION: Record<string, CareerAlignmentConten
     quote: "การเติบโตของยอดขาย เริ่มจากการเข้าใจลูกค้าและสร้างทีมที่แข็งแรง",
     subtitle: "คุณกำลังสร้างเส้นทางการเติบโตในสาย Sales Manager",
   },
-  Investor: {
+  "Investor": {
     quote: "การตัดสินใจที่ดี เริ่มจากข้อมูลที่รอบด้านและการบริหารความเสี่ยง",
     subtitle: "คุณกำลังสร้างเส้นทางการเติบโตในสาย Investor",
   },

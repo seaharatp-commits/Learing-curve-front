@@ -78,12 +78,12 @@ export function CareerAlignmentCard({ positionName, strengths = [], description,
             </div>
 
             {/* Quote: position-based, emotional highlight */}
-            <p className="career-alignment-quote relative mb-2 inline-block rounded-xl bg-blue-100/70 px-3 py-2 text-sm font-semibold leading-6 text-blue-900 shadow-sm shadow-blue-200/60 ring-1 ring-blue-200/70 transition duration-700 [text-shadow:0_0_18px_rgba(59,130,246,0.22)] motion-safe:animate-pulse dark:bg-blue-400/10 dark:text-blue-100 dark:shadow-none dark:ring-blue-300/25 dark:[text-shadow:0_0_20px_rgba(147,197,253,0.22)]">
+            <p className="career-alignment-quote relative mb-2 flex min-h-11 w-fit max-w-full items-center break-words rounded-xl bg-blue-100/70 px-3 py-2 text-sm font-semibold leading-6 text-blue-900 shadow-sm shadow-blue-200/60 ring-1 ring-blue-200/70 transition duration-700 [text-shadow:0_0_18px_rgba(59,130,246,0.22)] motion-safe:animate-pulse dark:bg-blue-400/10 dark:text-blue-100 dark:shadow-none dark:ring-blue-300/25 dark:[text-shadow:0_0_20px_rgba(147,197,253,0.22)]">
               “{displayQuotes[quoteIndex] ?? content.quote}”
             </p>
 
             {/* Subtitle: highlighted sub-message, position-based */}
-            <p className="career-alignment-subtitle mb-3 inline-flex w-fit rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 shadow-sm dark:border-blue-300/20 dark:bg-blue-400/10 dark:text-blue-200 dark:shadow-none">
+            <p className="career-alignment-subtitle mb-3 flex min-h-7 w-fit max-w-full break-words rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 shadow-sm dark:border-blue-300/20 dark:bg-blue-400/10 dark:text-blue-200 dark:shadow-none">
               {subtitleText}
             </p>
 
