@@ -511,20 +511,41 @@ export default function ChatContent() {
 
   const historyPanel = (
     <BaseCard className="h-full rounded-none border-0 bg-transparent p-0 shadow-none">
-      <div className="mb-3 flex items-center gap-1 px-2">
-        <h2 className="text-sm font-semibold">Recents</h2>
-        <ChevronDown size={14} className="text-default-400" />
+      <div className="mb-4 flex items-center justify-between px-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <MessageSquare size={16} />
+          </span>
+          <div>
+            <div className="flex items-center gap-1">
+              <h2 className="text-sm font-semibold">Recents</h2>
+              <ChevronDown size={14} className="text-default-400" />
+            </div>
+            <p className="text-xs text-default-500">บทสนทนาล่าสุด</p>
+          </div>
+        </div>
+        {!isChatHistoryLoading && (
+          <span className="rounded-full bg-default-100 px-2 py-0.5 text-[11px] text-default-500 dark:bg-white/10">
+            {chatHistory.length}
+          </span>
+        )}
       </div>
 
       {isChatHistoryLoading ? (
-        <p className="px-2 text-sm text-default-500">กำลังโหลดประวัติ...</p>
+        <div className="space-y-2 px-2" aria-label="กำลังโหลดประวัติการสนทนา">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-11 animate-pulse rounded-xl bg-default-100/80 dark:bg-white/5" />
+          ))}
+        </div>
       ) : isChatHistoryError ? (
-        <p className="px-2 text-sm text-danger-600">
+        <p role="alert" className="mx-2 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger-600 dark:text-danger-300">
           {extractErrorMessage(chatHistoryError, "โหลดประวัติการสนทนาไม่สำเร็จ")}
         </p>
       ) : chatHistory.length === 0 ? (
-        <div className="mx-2 rounded-lg border border-dashed border-default-200 p-3 text-sm text-default-500">
-          ยังไม่มีประวัติการสนทนา
+        <div className="mx-2 rounded-xl border border-dashed border-default-200/80 bg-default-50/40 p-4 text-center dark:border-white/10 dark:bg-white/[0.03]">
+          <MessageSquare size={18} className="mx-auto mb-2 text-default-400" />
+          <p className="text-sm text-default-500">ยังไม่มีประวัติการสนทนา</p>
+          <p className="mt-1 text-xs text-default-400">เริ่มแชทใหม่เพื่อสร้างรายการแรก</p>
         </div>
       ) : (
         <div className="max-h-[calc(100dvh-12rem)] space-y-1 overflow-y-auto pr-1">
@@ -537,13 +558,15 @@ export default function ChatContent() {
                   type="button"
                   className={`flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 py-2 pr-14 text-left text-sm transition-colors ${
                     isActive
-                      ? "border border-primary/20 bg-primary/10 text-foreground"
-                      : "text-default-700 hover:bg-default-100/80 dark:text-default-300 dark:hover:bg-default-100/10"
+                      ? "border border-primary/25 bg-primary/10 text-foreground shadow-sm"
+                      : "border border-transparent text-default-700 hover:border-default-200/70 hover:bg-default-100/80 dark:text-default-300 dark:hover:border-white/10 dark:hover:bg-default-100/10"
                   }`}
                   onClick={() => handleOpenHistory(item.id)}
                   title={`${item.title}\n${item.lastMessage}\n${dayjs(item.updatedAt).format("DD MMM YYYY HH:mm")}`}
                 >
-                  <MessageSquare size={15} className="shrink-0 text-default-500" />
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${isActive ? "bg-primary/15 text-primary" : "bg-default-100 text-default-500 dark:bg-white/5"}`}>
+                    <MessageSquare size={14} />
+                  </span>
                   <span className="min-w-0 flex-1 truncate">{item.title}</span>
                 </button>
 
@@ -624,43 +647,50 @@ export default function ChatContent() {
         {historyPanel}
       </aside>
 
-      <section className="mx-auto flex h-[calc(100dvh-8.75rem)] w-full min-w-0 max-w-[820px] flex-col gap-4 overflow-hidden">
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">แชทกับ AI ผู้ช่วยแก้ปัญหา</h1>
-        <div className="flex flex-wrap items-center gap-2">
+      <section className="mx-auto flex h-[calc(100dvh-8.75rem)] w-full min-w-0 max-w-[820px] flex-col gap-3 overflow-hidden">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="mb-0.5 text-xs font-medium uppercase tracking-[0.16em] text-primary/80">AI Assistant</p>
+            <h1 className="truncate text-xl font-semibold">แชทกับ AI ผู้ช่วยแก้ปัญหา</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
           {activeKnowledge ? (
-            <span className="min-w-0 max-w-full truncate rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <span title={activeKnowledge.title} className="min-w-0 max-w-[min(18rem,100%)] truncate rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               กำลังใช้ฐานความรู้: {activeKnowledge.title}
             </span>
           ) : (
-            <span className="w-fit rounded-full bg-default-100 px-3 py-1 text-xs text-default-500">
+            <span className="w-fit rounded-full border border-default-200/70 bg-default-100/70 px-3 py-1 text-xs text-default-500 dark:border-white/10 dark:bg-white/5">
               ตอบจากความรู้ทั่วไป
             </span>
           )}
-          <BaseButton
-            size="sm"
-            variant="flat"
-            startContent={<PlusCircle size={16} />}
-            onPress={handleNewChat}
-          >
-            แชทใหม่
-          </BaseButton>
+            <BaseButton
+              size="sm"
+              variant="flat"
+              startContent={<PlusCircle size={16} />}
+              onPress={handleNewChat}
+            >
+              แชทใหม่
+            </BaseButton>
+          </div>
         </div>
-      </div>
-      <BaseCard className="min-h-0 flex-1 overflow-y-auto p-3">
-        <div className="flex min-h-full flex-col gap-3">
+        <BaseCard className="min-h-0 flex-1 overflow-y-auto rounded-2xl border-default-200/80 bg-content1/90 p-2 sm:p-3 dark:border-white/10 dark:bg-[#11161d]/88">
+          <div className="flex min-h-full flex-col gap-4">
           {isHistoryLoading && (
-            <p className="text-center text-sm text-default-400">กำลังโหลดบทสนทนา...</p>
+            <div className="m-auto flex w-full max-w-sm flex-col items-center gap-3 text-center" aria-label="กำลังโหลดบทสนทนา">
+              <span className="h-10 w-10 animate-pulse rounded-2xl bg-primary/10" />
+              <span className="h-3 w-40 animate-pulse rounded-full bg-default-100 dark:bg-white/10" />
+              <span className="h-3 w-56 animate-pulse rounded-full bg-default-100 dark:bg-white/10" />
+            </div>
           )}
           {!isHistoryLoading && messages.length === 0 && (
-            <div className="m-auto flex max-w-md flex-col items-center gap-4 px-4 py-10 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="m-auto flex max-w-md flex-col items-center gap-4 px-4 py-12 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-sm shadow-primary/10">
                 <Bot size={24} />
               </div>
               <div>
                 <h2 className="text-base font-semibold">เริ่มคุยกับ AI ผู้ช่วยแก้ปัญหา</h2>
                 <p className="mt-1 text-sm leading-6 text-default-500">
-                  พิมพ์ปัญหา เลือกคำถามตัวอย่าง หรือให้ AI ช่วยอธิบายจากฐานความรู้ของระบบ
+                  พิมพ์ปัญหา เลือกคำถามตัวอย่าง หรือให้ AI ช่วยอธิบายจากบริบทที่เกี่ยวข้อง
                 </p>
               </div>
               {isSuggestedQuestionsLoading ? (
@@ -679,7 +709,8 @@ export default function ChatContent() {
                       key={`${question}-${index}`}
                       type="button"
                       onClick={() => setInput(question)}
-                      className="rounded-full border border-default-200 bg-background/80 px-3 py-1.5 text-xs text-default-600 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-default-100/20"
+                      aria-label={`ใช้คำถามแนะนำ: ${question}`}
+                      className="rounded-full border border-default-200/80 bg-background/80 px-3 py-1.5 text-xs text-default-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-white/10 dark:bg-white/[0.03]"
                     >
                       {question}
                     </button>
@@ -690,10 +721,12 @@ export default function ChatContent() {
           )}
           {messages.map((m) => (
             m.role === "assistant" && m.content === THINKING_MESSAGE ? (
-              <div key={m.id} className="flex items-start justify-start gap-2">
-                <Bot size={20} className="mt-1 text-primary" />
-                <div className="max-w-[min(75%,42rem)] rounded-xl bg-default-100 px-4 py-2 text-sm text-default-600 dark:text-default-300">
-                  <p className="font-medium transition-opacity">
+              <div key={m.id} className="flex items-start justify-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Bot size={16} />
+                </span>
+                <div className="max-w-[min(82%,42rem)] rounded-2xl rounded-tl-md border border-primary/10 bg-primary/[0.04] px-4 py-2.5 text-sm text-default-600 shadow-sm dark:border-white/10 dark:bg-white/[0.045] dark:text-default-300">
+                  <p className="font-medium transition-opacity" aria-live="polite">
                     {AI_LOADING_MESSAGES[loadingMessageIndex]}
                   </p>
                 </div>
@@ -701,21 +734,30 @@ export default function ChatContent() {
             ) : (
               <div
                 key={m.id}
-                className={`flex items-start gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex items-start gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {m.role === "assistant" && <Bot size={20} className="mt-1 text-primary" />}
+                {m.role === "assistant" && (
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Bot size={16} />
+                  </span>
+                )}
                 <div
-                  className={`max-w-[min(75%,42rem)] rounded-xl px-4 py-2 text-sm ${
-                    m.role === "user" ? "bg-primary text-primary-foreground" : "bg-default-100"
+                  role={m.role === "assistant" && m.content === AI_ERROR_MESSAGE ? "alert" : undefined}
+                  className={`max-w-[min(82%,42rem)] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
+                    m.role === "user"
+                      ? "rounded-tr-md bg-primary text-primary-foreground"
+                      : m.content === AI_ERROR_MESSAGE
+                        ? "rounded-tl-md border border-danger/25 bg-danger/10 text-danger-700 dark:text-danger-200"
+                        : "rounded-tl-md border border-default-200/70 bg-default-50/90 dark:border-white/10 dark:bg-white/[0.045]"
                   }`}
                 >
                   {m.role === "assistant" ? (
-                    <FormattedAnswer content={m.content} className="space-y-2 leading-6" />
+                    <FormattedAnswer content={m.content} className="ai-answer space-y-2 leading-6" />
                   ) : (
-                    <div className="whitespace-pre-line">{m.content}</div>
+                    <div className="whitespace-pre-line leading-7">{m.content}</div>
                   )}
                   {m.role === "assistant" && m.sourceType === "KNOWLEDGE_BASE" && (
-                    <p className="mt-2 border-t border-default-200/70 pt-2 text-xs font-medium text-primary">
+                    <p className="mt-3 border-t border-primary/15 pt-2 text-xs font-medium leading-5 text-primary">
                       อ้างอิงจากฐานความรู้: {m.sourceArticleTitle ?? m.sourceArticleId}
                       {m.sourceConfidenceScore !== null && m.sourceConfidenceScore !== undefined
                         ? ` (${Math.round(m.sourceConfidenceScore * 100)}%)`
@@ -723,7 +765,7 @@ export default function ChatContent() {
                     </p>
                   )}
                   {m.role === "assistant" && m.sourceType === "GENERAL_AI" && (
-                    <p className="mt-2 border-t border-default-200/70 pt-2 text-xs text-default-500">
+                    <p className="mt-3 border-t border-default-200/70 pt-2 text-xs leading-5 text-default-500 dark:border-white/10">
                       ตอบจากความรู้ทั่วไป
                     </p>
                   )}
@@ -734,9 +776,9 @@ export default function ChatContent() {
           ))}
           <div ref={bottomRef} />
         </div>
-      </BaseCard>
-      {aiRecommendedKnowledgeBases.length > 0 && knowledgeChoices.length === 0 && !activeKnowledge && (
-        <BaseCard className="space-y-2 border-primary/20 bg-primary/5">
+        </BaseCard>
+        {aiRecommendedKnowledgeBases.length > 0 && knowledgeChoices.length === 0 && !activeKnowledge && (
+        <BaseCard className="space-y-3 rounded-2xl border-primary/20 bg-primary/[0.04] p-1 dark:bg-primary/[0.06]">
           <div className="flex items-start gap-2">
             <BookOpen size={17} className="mt-0.5 text-primary" />
             <div>
@@ -753,7 +795,7 @@ export default function ChatContent() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => handleActivateRecommendedKnowledge(item)}
-                className="rounded-lg border border-default-200 bg-background/70 px-3 py-2 text-left transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-default-100/20"
+                className="rounded-xl border border-default-200/80 bg-background/70 px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
@@ -768,9 +810,9 @@ export default function ChatContent() {
             ))}
           </div>
         </BaseCard>
-      )}
-      {knowledgeChoices.length > 0 && (
-        <BaseCard className="space-y-3 border-primary/30 bg-primary/5">
+        )}
+        {knowledgeChoices.length > 0 && (
+        <BaseCard className="space-y-3 rounded-2xl border-primary/30 bg-primary/[0.05] p-1 dark:bg-primary/[0.07]">
           <div className="flex items-start gap-2">
             <BookOpen size={18} className="mt-0.5 text-primary" />
             <div>
@@ -787,7 +829,7 @@ export default function ChatContent() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => handleSelectKnowledge(choice)}
-                className="rounded-lg border border-default-200 bg-background/60 px-3 py-2 text-left transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl border border-default-200/80 bg-background/60 px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">{choice.title}</p>
@@ -807,23 +849,24 @@ export default function ChatContent() {
               type="button"
               disabled={isBusy}
               onClick={() => handleSelectKnowledge()}
-              className="rounded-lg border border-default-200 px-3 py-2 text-left text-sm text-default-600 transition-colors hover:bg-default-100/70 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl border border-dashed border-default-200/80 px-3 py-2.5 text-left text-sm text-default-600 transition-colors hover:border-default-300 hover:bg-default-100/70 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10"
             >
               ไม่ตรงกับสิ่งที่ถาม ให้ AI ตอบตามปกติ
             </button>
           </div>
           {knowledgePendingHint && (
-            <p className="rounded-lg bg-warning-50 px-3 py-2 text-xs text-warning-700">
+            <p role="status" className="rounded-lg bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:bg-warning-400/10 dark:text-warning-200">
               {knowledgePendingHint}
             </p>
           )}
         </BaseCard>
-      )}
-      <div className="flex w-full items-center gap-2 rounded-2xl border border-default-200 bg-background/85 p-1.5 shadow-sm dark:border-default-100/20 dark:bg-default-50/5">
+        )}
+        <div className="flex w-full items-end gap-2 rounded-2xl border border-default-200/80 bg-background/90 p-2 shadow-sm dark:border-white/10 dark:bg-[#11161d]/88">
         <Textarea
           value={input}
           onValueChange={setInput}
-          placeholder="พิมพ์ข้อความที่นี่..."
+          aria-label="พิมพ์ข้อความเพื่อถาม AI"
+          placeholder="พิมพ์ข้อความที่นี่... (Shift+Enter เพื่อขึ้นบรรทัดใหม่)"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -836,7 +879,7 @@ export default function ChatContent() {
           variant="flat"
           className="flex-1"
           classNames={{
-            input: "resize-none",
+            input: "resize-none py-2 text-sm leading-6",
             inputWrapper: "bg-transparent shadow-none",
             innerWrapper: "bg-transparent",
           }}
@@ -845,11 +888,13 @@ export default function ChatContent() {
           isIconOnly
           isLoading={isBusy}
           onPress={handleSend}
-          className="h-10 w-10 min-w-10 shrink-0 rounded-xl"
+          aria-label="ส่งข้อความ"
+          title="ส่งข้อความ"
+          className="h-11 w-11 min-w-11 shrink-0 rounded-xl"
         >
           <Send size={18} />
         </BaseButton>
-      </div>
+        </div>
       </section>
       <Modal isOpen={!!deletingHistory} onClose={() => setDeletingHistory(null)}>
         <ModalContent>
