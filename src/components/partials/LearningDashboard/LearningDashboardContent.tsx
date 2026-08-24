@@ -229,8 +229,8 @@ export default function LearningDashboardContent() {
         </p>
       </div>
 
-      <BaseCard className="border-primary/25 bg-primary-50/75 p-4 shadow-md shadow-primary/5 sm:p-5 dark:bg-primary-500/10">
-        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-4 md:flex-row md:items-end">
+      <BaseCard className="border-primary/20 bg-primary-50/65 p-3 shadow-sm shadow-primary/5 sm:p-4 dark:bg-primary-500/10">
+        <form onSubmit={handleGenerateLesson} className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
           <Textarea
             label="อยากเรียนเรื่องอะไร?"
             placeholder="พิมพ์เรื่องที่อยากเรียน เช่น Next.js, Docker, UX/UI"
@@ -259,7 +259,7 @@ export default function LearningDashboardContent() {
             size="lg"
             startContent={<Sparkles size={16} />}
             isLoading={generateLessonMutation.isPending}
-            className="h-14 w-full shrink-0 rounded-xl px-5 shadow-md shadow-primary/15 md:w-[160px]"
+            className="h-12 w-full shrink-0 rounded-xl px-4 text-sm shadow-sm shadow-primary/10 md:w-[140px]"
           >
             สร้างบทเรียน
           </BaseButton>
@@ -392,15 +392,15 @@ export default function LearningDashboardContent() {
           </p>
         ) : (
           <>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {visibleLessons.map((lesson) => (
               <div
                 key={lesson.lessonId}
-                className="group relative min-h-[112px] rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
+                className="group relative min-h-[92px] rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
               >
                 <Link
                   href={`/lessons/${lesson.lessonId}`}
-                  className="block cursor-pointer px-4 py-4"
+                  className="block cursor-pointer px-3.5 py-3"
                 >
                   <div className="flex items-start justify-between gap-3 pr-7">
                     <div className="min-w-0">
