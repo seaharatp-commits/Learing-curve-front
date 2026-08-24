@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { getQuizForAttempt } from "@/services/learning.service";
 
 export const useQuiz = (quizId: string) => {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["quiz", quizId],
     queryFn: () => getQuizForAttempt(quizId),
     enabled: !!quizId,
   });
-  return { data, isLoading, isError, error };
+  return { data, isLoading, isFetching, isError, error, refetch };
 };
