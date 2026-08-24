@@ -20,6 +20,10 @@ const notoSansThai = Noto_Sans_Thai({
 export const metadata: Metadata = {
   title: "Learning Curve",
   description: "Learning Curve — AI Helpdesk และแดชบอร์ดการเรียนรู้",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 // Runs before paint so the page never flashes the wrong theme. Defaults to
