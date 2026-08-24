@@ -345,7 +345,7 @@ export default function LearningDashboardContent() {
             <GraduationCap size={20} />
             <h2>ความก้าวหน้าในการเรียน</h2>
           </div>
-          <p className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">{learningProgress.percentage}%</p>
+          <p className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{learningProgress.percentage}%</p>
           <p className="mb-3 text-sm text-default-500">
             เรียนจบแล้ว {learningProgress.completedLessons} จาก{" "}
             {learningProgress.totalLessons} บทเรียน
@@ -363,20 +363,20 @@ export default function LearningDashboardContent() {
             <Trophy size={20} />
             <h2>ผลคะแนนแบบทดสอบ</h2>
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <div>
-              <p className="text-4xl font-semibold tracking-tight">{quizPerformance.totalCompleted}</p>
+              <p className="text-3xl font-semibold tracking-tight sm:text-4xl">{quizPerformance.totalCompleted}</p>
               <p className="text-xs text-default-500">แบบทดสอบที่ทำแล้ว</p>
             </div>
             <div>
-              <p className={`text-4xl font-semibold tracking-tight ${SCORE_COLOR(quizPerformance.averageScore)}`}>
+              <p className={`text-3xl font-semibold tracking-tight sm:text-4xl ${SCORE_COLOR(quizPerformance.averageScore)}`}>
                 {quizPerformance.averageScore}
               </p>
               <p className="text-xs text-default-500">คะแนนเฉลี่ย</p>
             </div>
             <div>
               <p
-                className={`text-4xl font-semibold tracking-tight ${
+                  className={`text-3xl font-semibold tracking-tight sm:text-4xl ${
                   quizPerformance.latestScore !== null ? SCORE_COLOR(quizPerformance.latestScore) : ""
                 }`}
               >
