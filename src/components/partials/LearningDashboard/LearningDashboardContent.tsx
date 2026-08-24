@@ -75,12 +75,21 @@ function getLessonPaginationItems(currentPage: number, totalPages: number): Pagi
 
 export default function LearningDashboardContent() {
   const router = useRouter();
-  const { data, isLoading, isError, error } = useLearningDashboard();
+  const {
+    data,
+    isLoading,
+    isFetching: isDashboardFetching,
+    isError,
+    error,
+    refetch: refetchDashboard,
+  } = useLearningDashboard();
   const {
     data: skillRadar,
     isLoading: isSkillRadarLoading,
+    isFetching: isSkillRadarFetching,
     isError: isSkillRadarError,
     error: skillRadarError,
+    refetch: refetchSkillRadar,
   } = useMySkillRadar();
   const {
     data: skillRadarPositions,
@@ -89,7 +98,9 @@ export default function LearningDashboardContent() {
   const {
     data: careerAlignment,
     isLoading: isCareerAlignmentLoading,
+    isFetching: isCareerAlignmentFetching,
     isError: isCareerAlignmentError,
+    refetch: refetchCareerAlignment,
   } = useCareerAlignment();
   const updateSkillRadarPositionMutation = useUpdateMySkillRadarPosition();
   const generateLessonMutation = useGenerateLessonFromTopic();
@@ -186,11 +197,23 @@ export default function LearningDashboardContent() {
 
   if (isError) {
     return (
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <BaseCard>
-          <p className="text-sm text-danger-600">
-            {getErrorMessage(error, "โหลดแดชบอร์ดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
-          </p>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-danger-600">
+              {getErrorMessage(error, "โหลดแดชบอร์ดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
+            </p>
+            <BaseButton
+              size="sm"
+              variant="flat"
+              isLoading={isDashboardFetching}
+              onPress={() => {
+                void refetchDashboard();
+              }}
+            >
+              ลองใหม่
+            </BaseButton>
+          </div>
         </BaseCard>
       </div>
     );
@@ -198,8 +221,44 @@ export default function LearningDashboardContent() {
 
   if (isLoading || !data) {
     return (
-      <div className="mx-auto max-w-5xl">
-        <p className="text-default-400">กำลังโหลดแดชบอร์ด...</p>
+      <div className="mx-auto max-w-6xl space-y-8" aria-busy="true" aria-label="กำลังโหลดแดชบอร์ด">
+        <div className="space-y-2">
+          <div className="h-3 w-32 animate-pulse rounded-full bg-default-100 dark:bg-default-100/15" />
+          <div className="h-8 w-64 max-w-full animate-pulse rounded-lg bg-default-100 dark:bg-default-100/15" />
+          <div className="h-4 w-80 max-w-full animate-pulse rounded-full bg-default-100 dark:bg-default-100/15" />
+        </div>
+
+        <BaseCard className="p-3 sm:p-4">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="h-14 flex-1 animate-pulse rounded-xl bg-default-100 dark:bg-default-100/15" />
+            <div className="h-12 w-full animate-pulse rounded-xl bg-default-100 dark:bg-default-100/15 md:w-[140px]" />
+          </div>
+        </BaseCard>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          {["progress", "quiz"].map((card) => (
+            <BaseCard key={card} className="h-[168px] space-y-5">
+              <div className="h-5 w-44 animate-pulse rounded-full bg-default-100 dark:bg-default-100/15" />
+              <div className="h-12 w-28 animate-pulse rounded-lg bg-default-100 dark:bg-default-100/15" />
+              <div className="h-3 w-full animate-pulse rounded-full bg-default-100 dark:bg-default-100/15" />
+            </BaseCard>
+          ))}
+        </div>
+
+        <BaseCard>
+          <div className="mb-4 space-y-2">
+            <div className="h-5 w-52 animate-pulse rounded-full bg-default-100 dark:bg-default-100/15" />
+            <div className="h-3 w-72 max-w-full animate-pulse rounded-full bg-default-100 dark:bg-default-100/15" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div
+                key={index}
+                className="h-[92px] animate-pulse rounded-xl bg-default-100/80 dark:bg-default-100/10"
+              />
+            ))}
+          </div>
+        </BaseCard>
       </div>
     );
   }
@@ -337,9 +396,21 @@ export default function LearningDashboardContent() {
         </BaseCard>
       ) : isCareerAlignmentError ? (
         <BaseCard>
-          <p className="text-sm text-danger-600">
-            ไม่สามารถโหลดข้อมูล Career Alignment ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง
-          </p>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-danger-600">
+              ไม่สามารถโหลดข้อมูล Career Alignment ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง
+            </p>
+            <BaseButton
+              size="sm"
+              variant="flat"
+              isLoading={isCareerAlignmentFetching}
+              onPress={() => {
+                void refetchCareerAlignment();
+              }}
+            >
+              ลองใหม่
+            </BaseButton>
+          </div>
         </BaseCard>
       ) : careerAlignment ? (
         <CareerAlignmentCard
@@ -355,11 +426,15 @@ export default function LearningDashboardContent() {
         isLoading={isSkillRadarLoading}
         isError={isSkillRadarError}
         error={skillRadarError}
+        isRetrying={isSkillRadarFetching}
         positions={skillRadarPositions}
         isPositionsLoading={isSkillRadarPositionsLoading}
         isSavingPosition={updateSkillRadarPositionMutation.isPending}
         positionMessage={skillRadarMessage}
         onChangePosition={handleChangeSkillRadarPosition}
+        onRetry={() => {
+          void refetchSkillRadar();
+        }}
       />
 
       <BaseCard className="space-y-1">
@@ -396,11 +471,11 @@ export default function LearningDashboardContent() {
             {visibleLessons.map((lesson) => (
               <div
                 key={lesson.lessonId}
-                className="group relative min-h-[92px] rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
+                className="group relative min-w-0 min-h-[92px] rounded-xl border border-default-200/80 bg-default-50/90 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/5 hover:shadow-md dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-primary/10"
               >
                 <Link
                   href={`/lessons/${lesson.lessonId}`}
-                  className="block cursor-pointer px-3.5 py-3"
+                  className="block min-w-0 cursor-pointer px-3.5 py-3"
                 >
                   <div className="flex items-start justify-between gap-3 pr-7">
                     <div className="min-w-0">
@@ -519,7 +594,7 @@ export default function LearningDashboardContent() {
             {latestRecentQuizzes.map((quiz) => (
               <div
                 key={quiz.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-default-200/70 bg-default-50 px-4 py-3 transition-colors hover:border-secondary/35 hover:bg-secondary/5 dark:border-default-100/15 dark:bg-default-100/10 dark:hover:bg-secondary/10"
+                className="flex items-center justify-between gap-4 rounded-xl border border-default-200/70 bg-default-50 px-4 py-3 dark:border-default-100/15 dark:bg-default-100/10"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{quiz.title}</p>

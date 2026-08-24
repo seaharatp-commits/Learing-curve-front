@@ -6,9 +6,9 @@ import { getLearningDashboard } from "@/services/learning.service";
 export const LEARNING_DASHBOARD_QUERY_KEY = ["learningDashboard"] as const;
 
 export const useLearningDashboard = () => {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: LEARNING_DASHBOARD_QUERY_KEY,
     queryFn: getLearningDashboard,
   });
-  return { data, isLoading, isError, error };
+  return { data, isLoading, isFetching, isError, error, refetch };
 };

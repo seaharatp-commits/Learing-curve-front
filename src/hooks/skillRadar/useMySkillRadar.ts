@@ -7,10 +7,10 @@ export const mySkillRadarQueryKey = (positionId?: string) =>
   ["mySkillRadar", positionId ?? "default"] as const;
 
 export const useMySkillRadar = (positionId?: string) => {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: mySkillRadarQueryKey(positionId),
     queryFn: () => getMySkillRadar(positionId),
   });
 
-  return { data, isLoading, isError, error };
+  return { data, isLoading, isFetching, isError, error, refetch };
 };

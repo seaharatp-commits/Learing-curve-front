@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BookOpen, MessageSquareText, Radar, Sparkles, Target, TrendingUp } from "lucide-react";
+import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
 import type { SkillRadarPosition, SkillRadarSkillScore, UserSkillRadar } from "@/types/app/skillRadar";
 import { extractErrorMessage as getErrorMessage } from "@/utils/extractErrorMessage";
@@ -12,11 +13,13 @@ interface SkillRadarCardProps {
   isLoading: boolean;
   isError: boolean;
   error: unknown;
+  isRetrying: boolean;
   positions: SkillRadarPosition[];
   isPositionsLoading: boolean;
   isSavingPosition: boolean;
   positionMessage?: { text: string; isError: boolean } | null;
   onChangePosition: (positionId: string) => void;
+  onRetry: () => void;
 }
 
 const CHART_SIZE = 320;
@@ -89,11 +92,13 @@ export default function SkillRadarCard({
   isLoading,
   isError,
   error,
+  isRetrying,
   positions,
   isPositionsLoading,
   isSavingPosition,
   positionMessage,
   onChangePosition,
+  onRetry,
 }: SkillRadarCardProps) {
   const [hoveredSkillId, setHoveredSkillId] = useState<string | null>(null);
   const skills = data?.skills ?? [];
@@ -169,11 +174,26 @@ export default function SkillRadarCard({
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-default-400">กำลังโหลด Skill Radar...</p>
+        <div className="grid gap-7 xl:grid-cols-[minmax(0,460px)_1fr]" aria-busy="true">
+          <div className="mx-auto h-[320px] w-full max-w-[460px] animate-pulse rounded-2xl bg-default-100/70 dark:bg-default-100/10" />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            {Array.from({ length: 5 }, (_, index) => (
+              <div
+                key={index}
+                className="h-[64px] animate-pulse rounded-xl bg-default-100/70 dark:bg-default-100/10"
+              />
+            ))}
+          </div>
+        </div>
       ) : isError ? (
-        <p className="text-sm text-danger-600">
-          {getErrorMessage(error, "โหลด Skill Radar ไม่สำเร็จ")}
-        </p>
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-danger-600">
+            {getErrorMessage(error, "โหลด Skill Radar ไม่สำเร็จ")}
+          </p>
+          <BaseButton size="sm" variant="flat" isLoading={isRetrying} onPress={onRetry}>
+            ลองใหม่
+          </BaseButton>
+        </div>
       ) : skills.length === 0 ? (
         <p className="text-sm text-default-400">ยังไม่มี skill สำหรับตำแหน่งนี้</p>
       ) : (
@@ -323,7 +343,7 @@ export default function SkillRadarCard({
                       ? "border-warning/45 bg-warning/10"
                       : "border-primary/35 bg-primary/10"
                     : skill.score <= 0 || skill.evidenceCount === 0
-                      ? "border-default-200/45 bg-background/25 opacity-60 hover:border-default-300 hover:bg-default-50/60 hover:opacity-80 dark:border-default-100/10 dark:bg-default-50/5"
+                      ? "border-default-200/45 bg-background/25 opacity-75 hover:border-default-300 hover:bg-default-50/60 hover:opacity-100 dark:border-default-100/10 dark:bg-default-50/5"
                       : "border-default-200/50 bg-background/30 opacity-80 hover:border-primary/20 hover:bg-primary/5 hover:opacity-100 dark:border-default-100/10 dark:bg-default-50/5"
                 }`}
               >
@@ -345,7 +365,7 @@ export default function SkillRadarCard({
                   />
                 </div>
                 {(skill.evidenceCount === 0 || skill.score <= 0) && (
-                  <p className="mt-1 text-[11px] text-default-400">ยังไม่มี evidence</p>
+                    <p className="mt-1 text-[11px] text-default-500 dark:text-default-300/75">ยังไม่มี evidence</p>
                 )}
               </button>
                 );
