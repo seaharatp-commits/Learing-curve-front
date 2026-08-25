@@ -329,7 +329,11 @@ export default function QuizTakeContent({ quizId }: QuizTakeContentProps) {
                     </p>
                   )}
                   {isAdmin && (
-                    <AdminQuestionSkillMappingPanel quizId={quizId} question={question} />
+                    <AdminQuestionSkillMappingPanel
+                      quizId={quizId}
+                      quizPositionId={quiz.positionId}
+                      question={question}
+                    />
                   )}
                 </BaseCard>
               );

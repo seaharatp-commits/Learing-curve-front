@@ -13,11 +13,13 @@ import type { QuizForAttempt } from "@/types/app/learning";
 
 interface AdminQuestionSkillMappingPanelProps {
   quizId: string;
+  quizPositionId: string | null;
   question: QuizForAttempt["questions"][number];
 }
 
 export function AdminQuestionSkillMappingPanel({
   quizId,
+  quizPositionId,
   question,
 }: AdminQuestionSkillMappingPanelProps) {
   const { data: skillPositions } = useAdminSkillRadarPositions(true);
@@ -42,6 +44,13 @@ export function AdminQuestionSkillMappingPanel({
         })),
       ),
     [skillPositions],
+  );
+  const selectableSkillPositions = useMemo(
+    () =>
+      quizPositionId
+        ? skillPositions.filter((position) => position.id === quizPositionId)
+        : skillPositions,
+    [quizPositionId, skillPositions],
   );
 
   const selectedSkills = useMemo(() => {
@@ -123,6 +132,11 @@ export function AdminQuestionSkillMappingPanel({
           <p className="text-xs text-default-500">
             ผูกคำถามนี้กับ Skill เพื่อให้คะแนน Quiz ส่งเข้า Skill Radar
           </p>
+          {quizPositionId && (
+            <p className="mt-1 text-xs text-primary">
+              Quiz นี้ใช้ Position: {skillPositions.find((position) => position.id === quizPositionId)?.name ?? quizPositionId}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <BaseButton
@@ -175,7 +189,7 @@ export function AdminQuestionSkillMappingPanel({
         className="h-9 w-full rounded-lg border border-default-200 bg-background px-2 text-sm text-foreground outline-none transition-colors focus:border-primary dark:border-default-100/20 dark:bg-default-50/10"
       >
         <option value="">เพิ่ม Skill...</option>
-        {skillPositions.map((position) => (
+        {selectableSkillPositions.map((position) => (
           <optgroup key={position.id} label={position.name}>
             {position.skills.map((skill) => (
               <option key={skill.id} value={skill.id}>
