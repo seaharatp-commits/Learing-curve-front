@@ -24,12 +24,19 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 export default function AdminDashboardContent() {
-  const { data, isLoading: isStatsLoading, isError: isStatsError, error: statsError } = useDashboardStats();
+  const {
+    data,
+    isLoading: isStatsLoading,
+    isError: isStatsError,
+    error: statsError,
+    refetch: refetchStats,
+  } = useDashboardStats();
   const {
     data: knowledgeBaseItems,
     isLoading: isKnowledgeLoading,
     isError: isKnowledgeError,
     error: knowledgeError,
+    refetch: refetchKnowledge,
   } = useKnowledgeBaseList();
   const recentKnowledge = knowledgeBaseItems.slice(0, 3);
 
@@ -56,10 +63,13 @@ export default function AdminDashboardContent() {
             <p className="text-sm text-default-400">กำลังโหลดสถิติระบบ...</p>
           </BaseCard>
         ) : isStatsError ? (
-          <BaseCard>
+          <BaseCard className="space-y-3">
             <p className="text-sm text-danger-600">
               {extractErrorMessage(statsError, "โหลดสถิติระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
             </p>
+            <BaseButton size="sm" variant="flat" onPress={() => void refetchStats()}>
+              ลองอีกครั้ง
+            </BaseButton>
           </BaseCard>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
@@ -96,10 +106,13 @@ export default function AdminDashboardContent() {
             <p className="text-sm text-default-400">กำลังโหลดข้อมูลฐานความรู้...</p>
           </BaseCard>
         ) : isKnowledgeError ? (
-          <BaseCard>
+          <BaseCard className="space-y-3">
             <p className="text-sm text-danger-600">
               {extractErrorMessage(knowledgeError, "โหลดข้อมูลฐานความรู้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
             </p>
+            <BaseButton size="sm" variant="flat" onPress={() => void refetchKnowledge()}>
+              ลองอีกครั้ง
+            </BaseButton>
           </BaseCard>
         ) : recentKnowledge.length === 0 ? (
           <BaseCard>

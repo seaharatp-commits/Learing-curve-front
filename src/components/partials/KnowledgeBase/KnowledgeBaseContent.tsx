@@ -29,7 +29,7 @@ function getCompactPageItems(currentPage: number, totalPages: number) {
 }
 
 export default function KnowledgeBaseContent() {
-  const { data, isLoading, isError, error } = useKnowledgeBaseList();
+  const { data, isLoading, isError, error, refetch } = useKnowledgeBaseList();
   const { deleteMutation } = useKnowledgeBaseMutations();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeBaseItem | undefined>();
@@ -166,10 +166,13 @@ export default function KnowledgeBaseContent() {
       )}
 
       {isError && (
-        <BaseCard>
+        <BaseCard className="space-y-3">
           <p className="text-sm text-danger-600">
             {getErrorMessage(error, "โหลดข้อมูลฐานความรู้ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
           </p>
+          <BaseButton size="sm" variant="flat" onPress={() => void refetch()}>
+            ลองอีกครั้ง
+          </BaseButton>
         </BaseCard>
       )}
 

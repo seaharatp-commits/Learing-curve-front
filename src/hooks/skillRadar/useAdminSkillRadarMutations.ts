@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createPositionSkill,
+  createPositionSkills,
   createSkillRadarPosition,
   updatePositionSkill,
   updateSkillRadarPosition,
@@ -32,6 +33,12 @@ export const useAdminSkillRadarMutations = () => {
     onSuccess: invalidatePositions,
   });
 
+  const createSkillsMutation = useMutation({
+    mutationFn: ({ positionId, payload }: { positionId: string; payload: PositionSkillPayload[] }) =>
+      createPositionSkills(positionId, payload),
+    onSuccess: invalidatePositions,
+  });
+
   const updateSkillMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: PositionSkillPayload }) =>
       updatePositionSkill(id, payload),
@@ -42,6 +49,7 @@ export const useAdminSkillRadarMutations = () => {
     createPositionMutation,
     updatePositionMutation,
     createSkillMutation,
+    createSkillsMutation,
     updateSkillMutation,
   };
 };

@@ -8,7 +8,7 @@ export const adminSkillRadarEventsQueryKey = (filters: AdminSkillScoreEventFilte
   ["adminSkillRadarEvents", filters] as const;
 
 export const useAdminSkillRadarEvents = (filters: AdminSkillScoreEventFilters = {}) => {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: adminSkillRadarEventsQueryKey(filters),
     queryFn: () => getAdminSkillRadarEvents(filters),
   });
@@ -18,5 +18,6 @@ export const useAdminSkillRadarEvents = (filters: AdminSkillScoreEventFilters = 
     isLoading,
     isError,
     error,
+    refetch,
   };
 };

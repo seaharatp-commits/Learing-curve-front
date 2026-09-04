@@ -192,7 +192,13 @@ function SkillEvidenceItem({
 }
 
 export default function AdminSkillRadarContent() {
-  const { data: positions, isLoading, isError, error } = useAdminSkillRadarPositions();
+  const {
+    data: positions,
+    isLoading,
+    isError,
+    error,
+    refetch: refetchPositions,
+  } = useAdminSkillRadarPositions();
   const [eventFilters, setEventFilters] = useState<AdminSkillScoreEventFilters>({
     page: 1,
     limit: 10,
@@ -203,11 +209,13 @@ export default function AdminSkillRadarContent() {
     isLoading: isEventsLoading,
     isError: isEventsError,
     error: eventsError,
+    refetch: refetchEvents,
   } = useAdminSkillRadarEvents(eventFilters);
   const {
     createPositionMutation,
     updatePositionMutation,
     createSkillMutation,
+    createSkillsMutation,
     updateSkillMutation,
   } = useAdminSkillRadarMutations();
   const suggestPositionSkillsMutation = useSuggestPositionSkills();
@@ -219,7 +227,6 @@ export default function AdminSkillRadarContent() {
   const [skillKeywordsText, setSkillKeywordsText] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [suggestions, setSuggestions] = useState<EditableSkillSuggestion[]>([]);
-  const [isSavingSuggestions, setIsSavingSuggestions] = useState(false);
   const events = eventsPage.items;
 
   const selectedPosition = useMemo(
@@ -348,6 +355,10 @@ export default function AdminSkillRadarContent() {
 
   const handleSaveSkill = () => {
     if (!selectedPosition) return;
+    if (!editingSkill && !selectedPosition.isActive) {
+      setMessage({ text: "ไม่สามารถเพิ่ม Skill ใน Position ที่ปิดใช้งานได้", isError: true });
+      return;
+    }
     const payload = {
       ...skillForm,
       name: skillForm.name.trim(),
@@ -381,6 +392,10 @@ export default function AdminSkillRadarContent() {
 
   const handleSuggestSkills = () => {
     if (!selectedPosition) return;
+    if (!selectedPosition.isActive) {
+      setMessage({ text: "ไม่สามารถแนะนำ Skill สำหรับ Position ที่ปิดใช้งานได้", isError: true });
+      return;
+    }
     setMessage(null);
     suggestPositionSkillsMutation.mutate(selectedPosition.id, {
       onSuccess: (data) => {
@@ -414,29 +429,28 @@ export default function AdminSkillRadarContent() {
 
   const handleSaveAllSuggestions = async () => {
     if (!selectedPosition || suggestions.length === 0) return;
-    setIsSavingSuggestions(true);
+    const payload = suggestions
+      .map((suggestion) => ({
+        name: suggestion.name.trim(),
+        description: suggestion.description.trim(),
+        keywords: textToKeywords(suggestion.keywordsText),
+        weight: 1,
+        isActive: true,
+      }))
+      .filter((suggestion) => suggestion.name);
+
+    if (payload.length === 0) {
+      setMessage({ text: "กรุณาระบุชื่อ Skill อย่างน้อยหนึ่งรายการ", isError: true });
+      return;
+    }
+
     setMessage(null);
     try {
-      for (const suggestion of suggestions) {
-        const name = suggestion.name.trim();
-        if (!name) continue;
-        await createSkillMutation.mutateAsync({
-          positionId: selectedPosition.id,
-          payload: {
-            name,
-            description: suggestion.description.trim(),
-            keywords: textToKeywords(suggestion.keywordsText),
-            weight: 1,
-            isActive: true,
-          },
-        });
-      }
+      await createSkillsMutation.mutateAsync({ positionId: selectedPosition.id, payload });
       setSuggestions([]);
       setMessage({ text: "บันทึก Skill ที่แนะนำสำเร็จ", isError: false });
     } catch (error) {
       setMessage({ text: getErrorMessage(error, "บันทึก Skill ที่แนะนำไม่สำเร็จ"), isError: true });
-    } finally {
-      setIsSavingSuggestions(false);
     }
   };
 
@@ -472,10 +486,13 @@ export default function AdminSkillRadarContent() {
           <p className="text-sm text-default-500">กำลังโหลด Skill Radar...</p>
         </BaseCard>
       ) : isError ? (
-        <BaseCard>
+        <BaseCard className="space-y-3">
           <p className="text-sm text-danger-600">
             {getErrorMessage(error, "โหลดข้อมูล Skill Radar ไม่สำเร็จ")}
           </p>
+          <BaseButton size="sm" variant="flat" onPress={() => void refetchPositions()}>
+            ลองอีกครั้ง
+          </BaseButton>
         </BaseCard>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -572,11 +589,17 @@ export default function AdminSkillRadarContent() {
                       variant="flat"
                       startContent={<Sparkles size={14} />}
                       isLoading={suggestPositionSkillsMutation.isPending}
+                      isDisabled={!selectedPosition.isActive}
                       onPress={handleSuggestSkills}
                     >
                       AI Suggest Skills
                     </BaseButton>
-                    <BaseButton size="sm" variant="flat" onPress={resetSkillForm}>
+                    <BaseButton
+                      size="sm"
+                      variant="flat"
+                      isDisabled={!selectedPosition.isActive}
+                      onPress={resetSkillForm}
+                    >
                       เพิ่ม Skill
                     </BaseButton>
                   </div>
@@ -678,7 +701,7 @@ export default function AdminSkillRadarContent() {
                 </div>
                 <BaseButton
                   startContent={<Save size={16} />}
-                  isLoading={isSavingSuggestions}
+                  isLoading={createSkillsMutation.isPending}
                   onPress={handleSaveAllSuggestions}
                 >
                   บันทึก Skill ทั้งหมดที่แนะนำ
@@ -727,9 +750,10 @@ export default function AdminSkillRadarContent() {
                 </label>
                 <div className="flex gap-2">
                   <BaseButton
-                    startContent={<Save size={16} />}
-                    isLoading={isSavingSkill}
-                    onPress={handleSaveSkill}
+                  startContent={<Save size={16} />}
+                  isLoading={isSavingSkill}
+                  isDisabled={!editingSkill && !selectedPosition.isActive}
+                  onPress={handleSaveSkill}
                   >
                     บันทึก Skill
                   </BaseButton>
@@ -858,9 +882,14 @@ export default function AdminSkillRadarContent() {
         {isEventsLoading ? (
           <p className="text-sm text-default-500">กำลังโหลด evidence...</p>
         ) : isEventsError ? (
-          <p className="text-sm text-danger-600">
-            {getErrorMessage(eventsError, "โหลด evidence ไม่สำเร็จ")}
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-danger-600">
+              {getErrorMessage(eventsError, "โหลด evidence ไม่สำเร็จ")}
+            </p>
+            <BaseButton size="sm" variant="flat" onPress={() => void refetchEvents()}>
+              ลองอีกครั้ง
+            </BaseButton>
+          </div>
         ) : events.length === 0 ? (
           <p className="text-sm text-default-500">
             ยังไม่มี evidence สำหรับ Skill Radar ลองทำ quiz หรือถาม AI Chat ก่อนครับ
