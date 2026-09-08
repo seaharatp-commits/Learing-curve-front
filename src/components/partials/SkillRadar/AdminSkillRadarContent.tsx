@@ -10,7 +10,6 @@ import {
   Download,
   Eye,
   Pencil,
-  Plus,
   RotateCcw,
   Save,
   Sparkles,
@@ -489,9 +488,6 @@ export default function AdminSkillRadarContent() {
           <h1 className="text-xl font-semibold">Skill Radar</h1>
           <p className="text-sm text-default-500">จัดการ Position และ Skill สำหรับ Radar Chart</p>
         </div>
-        <BaseButton startContent={<Plus size={16} />} onPress={resetPositionForm}>
-          เพิ่ม Position
-        </BaseButton>
       </div>
 
       {message && (

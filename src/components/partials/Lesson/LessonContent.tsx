@@ -92,6 +92,7 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [quizMessage, setQuizMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const latestQuiz = lesson?.quizzes.find((quiz) => quiz.questionCount > 0) ?? null;
 
   useEffect(() => {
     if (!askMutation.isPending) {
@@ -212,14 +213,24 @@ export default function LessonContent({ lessonId }: LessonContentProps) {
           >
             {isCompleted ? "เรียนจบแล้ว" : "เรียนจบบทนี้"}
           </BaseButton>
-          <BaseButton
-            color="secondary"
-            startContent={<Sparkles size={16} />}
-            isLoading={generateQuizMutation.isPending}
-            onPress={handleGenerateQuiz}
-          >
-            สร้างแบบทดสอบ
-          </BaseButton>
+          {latestQuiz ? (
+            <BaseButton
+              color="secondary"
+              startContent={<ClipboardList size={16} />}
+              onPress={() => router.push(`/quizzes/${latestQuiz.id}`)}
+            >
+              เปิดแบบทดสอบล่าสุด
+            </BaseButton>
+          ) : (
+            <BaseButton
+              color="secondary"
+              startContent={<Sparkles size={16} />}
+              isLoading={generateQuizMutation.isPending}
+              onPress={handleGenerateQuiz}
+            >
+              สร้างแบบทดสอบ
+            </BaseButton>
+          )}
         </div>
       </div>
       {completeError && <p className="text-sm text-danger-600">{completeError}</p>}
