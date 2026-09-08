@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import {
   Activity,
   BrainCircuit,
@@ -214,6 +215,7 @@ export default function AdminSkillRadarContent() {
   const {
     createPositionMutation,
     updatePositionMutation,
+    deletePositionMutation,
     createSkillMutation,
     createSkillsMutation,
     updateSkillMutation,
@@ -221,6 +223,7 @@ export default function AdminSkillRadarContent() {
   const suggestPositionSkillsMutation = useSuggestPositionSkills();
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
   const [editingPosition, setEditingPosition] = useState<AdminSkillRadarPosition | null>(null);
+  const [deletingPosition, setDeletingPosition] = useState<AdminSkillRadarPosition | null>(null);
   const [positionForm, setPositionForm] = useState<PositionPayload>(emptyPositionForm);
   const [editingSkill, setEditingSkill] = useState<SkillRadarSkill | null>(null);
   const [skillForm, setSkillForm] = useState<PositionSkillPayload>(emptySkillForm);
@@ -301,6 +304,28 @@ export default function AdminSkillRadarContent() {
       name: position.name,
       description: position.description ?? "",
       isActive: position.isActive,
+    });
+  };
+
+  const handleConfirmDeletePosition = () => {
+    if (!deletingPosition) return;
+
+    setMessage(null);
+    deletePositionMutation.mutate(deletingPosition.id, {
+      onSuccess: () => {
+        if (selectedPositionId === deletingPosition.id) {
+          setSelectedPositionId(null);
+        }
+        if (editingPosition?.id === deletingPosition.id) {
+          resetPositionForm();
+        }
+        setMessage({ text: "ลบ Position สำเร็จ", isError: false });
+        setDeletingPosition(null);
+      },
+      onError: (error: unknown) => {
+        setMessage({ text: getErrorMessage(error, "ลบ Position ไม่สำเร็จ"), isError: true });
+        setDeletingPosition(null);
+      },
     });
   };
 
@@ -504,30 +529,57 @@ export default function AdminSkillRadarContent() {
               </div>
               <div className="space-y-2">
                 {positions.map((position) => (
-                  <button
+                  <div
                     key={position.id}
-                    type="button"
-                    onClick={() => setSelectedPositionId(position.id)}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                    className={`flex items-center gap-1 rounded-lg p-1 transition-colors ${
                       selectedPosition?.id === position.id
                         ? "bg-primary/15 text-primary"
                         : "bg-default-50 hover:bg-default-100 dark:bg-default-100/10"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">{position.name}</span>
-                      <span
-                        className={`rounded-md px-2 py-0.5 text-xs ${
-                          position.isActive
-                            ? "bg-success/15 text-success-700"
-                            : "bg-default-100 text-default-500"
-                        }`}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPositionId(position.id)}
+                      className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-left text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">{position.name}</span>
+                        <span
+                          className={`shrink-0 rounded-md px-2 py-0.5 text-xs ${
+                            position.isActive
+                              ? "bg-success/15 text-success-700"
+                              : "bg-default-100 text-default-500"
+                          }`}
+                        >
+                          {position.isActive ? "Active" : "Off"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-default-500">{position.skills.length} skills</p>
+                    </button>
+                    <div className="flex shrink-0 flex-col gap-0.5">
+                      <BaseButton
+                        isIconOnly
+                        size="sm"
+                        variant="light"
+                        aria-label={`แก้ไข ${position.name}`}
+                        title="แก้ไข Position"
+                        onPress={() => startEditPosition(position)}
                       >
-                        {position.isActive ? "Active" : "Off"}
-                      </span>
+                        <Pencil size={14} />
+                      </BaseButton>
+                      <BaseButton
+                        isIconOnly
+                        size="sm"
+                        variant="light"
+                        color="danger"
+                        aria-label={`ลบ ${position.name}`}
+                        title="ลบ Position"
+                        onPress={() => setDeletingPosition(position)}
+                      >
+                        <Trash2 size={14} />
+                      </BaseButton>
                     </div>
-                    <p className="mt-1 text-xs text-default-500">{position.skills.length} skills</p>
-                  </button>
+                  </div>
                 ))}
               </div>
             </BaseCard>
@@ -934,6 +986,33 @@ export default function AdminSkillRadarContent() {
           </div>
         </div>
       </BaseCard>
+
+      <Modal isOpen={!!deletingPosition} onClose={() => setDeletingPosition(null)}>
+        <ModalContent>
+          <ModalHeader>ยืนยันการลบ Position</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              ลบได้เฉพาะ Position ที่ยังไม่มี Skill, ผู้ใช้, คะแนน หรือข้อมูลอื่นที่เกี่ยวข้องเท่านั้น
+            </p>
+            {deletingPosition && <p className="font-medium">{deletingPosition.name}</p>}
+            <p className="text-sm text-default-500">
+              หากมีข้อมูลอยู่ ระบบจะคง Position เดิมไว้และแนะนำให้ปิดใช้งานแทน
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setDeletingPosition(null)}>
+              ยกเลิก
+            </BaseButton>
+            <BaseButton
+              color="danger"
+              isLoading={deletePositionMutation.isPending}
+              onPress={handleConfirmDeletePosition}
+            >
+              ลบ Position
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

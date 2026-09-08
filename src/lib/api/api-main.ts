@@ -113,6 +113,9 @@ export const createSkillRadarPositionApi = (payload: PositionPayload) =>
 export const updateSkillRadarPositionApi = (id: string, payload: PositionPayload) =>
   mainClient.patch<AdminSkillRadarPosition>(`/skill-radar/admin/positions/${id}`, payload);
 
+export const deleteSkillRadarPositionApi = (id: string) =>
+  mainClient.delete<{ success: boolean }>(`/skill-radar/admin/positions/${id}`);
+
 export const createPositionSkillApi = (positionId: string, payload: PositionSkillPayload) =>
   mainClient.post<SkillRadarSkill>(`/skill-radar/admin/positions/${positionId}/skills`, payload);
 
