@@ -28,6 +28,7 @@ import {
   Pencil,
   Archive,
   ChevronDown,
+  History,
 } from "lucide-react";
 import { extractErrorMessage } from "@/utils/extractErrorMessage";
 
@@ -149,6 +150,7 @@ export default function ChatContent() {
   const [knowledgePendingHint, setKnowledgePendingHint] = useState("");
   const [pinnedSessionIds, setPinnedSessionIds] = useState<string[]>([]);
   const [deletingHistory, setDeletingHistory] = useState<{ id: string; title: string } | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatRunIdRef = useRef(0);
@@ -464,6 +466,7 @@ export default function ChatContent() {
   };
 
   const handleOpenHistory = (selectedSessionId: string) => {
+    setIsHistoryOpen(false);
     if (selectedSessionId === sessionId) return;
     chatRunIdRef.current += 1;
     setMessages([]);
@@ -572,7 +575,7 @@ export default function ChatContent() {
 
                 <div
                   className={`absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5 ${
-                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    isActive ? "opacity-100" : "opacity-100 2xl:opacity-0 2xl:group-hover:opacity-100 2xl:group-focus-within:opacity-100"
                   } transition-opacity`}
                 >
                   <button
@@ -603,7 +606,10 @@ export default function ChatContent() {
                       aria-label="Chat actions"
                       onAction={(key) => {
                         if (key === "pin") handleTogglePinHistory(item.id);
-                        if (key === "delete") setDeletingHistory({ id: item.id, title: item.title });
+                        if (key === "delete") {
+                          setIsHistoryOpen(false);
+                          setDeletingHistory({ id: item.id, title: item.title });
+                        }
                       }}
                       disabledKeys={["share", "group", "rename", "archive"]}
                     >
@@ -654,6 +660,17 @@ export default function ChatContent() {
             <h1 className="truncate text-xl font-semibold">แชทกับ AI ผู้ช่วยแก้ปัญหา</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <BaseButton
+              size="sm"
+              variant="flat"
+              className="2xl:hidden"
+              startContent={<History size={16} />}
+              aria-haspopup="dialog"
+              aria-expanded={isHistoryOpen}
+              onPress={() => setIsHistoryOpen(true)}
+            >
+              ประวัติแชท
+            </BaseButton>
           {activeKnowledge ? (
             <span title={activeKnowledge.title} className="min-w-0 max-w-[min(18rem,100%)] truncate rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               กำลังใช้ฐานความรู้: {activeKnowledge.title}
@@ -896,6 +913,12 @@ export default function ChatContent() {
         </BaseButton>
         </div>
       </section>
+      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} scrollBehavior="inside" size="md">
+        <ModalContent>
+          <ModalHeader>ประวัติแชท</ModalHeader>
+          <ModalBody className="pb-6">{historyPanel}</ModalBody>
+        </ModalContent>
+      </Modal>
       <Modal isOpen={!!deletingHistory} onClose={() => setDeletingHistory(null)}>
         <ModalContent>
           <ModalHeader>ยืนยันการลบประวัติแชท</ModalHeader>

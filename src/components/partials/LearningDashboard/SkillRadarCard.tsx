@@ -121,8 +121,8 @@ export default function SkillRadarCard({
           })
           .join(" ")
       : "";
-  const insightText = highlightedSkill
-    ? `ตอนนี้ ${highlightedSkill.name} เด่นที่สุดที่ ${highlightedSkill.score}% จาก ${highlightedSkill.evidenceCount} evidence`
+  const insightText = strongestSkill
+    ? `ตอนนี้ ${strongestSkill.name} เด่นที่สุดที่ ${strongestSkill.score}% จาก ${strongestSkill.evidenceCount} evidence`
     : "ทำ quiz หรือถาม AI Chat เพื่อเริ่มสะสม evidence ให้ Skill Radar";
   const evidenceHint =
     lowEvidenceCount > 0
@@ -197,16 +197,16 @@ export default function SkillRadarCard({
       ) : skills.length === 0 ? (
         <p className="text-sm text-default-400">ยังไม่มี skill สำหรับตำแหน่งนี้</p>
       ) : (
-        <div className="grid gap-7 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-center">
-          <div className="mx-auto w-full max-w-[460px] rounded-2xl bg-background/70 p-4 shadow-lg shadow-primary/5 ring-1 ring-default-200/70 sm:p-5 dark:bg-default-50/5 dark:ring-default-100/15">
-            <div className="mb-3 space-y-2 rounded-2xl bg-default-50/80 px-4 py-3 text-sm dark:bg-default-100/10">
+        <div className="grid min-w-0 gap-4 sm:gap-7 xl:grid-cols-[minmax(0,460px)_minmax(0,1fr)] xl:items-center">
+          <div className="mx-auto min-w-0 w-full max-w-[460px] rounded-2xl bg-background/70 p-2 shadow-lg shadow-primary/5 ring-1 ring-default-200/70 sm:p-5 dark:bg-default-50/5 dark:ring-default-100/15">
+            <div className="mb-3 space-y-2 rounded-2xl bg-default-50/80 px-3 py-3 text-sm [overflow-wrap:anywhere] sm:px-4 dark:bg-default-100/10">
               {strongestSkill ? (
                 <>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex min-w-0 flex-col items-start gap-2">
                     <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-semibold text-warning-600">
                       Top Skill
                     </span>
-                    <p className="font-medium text-foreground">{insightText}</p>
+                    <p className="w-full font-medium leading-6 text-foreground">{insightText}</p>
                   </div>
                   <p className="text-xs leading-5 text-default-500">{evidenceHint}</p>
                 </>
@@ -218,6 +218,21 @@ export default function SkillRadarCard({
                   </p>
                 </>
               )}
+              {/* Keep sizing independent of the hovered/focused skill, including wrapped names. */}
+              <div className="relative min-h-5 min-w-0 text-xs leading-5 text-default-600 dark:text-default-300">
+                <div aria-hidden="true" style={{ display: "grid", opacity: 0, pointerEvents: "none" }}>
+                  {skills.map((skill) => (
+                    <p key={skill.id} className="min-w-0" style={{ gridArea: "1 / 1" }}>
+                      {skill.name}: {skill.score}% จาก {skill.evidenceCount} evidence
+                    </p>
+                  ))}
+                </div>
+                {highlightedSkill && highlightedSkill.id !== strongestSkillId && (
+                  <p className="absolute inset-x-0 top-0 min-w-0">
+                    {highlightedSkill.name}: {highlightedSkill.score}% จาก {highlightedSkill.evidenceCount} evidence
+                  </p>
+                )}
+              </div>
             </div>
             {skills.length >= 3 ? (
               <svg viewBox={`0 0 ${CHART_SIZE} ${CHART_SIZE}`} className="h-auto w-full overflow-visible">
@@ -317,7 +332,7 @@ export default function SkillRadarCard({
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-1">
             <div className="flex items-center justify-between px-1 text-xs text-default-500 sm:col-span-2 xl:col-span-1">
               <span className="font-medium text-default-600 dark:text-default-300">รายละเอียด Skill</span>
               <span>คะแนนสะสม</span>
@@ -336,8 +351,11 @@ export default function SkillRadarCard({
                 type="button"
                 onMouseEnter={() => setHoveredSkillId(skill.id)}
                 onMouseLeave={() => setHoveredSkillId(null)}
+                onFocus={() => setHoveredSkillId(skill.id)}
+                onBlur={() => setHoveredSkillId(null)}
+                onClick={() => setHoveredSkillId(skill.id)}
                 aria-label={`ดูรายละเอียด ${skill.name}`}
-                className={`min-h-[68px] rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                className={`min-w-0 min-h-[60px] rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-[68px] ${
                   skill.id === highlightedSkillId
                     ? isTopSkill
                       ? "border-warning/45 bg-warning/10"
@@ -348,15 +366,15 @@ export default function SkillRadarCard({
                 }`}
               >
                 <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                  <span className="flex min-w-0 items-center gap-2 font-medium">
-                    <span className="truncate">{skill.name}</span>
+                  <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
+                    <span className="[overflow-wrap:anywhere]">{skill.name}</span>
                     {isTopSkill && (
                       <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning-600">
                         จุดเด่น
                       </span>
                     )}
                   </span>
-                  <span className={scoreTextColor(skill.score, isTopSkill)}>{skill.score}%</span>
+                  <span className={`shrink-0 ${scoreTextColor(skill.score, isTopSkill)}`}>{skill.score}%</span>
                 </div>
                 <div className="h-1 rounded-full bg-default-100 dark:bg-default-100/10">
                   <div
