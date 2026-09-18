@@ -6,8 +6,10 @@ import {
   Activity,
   AlertTriangle,
   BrainCircuit,
+  Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Download,
   Eye,
   ListFilter,
@@ -88,44 +90,90 @@ function formatConfidence(confidence: number | null) {
 
 function escapeCsvCell(value: unknown) {
   const text = value === null || value === undefined ? "" : String(value);
-  return `"${text.replace(/"/g, '""')}"`;
+  const safeText =
+    typeof value === "string" && /^[=+\-@]/.test(text.trimStart()) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
 }
 
 function buildEventsCsv(events: AdminSkillScoreEvent[]) {
   const rows = [
     [
-      "eventId",
-      "user",
-      "email",
-      "position",
-      "skill",
-      "sourceType",
-      "sourceId",
-      "scoreDelta",
-      "scoreBefore",
-      "scoreAfter",
-      "confidence",
-      "reason",
-      "createdAt",
+      "ลำดับ",
+      "วันและเวลา",
+      "ชื่อผู้ใช้",
+      "อีเมล",
+      "Position",
+      "Skill",
+      "แหล่งที่มา",
+      "คะแนนเพิ่ม",
+      "คะแนนก่อน",
+      "คะแนนหลัง",
+      "ความมั่นใจ",
+      "เหตุผล",
+      "Event ID",
+      "User ID",
+      "Position ID",
+      "Skill ID",
+      "Source ID",
     ],
-    ...events.map((event) => [
-      event.id,
+    ...events.map((event, index) => [
+      index + 1,
+      formatEventDate(event.createdAt),
       event.user.name ?? "",
       event.user.email,
       event.position.name,
       event.skill.name,
-      event.sourceType,
-      event.sourceId ?? "",
-      event.scoreDelta,
-      event.scoreBefore,
-      event.scoreAfter,
-      event.confidence ?? "",
+      formatSourceType(event.sourceType),
+      Number(event.scoreDelta.toFixed(2)),
+      Number(event.scoreBefore.toFixed(2)),
+      Number(event.scoreAfter.toFixed(2)),
+      formatConfidence(event.confidence),
       event.reason ?? "",
-      event.createdAt,
+      event.id,
+      event.user.id,
+      event.position.id,
+      event.skill.id,
+      event.sourceId ?? "",
     ]),
   ];
 
-  return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+  return `\uFEFF${rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n")}`;
+}
+
+function CopyableId({ label, value }: { label: string; value: string | null }) {
+  const [isCopied, setIsCopied] = useState(false);
+  const displayValue = value ? `${value.slice(0, 8)}…` : "-";
+
+  const copyValue = async () => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setIsCopied(true);
+      window.setTimeout(() => setIsCopied(false), 1600);
+    } catch {
+      setIsCopied(false);
+    }
+  };
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="shrink-0 font-medium text-default-700">{label}:</span>
+      <code className="truncate text-default-500" title={value ?? undefined}>
+        {displayValue}
+      </code>
+      {value && (
+        <button
+          type="button"
+          className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-default-400 transition-colors hover:bg-default-100 hover:text-primary"
+          aria-label={`คัดลอก ${label}`}
+          title={isCopied ? "คัดลอกแล้ว" : `คัดลอก ${label}`}
+          onClick={() => void copyValue()}
+        >
+          {isCopied ? <Check size={13} className="text-success-600" /> : <Copy size={13} />}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function SkillEvidenceItem({
@@ -173,23 +221,14 @@ function SkillEvidenceItem({
       </p>
       {event.reason && <p className="mt-2 text-xs text-default-600">{event.reason}</p>}
       {isExpanded && (
-        <div className="mt-3 grid gap-2 rounded-md border border-default-200 bg-background/60 p-3 text-xs text-default-500 sm:grid-cols-2">
-          <p>
-            <span className="font-medium text-default-700">Event ID:</span> {event.id}
-          </p>
-          <p>
-            <span className="font-medium text-default-700">User ID:</span> {event.user.id}
-          </p>
-          <p>
-            <span className="font-medium text-default-700">Position ID:</span> {event.position.id}
-          </p>
-          <p>
-            <span className="font-medium text-default-700">Skill ID:</span> {event.skill.id}
-          </p>
-          <p className="sm:col-span-2">
-            <span className="font-medium text-default-700">Source ID:</span>{" "}
-            {event.sourceId ?? "-"}
-          </p>
+        <div className="mt-3 grid gap-x-6 gap-y-2 rounded-md border border-default-200 bg-background/60 p-3 text-xs sm:grid-cols-2">
+          <CopyableId label="Event ID" value={event.id} />
+          <CopyableId label="User ID" value={event.user.id} />
+          <CopyableId label="Position ID" value={event.position.id} />
+          <CopyableId label="Skill ID" value={event.skill.id} />
+          <div className="sm:col-span-2">
+            <CopyableId label="Source ID" value={event.sourceId} />
+          </div>
         </div>
       )}
     </div>
@@ -238,6 +277,7 @@ export default function AdminSkillRadarContent() {
   const [suggestions, setSuggestions] = useState<EditableSkillSuggestion[]>([]);
   const [positionSearch, setPositionSearch] = useState("");
   const [skillSearch, setSkillSearch] = useState("");
+  const [isPositionFormOpen, setIsPositionFormOpen] = useState(false);
   const [isSkillFormOpen, setIsSkillFormOpen] = useState(false);
   const events = eventsPage.items;
 
@@ -351,7 +391,8 @@ export default function AdminSkillRadarContent() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `skill-radar-evidence-page-${eventsPage.page}.csv`;
+    const exportDate = new Intl.DateTimeFormat("en-CA").format(new Date());
+    link.download = `skill-radar-evidence-${exportDate}-page-${eventsPage.page}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     setMessage({ text: "ส่งออก CSV สำเร็จ", isError: false });
@@ -360,6 +401,21 @@ export default function AdminSkillRadarContent() {
   const resetPositionForm = () => {
     setEditingPosition(null);
     setPositionForm(emptyPositionForm);
+  };
+
+  const closePositionForm = () => {
+    resetPositionForm();
+    setIsPositionFormOpen(false);
+  };
+
+  const openNewPositionForm = () => {
+    resetPositionForm();
+    setIsPositionFormOpen(true);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById("position-form")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const resetSkillForm = () => {
@@ -382,11 +438,17 @@ export default function AdminSkillRadarContent() {
   };
 
   const startEditPosition = (position: AdminSkillRadarPosition) => {
+    setIsPositionFormOpen(true);
     setEditingPosition(position);
     setPositionForm({
       name: position.name,
       description: position.description ?? "",
       isActive: position.isActive,
+    });
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById("position-form")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
 
@@ -400,7 +462,7 @@ export default function AdminSkillRadarContent() {
           setSelectedPositionId(null);
         }
         if (editingPosition?.id === deletingPosition.id) {
-          resetPositionForm();
+          closePositionForm();
         }
         setMessage({ text: "ลบ Position สำเร็จ", isError: false });
         setDeletingPosition(null);
@@ -464,7 +526,7 @@ export default function AdminSkillRadarContent() {
       onSuccess: (savedPosition: AdminSkillRadarPosition) => {
         setSelectedPositionId(savedPosition.id);
         setMessage({ text: "บันทึก Position สำเร็จ", isError: false });
-        resetPositionForm();
+        closePositionForm();
       },
       onError: (error: unknown) => {
         setMessage({ text: getErrorMessage(error, "บันทึก Position ไม่สำเร็จ"), isError: true });
@@ -662,9 +724,21 @@ export default function AdminSkillRadarContent() {
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <div className="space-y-4">
             <BaseCard>
-              <div className="mb-3 flex items-center gap-2">
-                <BrainCircuit size={18} className="text-primary" />
-                <h2 className="font-medium">Position</h2>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <BrainCircuit size={18} className="text-primary" />
+                  <h2 className="font-medium">Position</h2>
+                </div>
+                <BaseButton
+                  size="sm"
+                  variant="flat"
+                  startContent={<Plus size={14} />}
+                  isDisabled={isPositionBusy}
+                  title="เพิ่ม Position ใหม่"
+                  onPress={openNewPositionForm}
+                >
+                  เพิ่ม Position
+                </BaseButton>
               </div>
               <BaseInput
                 className="mb-3"
@@ -674,11 +748,11 @@ export default function AdminSkillRadarContent() {
                 value={positionSearch}
                 onValueChange={setPositionSearch}
               />
-              <div className="space-y-2">
+              <div className="max-h-[352px] space-y-2 overflow-y-auto overscroll-contain pr-1 sm:max-h-[424px] [scrollbar-gutter:stable]">
                 {filteredPositions.map((position) => (
                   <div
                     key={position.id}
-                    className={`flex items-center gap-1 rounded-lg p-1 transition-colors ${
+                    className={`flex min-h-16 items-center gap-1 rounded-lg p-1 transition-colors ${
                       selectedPosition?.id === position.id
                         ? "bg-primary/15 text-primary"
                         : "bg-default-50 hover:bg-default-100 dark:bg-default-100/10"
@@ -745,57 +819,64 @@ export default function AdminSkillRadarContent() {
               </div>
             </BaseCard>
 
-            <BaseCard className="space-y-3">
-              <h2 className="font-medium">{editingPosition ? "แก้ไข Position" : "เพิ่ม Position"}</h2>
-              <BaseInput
-                label="ชื่อ Position"
-                isDisabled={isSavingPosition}
-                value={positionForm.name}
-                onValueChange={(name) => setPositionForm((prev) => ({ ...prev, name }))}
-              />
-              <BaseInput
-                label="คำอธิบาย"
-                isDisabled={isSavingPosition}
-                value={positionForm.description ?? ""}
-                onValueChange={(description) =>
-                  setPositionForm((prev) => ({ ...prev, description }))
-                }
-              />
-              <label className="flex items-center gap-2 text-sm text-default-600">
-                <input
-                  type="checkbox"
-                  disabled={isSavingPosition}
-                  checked={positionForm.isActive ?? true}
-                  onChange={(event) =>
-                    setPositionForm((prev) => ({ ...prev, isActive: event.target.checked }))
+            {(isPositionFormOpen || editingPosition) && (
+              <BaseCard id="position-form" className="space-y-3 scroll-mt-4">
+                <h2 className="font-medium">
+                  {editingPosition ? "แก้ไข Position" : "เพิ่ม Position"}
+                </h2>
+                <BaseInput
+                  label="ชื่อ Position"
+                  isDisabled={isSavingPosition}
+                  value={positionForm.name}
+                  onValueChange={(name) => setPositionForm((prev) => ({ ...prev, name }))}
+                />
+                <BaseInput
+                  label="คำอธิบาย"
+                  isDisabled={isSavingPosition}
+                  value={positionForm.description ?? ""}
+                  onValueChange={(description) =>
+                    setPositionForm((prev) => ({ ...prev, description }))
                   }
                 />
-                เปิดใช้งาน
-              </label>
-              {editingPosition && positionForm.isActive === false && (
-                <div className="flex gap-2 rounded-lg border border-warning-300 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-950/40">
-                  <AlertTriangle size={17} className="mt-0.5 shrink-0" />
-                  <p>
-                    การปิดใช้งานจะไม่ลบ Skill คะแนน หรือประวัติเดิม แต่ผู้ใช้จะไม่สามารถเลือก Position นี้กับข้อมูลใหม่ได้
-                  </p>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <BaseButton
-                  startContent={<Save size={16} />}
-                  isLoading={isSavingPosition}
-                  isDisabled={isPositionBusy}
-                  onPress={handleSavePosition}
-                >
-                  บันทึก
-                </BaseButton>
-                {editingPosition && (
-                  <BaseButton variant="flat" isDisabled={isPositionBusy} onPress={resetPositionForm}>
+                <label className="flex items-center gap-2 text-sm text-default-600">
+                  <input
+                    type="checkbox"
+                    disabled={isSavingPosition}
+                    checked={positionForm.isActive ?? true}
+                    onChange={(event) =>
+                      setPositionForm((prev) => ({ ...prev, isActive: event.target.checked }))
+                    }
+                  />
+                  เปิดใช้งาน
+                </label>
+                {editingPosition && positionForm.isActive === false && (
+                  <div className="flex gap-2 rounded-lg border border-warning-300 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-950/40">
+                    <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+                    <p>
+                      การปิดใช้งานจะไม่ลบ Skill คะแนน หรือประวัติเดิม
+                      แต่ผู้ใช้จะไม่สามารถเลือก Position นี้กับข้อมูลใหม่ได้
+                    </p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <BaseButton
+                    startContent={<Save size={16} />}
+                    isLoading={isSavingPosition}
+                    isDisabled={isPositionBusy}
+                    onPress={handleSavePosition}
+                  >
+                    บันทึก
+                  </BaseButton>
+                  <BaseButton
+                    variant="flat"
+                    isDisabled={isPositionBusy}
+                    onPress={closePositionForm}
+                  >
                     ยกเลิก
                   </BaseButton>
-                )}
-              </div>
-            </BaseCard>
+                </div>
+              </BaseCard>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -1092,7 +1173,7 @@ export default function AdminSkillRadarContent() {
             isDisabled={events.length === 0}
             onPress={exportCurrentEvents}
           >
-            ส่งออก CSV
+            ส่งออกหน้านี้ (.CSV)
           </BaseButton>
         </div>
 
