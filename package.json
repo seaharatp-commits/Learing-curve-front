@@ -19,7 +19,8 @@
     "next-auth": "4.24.14",
     "axios": "1.17.0",
     "dayjs": "1.11.21",
-    "lucide-react": "1.17.0"
+    "lucide-react": "1.17.0",
+    "react-qr-code": "2.2.0"
   },
   "devDependencies": {
     "typescript": "6.0.3",
