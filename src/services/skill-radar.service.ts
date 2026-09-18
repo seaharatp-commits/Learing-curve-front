@@ -2,6 +2,7 @@ import {
   createPositionSkillApi,
   createPositionSkillsApi,
   createSkillRadarPositionApi,
+  deletePositionSkillApi,
   deleteSkillRadarPositionApi,
   getAdminSkillRadarEventsApi,
   getAdminSkillRadarPositionsApi,
@@ -103,6 +104,11 @@ export const updatePositionSkill = async (
   payload: PositionSkillPayload,
 ): Promise<SkillRadarSkill> => {
   const res = await updatePositionSkillApi(id, payload);
+  return res.data;
+};
+
+export const deletePositionSkill = async (id: string): Promise<{ success: boolean }> => {
+  const res = await deletePositionSkillApi(id);
   return res.data;
 };
 

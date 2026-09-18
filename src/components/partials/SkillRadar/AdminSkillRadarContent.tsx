@@ -218,6 +218,7 @@ export default function AdminSkillRadarContent() {
     createSkillMutation,
     createSkillsMutation,
     updateSkillMutation,
+    deleteSkillMutation,
   } = useAdminSkillRadarMutations();
   const suggestPositionSkillsMutation = useSuggestPositionSkills();
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
@@ -225,6 +226,7 @@ export default function AdminSkillRadarContent() {
   const [deletingPosition, setDeletingPosition] = useState<AdminSkillRadarPosition | null>(null);
   const [positionForm, setPositionForm] = useState<PositionPayload>(emptyPositionForm);
   const [editingSkill, setEditingSkill] = useState<SkillRadarSkill | null>(null);
+  const [deletingSkill, setDeletingSkill] = useState<SkillRadarSkill | null>(null);
   const [skillForm, setSkillForm] = useState<PositionSkillPayload>(emptySkillForm);
   const [skillKeywordsText, setSkillKeywordsText] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
@@ -338,6 +340,25 @@ export default function AdminSkillRadarContent() {
       isActive: skill.isActive,
     });
     setSkillKeywordsText(keywordsToText(skill.keywords));
+  };
+
+  const handleConfirmDeleteSkill = () => {
+    if (!deletingSkill) return;
+
+    setMessage(null);
+    deleteSkillMutation.mutate(deletingSkill.id, {
+      onSuccess: () => {
+        if (editingSkill?.id === deletingSkill.id) {
+          resetSkillForm();
+        }
+        setMessage({ text: "ลบ Skill สำเร็จ", isError: false });
+        setDeletingSkill(null);
+      },
+      onError: (error: unknown) => {
+        setMessage({ text: getErrorMessage(error, "ลบ Skill ไม่สำเร็จ"), isError: true });
+        setDeletingSkill(null);
+      },
+    });
   };
 
   const handleSavePosition = () => {
@@ -642,14 +663,6 @@ export default function AdminSkillRadarContent() {
                     >
                       AI Suggest Skills
                     </BaseButton>
-                    <BaseButton
-                      size="sm"
-                      variant="flat"
-                      isDisabled={!selectedPosition.isActive}
-                      onPress={resetSkillForm}
-                    >
-                      เพิ่ม Skill
-                    </BaseButton>
                   </div>
                 )}
               </div>
@@ -668,14 +681,29 @@ export default function AdminSkillRadarContent() {
                           <p className="font-medium">{skill.name}</p>
                           <p className="text-xs text-default-500">weight {skill.weight}</p>
                         </div>
-                        <BaseButton
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          onPress={() => startEditSkill(skill)}
-                        >
-                          <Pencil size={14} />
-                        </BaseButton>
+                        <div className="flex shrink-0 gap-1">
+                          <BaseButton
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            aria-label={`แก้ไข ${skill.name}`}
+                            title="แก้ไข Skill"
+                            onPress={() => startEditSkill(skill)}
+                          >
+                            <Pencil size={14} />
+                          </BaseButton>
+                          <BaseButton
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            color="danger"
+                            aria-label={`ลบ ${skill.name}`}
+                            title="ลบ Skill"
+                            onPress={() => setDeletingSkill(skill)}
+                          >
+                            <Trash2 size={14} />
+                          </BaseButton>
+                        </div>
                       </div>
                       {skill.description && (
                         <p className="mt-2 text-sm text-default-600">{skill.description}</p>
@@ -988,11 +1016,19 @@ export default function AdminSkillRadarContent() {
           <ModalHeader>ยืนยันการลบ Position</ModalHeader>
           <ModalBody>
             <p className="text-sm text-default-600">
-              ลบได้เฉพาะ Position ที่ยังไม่มี Skill, ผู้ใช้, คะแนน หรือข้อมูลอื่นที่เกี่ยวข้องเท่านั้น
+              Position ที่ยังไม่ถูกใช้งานสามารถลบพร้อม Skill ภายในได้
             </p>
-            {deletingPosition && <p className="font-medium">{deletingPosition.name}</p>}
+            {deletingPosition && (
+              <div>
+                <p className="font-medium">{deletingPosition.name}</p>
+                <p className="text-sm text-danger-600">
+                  Skill ที่จะถูกลบพร้อมกัน: {deletingPosition.skills.length} รายการ
+                </p>
+              </div>
+            )}
             <p className="text-sm text-default-500">
-              หากมีข้อมูลอยู่ ระบบจะคง Position เดิมไว้และแนะนำให้ปิดใช้งานแทน
+              หากมีผู้ใช้ คะแนน ประวัติคะแนน Career Alignment หรือคำถาม Quiz ผูกอยู่
+              ระบบจะไม่ลบและจะแนะนำให้ปิดใช้งานแทน
             </p>
           </ModalBody>
           <ModalFooter>
@@ -1005,6 +1041,33 @@ export default function AdminSkillRadarContent() {
               onPress={handleConfirmDeletePosition}
             >
               ลบ Position
+            </BaseButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={!!deletingSkill} onClose={() => setDeletingSkill(null)}>
+        <ModalContent>
+          <ModalHeader>ยืนยันการลบ Skill</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              ลบได้เฉพาะ Skill ที่ยังไม่มีคะแนน ประวัติคะแนน หรือคำถาม Quiz ผูกอยู่เท่านั้น
+            </p>
+            {deletingSkill && <p className="font-medium">{deletingSkill.name}</p>}
+            <p className="text-sm text-default-500">
+              หากมีข้อมูลอยู่ ระบบจะคง Skill เดิมไว้และแนะนำให้ปิดใช้งานแทน
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <BaseButton variant="light" onPress={() => setDeletingSkill(null)}>
+              ยกเลิก
+            </BaseButton>
+            <BaseButton
+              color="danger"
+              isLoading={deleteSkillMutation.isPending}
+              onPress={handleConfirmDeleteSkill}
+            >
+              ลบ Skill
             </BaseButton>
           </ModalFooter>
         </ModalContent>

@@ -5,6 +5,7 @@ import {
   createPositionSkill,
   createPositionSkills,
   createSkillRadarPosition,
+  deletePositionSkill,
   deleteSkillRadarPosition,
   updatePositionSkill,
   updateSkillRadarPosition,
@@ -51,6 +52,11 @@ export const useAdminSkillRadarMutations = () => {
     onSuccess: invalidatePositions,
   });
 
+  const deleteSkillMutation = useMutation({
+    mutationFn: (id: string) => deletePositionSkill(id),
+    onSuccess: invalidatePositions,
+  });
+
   return {
     createPositionMutation,
     updatePositionMutation,
@@ -58,5 +64,6 @@ export const useAdminSkillRadarMutations = () => {
     createSkillMutation,
     createSkillsMutation,
     updateSkillMutation,
+    deleteSkillMutation,
   };
 };
