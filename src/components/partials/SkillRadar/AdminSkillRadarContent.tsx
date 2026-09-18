@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Download,
   Eye,
+  ListFilter,
   Pencil,
   Plus,
   RotateCcw,
@@ -290,6 +291,24 @@ export default function AdminSkillRadarContent() {
       })),
     );
   }, [eventFilters.positionId, positions]);
+
+  const activeEventFilterCount = useMemo(
+    () =>
+      [
+        eventFilters.search,
+        eventFilters.userId,
+        eventFilters.positionId,
+        eventFilters.skillId,
+        eventFilters.sourceType,
+      ].filter(Boolean).length,
+    [
+      eventFilters.positionId,
+      eventFilters.search,
+      eventFilters.skillId,
+      eventFilters.sourceType,
+      eventFilters.userId,
+    ],
+  );
 
   useEffect(() => {
     if (!selectedPositionId && positions.length > 0) {
@@ -1054,17 +1073,18 @@ export default function AdminSkillRadarContent() {
       )}
 
       <BaseCard>
-        <div className="mb-3 flex items-center gap-2">
-          <Activity size={18} className="text-primary" />
-          <div>
-            <h2 className="font-medium">ตรวจสอบหลักฐานคะแนน Skill</h2>
-            <p className="text-sm text-default-500">
-              ตรวจสอบคะแนน Skill Radar ตามผู้ใช้ Position, Skill และแหล่งที่มาของคะแนน
-            </p>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Activity size={18} />
+            </div>
+            <div>
+              <h2 className="font-medium">ตรวจสอบหลักฐานคะแนน Skill</h2>
+              <p className="mt-0.5 text-sm text-default-500">
+                ตรวจสอบคะแนนตามผู้ใช้ Position, Skill และแหล่งที่มา
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="mb-4 flex justify-end">
           <BaseButton
             size="sm"
             variant="flat"
@@ -1076,90 +1096,113 @@ export default function AdminSkillRadarContent() {
           </BaseButton>
         </div>
 
-        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <BaseInput
-            label="ค้นหา"
-            placeholder="ชื่อผู้ใช้ อีเมล Skill หรือเหตุผล"
-            value={eventFilters.search ?? ""}
-            onValueChange={(search) => updateEventFilters({ search: search || undefined })}
-          />
-          <BaseInput
-            label="User ID"
-            placeholder="กรองด้วย userId"
-            value={eventFilters.userId ?? ""}
-            onValueChange={(userId) => updateEventFilters({ userId: userId || undefined })}
-          />
-          <label className="flex flex-col gap-1 text-sm text-default-600">
-            Position
-            <select
-              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
-              value={eventFilters.positionId ?? ""}
-              onChange={(event) =>
-                updateEventFilters({ positionId: event.target.value || undefined })
-              }
-            >
-              <option value="">ทั้งหมด</option>
-              {positions.map((position) => (
-                <option key={position.id} value={position.id}>
-                  {position.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-default-600">
-            Skill
-            <select
-              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
-              value={eventFilters.skillId ?? ""}
-              onChange={(event) => updateEventFilters({ skillId: event.target.value || undefined })}
-            >
-              <option value="">ทั้งหมด</option>
-              {eventSkillOptions.map((skill) => (
-                <option key={skill.id} value={skill.id}>
-                  {skill.name} / {skill.positionName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-default-600">
-            แหล่งที่มา
-            <select
-              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
-              value={eventFilters.sourceType ?? ""}
-              onChange={(event) =>
-                updateEventFilters({ sourceType: event.target.value || undefined })
-              }
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="QUIZ_ATTEMPT">Quiz</option>
-              <option value="AI_CHAT_QUESTION">AI Chat</option>
-              <option value="LESSON_COMPLETION">Lesson</option>
-              <option value="LESSON_TOPIC_CREATED">Lesson Topic</option>
-              <option value="LESSON_CHAT_QUESTION">Lesson Chat</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-default-600">
-            จำนวนต่อหน้า
-            <select
-              className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
-              value={eventFilters.limit ?? 10}
-              onChange={(event) => updateEventFilters({ limit: Number(event.target.value) })}
-            >
-              <option value={10}>10</option>
-              <option value={30}>30</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </label>
-          <div className="flex items-end">
+        <div className="mb-4 space-y-3 border-y border-default-200/70 bg-default-50/60 py-4 dark:bg-default-100/5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ListFilter size={16} className="text-primary" />
+              <p className="text-sm font-medium">ตัวกรองหลักฐาน</p>
+              {activeEventFilterCount > 0 && (
+                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  ใช้อยู่ {activeEventFilterCount}
+                </span>
+              )}
+            </div>
             <BaseButton
               size="sm"
-              variant="flat"
+              variant="light"
               startContent={<RotateCcw size={14} />}
+              isDisabled={activeEventFilterCount === 0}
               onPress={clearEventFilters}
             >
               ล้างตัวกรอง
             </BaseButton>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.4fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)]">
+            <label className="flex flex-col gap-1.5 text-sm text-default-600">
+              ค้นหา
+              <BaseInput
+                aria-label="ค้นหาหลักฐานคะแนน"
+                placeholder="ชื่อผู้ใช้ อีเมล Skill หรือเหตุผล"
+                startContent={<Search size={16} className="text-default-400" />}
+                value={eventFilters.search ?? ""}
+                onValueChange={(search) => updateEventFilters({ search: search || undefined })}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-default-600">
+              Position
+              <select
+                className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                value={eventFilters.positionId ?? ""}
+                onChange={(event) =>
+                  updateEventFilters({ positionId: event.target.value || undefined })
+                }
+              >
+                <option value="">ทุก Position</option>
+                {positions.map((position) => (
+                  <option key={position.id} value={position.id}>
+                    {position.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-default-600">
+              Skill
+              <select
+                className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                value={eventFilters.skillId ?? ""}
+                onChange={(event) => updateEventFilters({ skillId: event.target.value || undefined })}
+              >
+                <option value="">ทุก Skill</option>
+                {eventSkillOptions.map((skill) => (
+                  <option key={skill.id} value={skill.id}>
+                    {skill.name} / {skill.positionName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_minmax(200px,0.7fr)_140px]">
+            <label className="flex flex-col gap-1.5 text-sm text-default-600">
+              รหัสผู้ใช้ (User ID)
+              <BaseInput
+                aria-label="กรองด้วยรหัสผู้ใช้"
+                placeholder="กรอก User ID"
+                value={eventFilters.userId ?? ""}
+                onValueChange={(userId) => updateEventFilters({ userId: userId || undefined })}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-default-600">
+              แหล่งที่มา
+              <select
+                className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                value={eventFilters.sourceType ?? ""}
+                onChange={(event) =>
+                  updateEventFilters({ sourceType: event.target.value || undefined })
+                }
+              >
+                <option value="">ทุกแหล่งที่มา</option>
+                <option value="QUIZ_ATTEMPT">Quiz</option>
+                <option value="AI_CHAT_QUESTION">AI Chat</option>
+                <option value="LESSON_COMPLETION">Lesson</option>
+                <option value="LESSON_TOPIC_CREATED">Lesson Topic</option>
+                <option value="LESSON_CHAT_QUESTION">Lesson Chat</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-default-600 sm:col-span-2 lg:col-span-1">
+              จำนวนต่อหน้า
+              <select
+                className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                value={eventFilters.limit ?? 10}
+                onChange={(event) => updateEventFilters({ limit: Number(event.target.value) })}
+              >
+                <option value={10}>10</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
           </div>
         </div>
 
