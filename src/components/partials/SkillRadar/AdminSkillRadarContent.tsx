@@ -1027,8 +1027,8 @@ export default function AdminSkillRadarContent() {
               </div>
             )}
             <p className="text-sm text-default-500">
-              หากมีผู้ใช้ คะแนน ประวัติคะแนน Career Alignment หรือคำถาม Quiz ผูกอยู่
-              ระบบจะไม่ลบและจะแนะนำให้ปิดใช้งานแทน
+              Career Alignment ที่เป็น cache จะถูกลบพร้อม Position หากมีผู้ใช้ คะแนน
+              ประวัติคะแนน หรือคำถาม Quiz ผูกอยู่ ระบบจะไม่ลบและจะแนะนำให้ปิดใช้งานแทน
             </p>
           </ModalBody>
           <ModalFooter>
