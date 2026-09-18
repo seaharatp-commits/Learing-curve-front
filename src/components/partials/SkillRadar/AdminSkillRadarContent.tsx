@@ -11,6 +11,7 @@ import {
   Download,
   Eye,
   Pencil,
+  Plus,
   RotateCcw,
   Save,
   Search,
@@ -236,6 +237,7 @@ export default function AdminSkillRadarContent() {
   const [suggestions, setSuggestions] = useState<EditableSkillSuggestion[]>([]);
   const [positionSearch, setPositionSearch] = useState("");
   const [skillSearch, setSkillSearch] = useState("");
+  const [isSkillFormOpen, setIsSkillFormOpen] = useState(false);
   const events = eventsPage.items;
 
   const selectedPosition = useMemo(
@@ -298,6 +300,8 @@ export default function AdminSkillRadarContent() {
   useEffect(() => {
     setSuggestions([]);
     setSkillSearch("");
+    setIsSkillFormOpen(false);
+    resetSkillForm();
   }, [selectedPositionId]);
 
   useEffect(() => {
@@ -345,6 +349,19 @@ export default function AdminSkillRadarContent() {
     setSkillKeywordsText("");
   };
 
+  const closeSkillForm = () => {
+    resetSkillForm();
+    setIsSkillFormOpen(false);
+  };
+
+  const openNewSkillForm = () => {
+    resetSkillForm();
+    setIsSkillFormOpen(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById("skill-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const startEditPosition = (position: AdminSkillRadarPosition) => {
     setEditingPosition(position);
     setPositionForm({
@@ -377,6 +394,7 @@ export default function AdminSkillRadarContent() {
   };
 
   const startEditSkill = (skill: SkillRadarSkill) => {
+    setIsSkillFormOpen(true);
     setEditingSkill(skill);
     setSkillForm({
       name: skill.name,
@@ -386,6 +404,9 @@ export default function AdminSkillRadarContent() {
       isActive: skill.isActive,
     });
     setSkillKeywordsText(keywordsToText(skill.keywords));
+    window.requestAnimationFrame(() => {
+      document.getElementById("skill-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const handleConfirmDeleteSkill = () => {
@@ -395,7 +416,7 @@ export default function AdminSkillRadarContent() {
     deleteSkillMutation.mutate(deletingSkill.id, {
       onSuccess: () => {
         if (editingSkill?.id === deletingSkill.id) {
-          resetSkillForm();
+          closeSkillForm();
         }
         setMessage({ text: "ลบ Skill สำเร็จ", isError: false });
         setDeletingSkill(null);
@@ -467,7 +488,7 @@ export default function AdminSkillRadarContent() {
     const options = {
       onSuccess: () => {
         setMessage({ text: "บันทึก Skill สำเร็จ", isError: false });
-        resetSkillForm();
+        closeSkillForm();
       },
       onError: (error: unknown) => {
         setMessage({ text: getErrorMessage(error, "บันทึก Skill ไม่สำเร็จ"), isError: true });
@@ -587,19 +608,21 @@ export default function AdminSkillRadarContent() {
       </div>
 
       {!isLoading && !isError && (
-        <BaseCard className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {[
-            ["Position ทั้งหมด", summary.positionCount],
-            ["Position ที่เปิดใช้", summary.activePositionCount],
-            ["Skill ทั้งหมด", summary.skillCount],
-            ["Skill ที่เปิดใช้", summary.activeSkillCount],
-            ["Evidence ที่พบ", eventsPage.total],
-          ].map(([label, value]) => (
-            <div key={label} className="border-b border-default-100 pb-2 last:border-0 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-3 sm:last:border-r-0">
-              <p className="text-xs text-default-500">{label}</p>
-              <p className="mt-1 text-xl font-semibold">{value}</p>
-            </div>
-          ))}
+        <BaseCard>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 xl:grid-cols-5">
+            {[
+              ["Position ทั้งหมด", summary.positionCount],
+              ["Position ที่เปิดใช้", summary.activePositionCount],
+              ["Skill ทั้งหมด", summary.skillCount],
+              ["Skill ที่เปิดใช้", summary.activeSkillCount],
+              ["Evidence ที่พบ", eventsPage.total],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0 border-l-2 border-primary/40 pl-3">
+                <p className="truncate text-xs text-default-500">{label}</p>
+                <p className="mt-0.5 text-xl font-semibold leading-tight">{value}</p>
+              </div>
+            ))}
+          </div>
         </BaseCard>
       )}
 
@@ -758,7 +781,7 @@ export default function AdminSkillRadarContent() {
 
           <div className="space-y-4">
             <BaseCard>
-              <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="mb-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-medium">{selectedPosition?.name ?? "Skills"}</h2>
                   <p className="text-sm text-default-500">
@@ -766,10 +789,11 @@ export default function AdminSkillRadarContent() {
                   </p>
                 </div>
                 {selectedPosition && (
-                  <div className="flex gap-2">
+                  <div className="flex shrink-0 flex-wrap justify-end gap-2">
                     <BaseButton
                       size="sm"
                       variant="flat"
+                      color="primary"
                       startContent={<Sparkles size={14} />}
                       isLoading={suggestPositionSkillsMutation.isPending}
                       isDisabled={!selectedPosition.isActive || isSkillBusy}
@@ -777,6 +801,16 @@ export default function AdminSkillRadarContent() {
                       onPress={handleSuggestSkills}
                     >
                       ให้ AI แนะนำ Skill
+                    </BaseButton>
+                    <BaseButton
+                      size="sm"
+                      color="primary"
+                      startContent={<Plus size={15} />}
+                      isDisabled={!selectedPosition.isActive || isSkillBusy}
+                      title="เพิ่ม Skill ใหม่ใน Position นี้"
+                      onPress={openNewSkillForm}
+                    >
+                      เพิ่ม Skill
                     </BaseButton>
                   </div>
                 )}
@@ -805,9 +839,10 @@ export default function AdminSkillRadarContent() {
                     variant="flat"
                     className="mt-3"
                     isDisabled={!selectedPosition.isActive || isSkillBusy}
-                    onPress={() => document.getElementById("skill-form")?.scrollIntoView({ behavior: "smooth" })}
+                    startContent={<Plus size={15} />}
+                    onPress={openNewSkillForm}
                   >
-                    ไปที่ฟอร์มเพิ่ม Skill
+                    เพิ่ม Skill แรก
                   </BaseButton>
                 </div>
               ) : filteredSkills.length === 0 ? (
@@ -818,11 +853,11 @@ export default function AdminSkillRadarContent() {
                   </BaseButton>
                 </div>
               ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-2 md:grid-cols-2">
                   {filteredSkills.map((skill) => (
                     <div
                       key={skill.id}
-                      className="rounded-lg bg-default-50 p-3 dark:bg-default-100/10"
+                      className="rounded-lg border border-default-200/70 bg-default-50/60 p-3 transition-colors hover:border-primary/40 hover:bg-default-100/70 dark:bg-default-100/10"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -856,9 +891,9 @@ export default function AdminSkillRadarContent() {
                         </div>
                       </div>
                       {skill.description && (
-                        <p className="mt-2 text-sm text-default-600">{skill.description}</p>
+                        <p className="mt-1.5 line-clamp-2 text-sm text-default-600">{skill.description}</p>
                       )}
-                      <div className="mt-2 flex flex-wrap gap-1">
+                      <div className="mt-1.5 flex flex-wrap gap-1">
                         {skill.keywords.slice(0, 8).map((keyword) => (
                           <span
                             key={`${skill.id}-${keyword}`}
@@ -868,7 +903,7 @@ export default function AdminSkillRadarContent() {
                           </span>
                         ))}
                       </div>
-                      <p className={`mt-2 text-xs ${skill.isActive ? "text-success-600" : "text-default-400"}`}>
+                      <p className={`mt-1.5 text-xs ${skill.isActive ? "text-success-600" : "text-default-400"}`}>
                         {skill.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                       </p>
                     </div>
@@ -947,7 +982,7 @@ export default function AdminSkillRadarContent() {
               </BaseCard>
             )}
 
-            {selectedPosition && (
+            {selectedPosition && (isSkillFormOpen || editingSkill) && (
               <BaseCard id="skill-form" className="space-y-3 scroll-mt-4">
                 <h2 className="font-medium">{editingSkill ? "แก้ไข Skill" : "เพิ่ม Skill"}</h2>
                 <BaseInput
@@ -1008,11 +1043,9 @@ export default function AdminSkillRadarContent() {
                   >
                     บันทึก Skill
                   </BaseButton>
-                  {editingSkill && (
-                    <BaseButton variant="flat" isDisabled={isSkillBusy} onPress={resetSkillForm}>
-                      ยกเลิก
-                    </BaseButton>
-                  )}
+                  <BaseButton variant="flat" isDisabled={isSkillBusy} onPress={closeSkillForm}>
+                    ยกเลิก
+                  </BaseButton>
                 </div>
               </BaseCard>
             )}
