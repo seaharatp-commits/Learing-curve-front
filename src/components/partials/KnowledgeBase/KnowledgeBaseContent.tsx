@@ -104,9 +104,13 @@ export default function KnowledgeBaseContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">จัดการฐานความรู้</h1>
-        <BaseButton startContent={<Plus size={16} />} onPress={() => setIsAddOpen(true)}>
+        <BaseButton
+          className="self-start"
+          startContent={<Plus size={16} />}
+          onPress={() => setIsAddOpen(true)}
+        >
           เพิ่มความรู้
         </BaseButton>
       </div>

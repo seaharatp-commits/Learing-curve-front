@@ -52,7 +52,7 @@ export default function AdminDashboardContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Learning Curve · Admin</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">Learning Curve · Admin</h1>
         <p className="text-sm text-default-500">ภาพรวมระบบและทางลัดสำหรับจัดการฐานความรู้</p>
       </div>
 
@@ -92,7 +92,7 @@ export default function AdminDashboardContent() {
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-sm font-semibold text-default-600">Knowledge Base ล่าสุด</h2>
           <Link href="/admin/knowledge-base">
             <BaseButton size="sm" variant="flat" endContent={<ArrowRight size={14} />}>

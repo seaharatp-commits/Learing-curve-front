@@ -88,6 +88,11 @@ function formatConfidence(confidence: number | null) {
   return `${Math.round(confidence * 100)}%`;
 }
 
+function formatScoreDelta(scoreDelta: number) {
+  const value = Number(scoreDelta.toFixed(2));
+  return `${value > 0 ? "+" : ""}${value}`;
+}
+
 function escapeCsvCell(value: unknown) {
   const text = value === null || value === undefined ? "" : String(value);
   const safeText =
@@ -105,7 +110,7 @@ function buildEventsCsv(events: AdminSkillScoreEvent[]) {
       "Position",
       "Skill",
       "แหล่งที่มา",
-      "คะแนนเพิ่ม",
+      "การเปลี่ยนแปลงคะแนน",
       "คะแนนก่อน",
       "คะแนนหลัง",
       "ความมั่นใจ",
@@ -200,8 +205,16 @@ function SkillEvidenceItem({
           <span className="rounded-md bg-primary/10 px-2 py-1 text-primary">
             {formatSourceType(event.sourceType)}
           </span>
-          <span className="rounded-md bg-success/10 px-2 py-1 text-success-700">
-            +{event.scoreDelta}
+          <span
+            className={`rounded-md px-2 py-1 font-medium ${
+              event.scoreDelta > 0
+                ? "bg-success/10 text-success-700"
+                : event.scoreDelta < 0
+                  ? "bg-danger/10 text-danger-600"
+                  : "bg-default-100 text-default-600"
+            }`}
+          >
+            {formatScoreDelta(event.scoreDelta)}
           </span>
           <span className="rounded-md bg-default-100 px-2 py-1 text-default-600">
             ความมั่นใจ {formatConfidence(event.confidence)}
@@ -1014,7 +1027,7 @@ export default function AdminSkillRadarContent() {
 
             {selectedPosition && suggestions.length > 0 && (
               <BaseCard className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="font-medium">
                     Skill ที่ AI แนะนำ ({suggestions.length}) — ตรวจสอบก่อนบันทึก
                   </h2>
