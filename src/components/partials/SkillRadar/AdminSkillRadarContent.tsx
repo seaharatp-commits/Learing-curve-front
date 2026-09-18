@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import {
   Activity,
+  AlertTriangle,
   BrainCircuit,
   ChevronLeft,
   ChevronRight,
@@ -12,8 +13,10 @@ import {
   Pencil,
   RotateCcw,
   Save,
+  Search,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseCard } from "@/components/ui/Card";
@@ -151,7 +154,7 @@ function SkillEvidenceItem({
             +{event.scoreDelta}
           </span>
           <span className="rounded-md bg-default-100 px-2 py-1 text-default-600">
-            confidence {formatConfidence(event.confidence)}
+            ความมั่นใจ {formatConfidence(event.confidence)}
           </span>
           <button
             type="button"
@@ -159,12 +162,12 @@ function SkillEvidenceItem({
             onClick={onToggle}
           >
             <Eye size={13} />
-            debug
+            รายละเอียด
           </button>
         </div>
       </div>
       <p className="mt-2 text-xs text-default-500">
-        score {Math.round(event.scoreBefore)} → {Math.round(event.scoreAfter)}
+        คะแนน {Math.round(event.scoreBefore)} → {Math.round(event.scoreAfter)}
       </p>
       {event.reason && <p className="mt-2 text-xs text-default-600">{event.reason}</p>}
       {isExpanded && (
@@ -231,12 +234,47 @@ export default function AdminSkillRadarContent() {
   const [skillKeywordsText, setSkillKeywordsText] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [suggestions, setSuggestions] = useState<EditableSkillSuggestion[]>([]);
+  const [positionSearch, setPositionSearch] = useState("");
+  const [skillSearch, setSkillSearch] = useState("");
   const events = eventsPage.items;
 
   const selectedPosition = useMemo(
     () => positions.find((position) => position.id === selectedPositionId) ?? positions[0] ?? null,
     [positions, selectedPositionId],
   );
+
+  const summary = useMemo(() => {
+    const skills = positions.flatMap((position) => position.skills);
+    return {
+      positionCount: positions.length,
+      activePositionCount: positions.filter((position) => position.isActive).length,
+      skillCount: skills.length,
+      activeSkillCount: skills.filter((skill) => skill.isActive).length,
+    };
+  }, [positions]);
+
+  const filteredPositions = useMemo(() => {
+    const query = positionSearch.trim().toLocaleLowerCase();
+    if (!query) return positions;
+    return positions.filter((position) =>
+      [position.name, position.description ?? ""]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(query),
+    );
+  }, [positionSearch, positions]);
+
+  const filteredSkills = useMemo(() => {
+    if (!selectedPosition) return [];
+    const query = skillSearch.trim().toLocaleLowerCase();
+    if (!query) return selectedPosition.skills;
+    return selectedPosition.skills.filter((skill) =>
+      [skill.name, skill.description ?? "", ...skill.keywords]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(query),
+    );
+  }, [selectedPosition, skillSearch]);
 
   const eventSkillOptions = useMemo(() => {
     const filteredPositions = eventFilters.positionId
@@ -259,7 +297,14 @@ export default function AdminSkillRadarContent() {
 
   useEffect(() => {
     setSuggestions([]);
+    setSkillSearch("");
   }, [selectedPositionId]);
+
+  useEffect(() => {
+    if (!message) return;
+    const timeout = window.setTimeout(() => setMessage(null), message.isError ? 7000 : 4000);
+    return () => window.clearTimeout(timeout);
+  }, [message]);
 
   const updateEventFilters = (patch: Partial<AdminSkillScoreEventFilters>) => {
     setExpandedEventId(null);
@@ -286,6 +331,7 @@ export default function AdminSkillRadarContent() {
     link.download = `skill-radar-evidence-page-${eventsPage.page}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+    setMessage({ text: "ส่งออก CSV สำเร็จ", isError: false });
   };
 
   const resetPositionForm = () => {
@@ -452,12 +498,12 @@ export default function AdminSkillRadarContent() {
           })),
         );
         setMessage({
-          text: `AI แนะนำ ${data.length} skill แล้ว กรุณาตรวจสอบก่อนกดบันทึก`,
+          text: `AI แนะนำ ${data.length} Skill แล้ว กรุณาตรวจสอบก่อนกดบันทึก`,
           isError: false,
         });
       },
       onError: (error: unknown) => {
-        setMessage({ text: getErrorMessage(error, "AI แนะนำ skill ไม่สำเร็จ"), isError: true });
+        setMessage({ text: getErrorMessage(error, "AI แนะนำ Skill ไม่สำเร็จ"), isError: true });
       },
     });
   };
@@ -501,9 +547,38 @@ export default function AdminSkillRadarContent() {
 
   const isSavingPosition = createPositionMutation.isPending || updatePositionMutation.isPending;
   const isSavingSkill = createSkillMutation.isPending || updateSkillMutation.isPending;
+  const isPositionBusy = isSavingPosition || deletePositionMutation.isPending;
+  const isSkillBusy =
+    isSavingSkill ||
+    deleteSkillMutation.isPending ||
+    createSkillsMutation.isPending ||
+    suggestPositionSkillsMutation.isPending;
 
   return (
     <div className="space-y-4">
+      {message && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className={`fixed right-4 top-4 z-50 flex max-w-[calc(100vw-2rem)] items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg sm:max-w-md ${
+            message.isError
+              ? "border-danger-300 bg-danger-50 text-danger-700 dark:bg-danger-950"
+              : "border-success-300 bg-success-50 text-success-700 dark:bg-success-950"
+          }`}
+        >
+          <span className="min-w-0 flex-1">{message.text}</span>
+          <button
+            type="button"
+            aria-label="ปิดข้อความแจ้งเตือน"
+            title="ปิด"
+            className="shrink-0 rounded p-0.5 hover:bg-black/5"
+            onClick={() => setMessage(null)}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Skill Radar</h1>
@@ -511,16 +586,21 @@ export default function AdminSkillRadarContent() {
         </div>
       </div>
 
-      {message && (
-        <div
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            message.isError
-              ? "border-danger-300 bg-danger-50 text-danger-700"
-              : "border-success-300 bg-success-50 text-success-700"
-          }`}
-        >
-          {message.text}
-        </div>
+      {!isLoading && !isError && (
+        <BaseCard className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            ["Position ทั้งหมด", summary.positionCount],
+            ["Position ที่เปิดใช้", summary.activePositionCount],
+            ["Skill ทั้งหมด", summary.skillCount],
+            ["Skill ที่เปิดใช้", summary.activeSkillCount],
+            ["Evidence ที่พบ", eventsPage.total],
+          ].map(([label, value]) => (
+            <div key={label} className="border-b border-default-100 pb-2 last:border-0 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-3 sm:last:border-r-0">
+              <p className="text-xs text-default-500">{label}</p>
+              <p className="mt-1 text-xl font-semibold">{value}</p>
+            </div>
+          ))}
+        </BaseCard>
       )}
 
       {isLoading ? (
@@ -542,10 +622,18 @@ export default function AdminSkillRadarContent() {
             <BaseCard>
               <div className="mb-3 flex items-center gap-2">
                 <BrainCircuit size={18} className="text-primary" />
-                <h2 className="font-medium">Positions</h2>
+                <h2 className="font-medium">Position</h2>
               </div>
+              <BaseInput
+                className="mb-3"
+                aria-label="ค้นหา Position"
+                placeholder="ค้นหา Position"
+                startContent={<Search size={16} className="text-default-400" />}
+                value={positionSearch}
+                onValueChange={setPositionSearch}
+              />
               <div className="space-y-2">
-                {positions.map((position) => (
+                {filteredPositions.map((position) => (
                   <div
                     key={position.id}
                     className={`flex items-center gap-1 rounded-lg p-1 transition-colors ${
@@ -556,8 +644,9 @@ export default function AdminSkillRadarContent() {
                   >
                     <button
                       type="button"
+                      disabled={isPositionBusy}
                       onClick={() => setSelectedPositionId(position.id)}
-                      className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-left text-sm"
+                      className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate font-medium">{position.name}</span>
@@ -568,10 +657,12 @@ export default function AdminSkillRadarContent() {
                               : "bg-default-100 text-default-500"
                           }`}
                         >
-                          {position.isActive ? "Active" : "Off"}
+                          {position.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-default-500">{position.skills.length} skills</p>
+                      <p className="mt-1 text-xs text-default-500">
+                        {position.skills.length} Skill
+                      </p>
                     </button>
                     <div className="flex shrink-0 flex-col gap-0.5">
                       <BaseButton
@@ -580,6 +671,7 @@ export default function AdminSkillRadarContent() {
                         variant="light"
                         aria-label={`แก้ไข ${position.name}`}
                         title="แก้ไข Position"
+                        isDisabled={isPositionBusy}
                         onPress={() => startEditPosition(position)}
                       >
                         <Pencil size={14} />
@@ -591,6 +683,7 @@ export default function AdminSkillRadarContent() {
                         color="danger"
                         aria-label={`ลบ ${position.name}`}
                         title="ลบ Position"
+                        isDisabled={isPositionBusy}
                         onPress={() => setDeletingPosition(position)}
                       >
                         <Trash2 size={14} />
@@ -598,6 +691,15 @@ export default function AdminSkillRadarContent() {
                     </div>
                   </div>
                 ))}
+                {filteredPositions.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-default-200 px-3 py-6 text-center">
+                    <p className="text-sm font-medium">ไม่พบ Position</p>
+                    <p className="mt-1 text-xs text-default-500">ลองค้นหาด้วยชื่อหรือคำอธิบายอื่น</p>
+                    <BaseButton size="sm" variant="light" className="mt-2" onPress={() => setPositionSearch("")}>
+                      ล้างคำค้นหา
+                    </BaseButton>
+                  </div>
+                )}
               </div>
             </BaseCard>
 
@@ -605,11 +707,13 @@ export default function AdminSkillRadarContent() {
               <h2 className="font-medium">{editingPosition ? "แก้ไข Position" : "เพิ่ม Position"}</h2>
               <BaseInput
                 label="ชื่อ Position"
+                isDisabled={isSavingPosition}
                 value={positionForm.name}
                 onValueChange={(name) => setPositionForm((prev) => ({ ...prev, name }))}
               />
               <BaseInput
                 label="คำอธิบาย"
+                isDisabled={isSavingPosition}
                 value={positionForm.description ?? ""}
                 onValueChange={(description) =>
                   setPositionForm((prev) => ({ ...prev, description }))
@@ -618,6 +722,7 @@ export default function AdminSkillRadarContent() {
               <label className="flex items-center gap-2 text-sm text-default-600">
                 <input
                   type="checkbox"
+                  disabled={isSavingPosition}
                   checked={positionForm.isActive ?? true}
                   onChange={(event) =>
                     setPositionForm((prev) => ({ ...prev, isActive: event.target.checked }))
@@ -625,16 +730,25 @@ export default function AdminSkillRadarContent() {
                 />
                 เปิดใช้งาน
               </label>
+              {editingPosition && positionForm.isActive === false && (
+                <div className="flex gap-2 rounded-lg border border-warning-300 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-950/40">
+                  <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+                  <p>
+                    การปิดใช้งานจะไม่ลบ Skill คะแนน หรือประวัติเดิม แต่ผู้ใช้จะไม่สามารถเลือก Position นี้กับข้อมูลใหม่ได้
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2">
                 <BaseButton
                   startContent={<Save size={16} />}
                   isLoading={isSavingPosition}
+                  isDisabled={isPositionBusy}
                   onPress={handleSavePosition}
                 >
                   บันทึก
                 </BaseButton>
                 {editingPosition && (
-                  <BaseButton variant="flat" onPress={resetPositionForm}>
+                  <BaseButton variant="flat" isDisabled={isPositionBusy} onPress={resetPositionForm}>
                     ยกเลิก
                   </BaseButton>
                 )}
@@ -658,20 +772,54 @@ export default function AdminSkillRadarContent() {
                       variant="flat"
                       startContent={<Sparkles size={14} />}
                       isLoading={suggestPositionSkillsMutation.isPending}
-                      isDisabled={!selectedPosition.isActive}
+                      isDisabled={!selectedPosition.isActive || isSkillBusy}
+                      title="ให้ AI แนะนำ Skill สำหรับ Position นี้"
                       onPress={handleSuggestSkills}
                     >
-                      AI Suggest Skills
+                      ให้ AI แนะนำ Skill
                     </BaseButton>
                   </div>
                 )}
               </div>
 
+              {selectedPosition && selectedPosition.skills.length > 0 && (
+                <BaseInput
+                  className="mb-3"
+                  aria-label="ค้นหา Skill"
+                  placeholder="ค้นหาจากชื่อ คำอธิบาย หรือ Keyword"
+                  startContent={<Search size={16} className="text-default-400" />}
+                  value={skillSearch}
+                  onValueChange={setSkillSearch}
+                />
+              )}
+
               {selectedPosition && selectedPosition.skills.length === 0 ? (
-                <p className="text-sm text-default-500">ยังไม่มี Skill ใน Position นี้</p>
+                <div className="rounded-lg border border-dashed border-default-200 px-4 py-8 text-center">
+                  <BrainCircuit size={28} className="mx-auto text-default-400" />
+                  <p className="mt-2 font-medium">ยังไม่มี Skill ใน Position นี้</p>
+                  <p className="mt-1 text-sm text-default-500">
+                    เพิ่ม Skill แรกด้วยฟอร์มด้านล่าง หรือให้ AI ช่วยแนะนำรายการเริ่มต้น
+                  </p>
+                  <BaseButton
+                    size="sm"
+                    variant="flat"
+                    className="mt-3"
+                    isDisabled={!selectedPosition.isActive || isSkillBusy}
+                    onPress={() => document.getElementById("skill-form")?.scrollIntoView({ behavior: "smooth" })}
+                  >
+                    ไปที่ฟอร์มเพิ่ม Skill
+                  </BaseButton>
+                </div>
+              ) : filteredSkills.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-default-200 px-4 py-8 text-center">
+                  <p className="font-medium">ไม่พบ Skill ที่ตรงกับคำค้นหา</p>
+                  <BaseButton size="sm" variant="light" className="mt-2" onPress={() => setSkillSearch("")}>
+                    ล้างคำค้นหา
+                  </BaseButton>
+                </div>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
-                  {selectedPosition?.skills.map((skill) => (
+                  {filteredSkills.map((skill) => (
                     <div
                       key={skill.id}
                       className="rounded-lg bg-default-50 p-3 dark:bg-default-100/10"
@@ -679,7 +827,7 @@ export default function AdminSkillRadarContent() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-medium">{skill.name}</p>
-                          <p className="text-xs text-default-500">weight {skill.weight}</p>
+                          <p className="text-xs text-default-500">น้ำหนักคะแนน: {skill.weight}</p>
                         </div>
                         <div className="flex shrink-0 gap-1">
                           <BaseButton
@@ -688,6 +836,7 @@ export default function AdminSkillRadarContent() {
                             variant="light"
                             aria-label={`แก้ไข ${skill.name}`}
                             title="แก้ไข Skill"
+                            isDisabled={isSkillBusy}
                             onPress={() => startEditSkill(skill)}
                           >
                             <Pencil size={14} />
@@ -699,6 +848,7 @@ export default function AdminSkillRadarContent() {
                             color="danger"
                             aria-label={`ลบ ${skill.name}`}
                             title="ลบ Skill"
+                            isDisabled={isSkillBusy}
                             onPress={() => setDeletingSkill(skill)}
                           >
                             <Trash2 size={14} />
@@ -719,7 +869,7 @@ export default function AdminSkillRadarContent() {
                         ))}
                       </div>
                       <p className={`mt-2 text-xs ${skill.isActive ? "text-success-600" : "text-default-400"}`}>
-                        {skill.isActive ? "Active" : "Inactive"}
+                        {skill.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                       </p>
                     </div>
                   ))}
@@ -733,7 +883,12 @@ export default function AdminSkillRadarContent() {
                   <h2 className="font-medium">
                     Skill ที่ AI แนะนำ ({suggestions.length}) — ตรวจสอบก่อนบันทึก
                   </h2>
-                  <BaseButton size="sm" variant="flat" onPress={() => setSuggestions([])}>
+                  <BaseButton
+                    size="sm"
+                    variant="flat"
+                    isDisabled={createSkillsMutation.isPending}
+                    onPress={() => setSuggestions([])}
+                  >
                     ยกเลิกทั้งหมด
                   </BaseButton>
                 </div>
@@ -747,16 +902,19 @@ export default function AdminSkillRadarContent() {
                         <div className="flex-1 space-y-2">
                           <BaseInput
                             label="ชื่อ Skill"
+                            isDisabled={createSkillsMutation.isPending}
                             value={suggestion.name}
                             onValueChange={(name) => updateSuggestion(index, { name })}
                           />
                           <BaseInput
                             label="คำอธิบาย"
+                            isDisabled={createSkillsMutation.isPending}
                             value={suggestion.description}
                             onValueChange={(description) => updateSuggestion(index, { description })}
                           />
                           <BaseInput
                             label="Keywords"
+                            isDisabled={createSkillsMutation.isPending}
                             placeholder="api, database, auth"
                             value={suggestion.keywordsText}
                             onValueChange={(keywordsText) => updateSuggestion(index, { keywordsText })}
@@ -767,6 +925,9 @@ export default function AdminSkillRadarContent() {
                           size="sm"
                           variant="light"
                           color="danger"
+                          aria-label={`นำ ${suggestion.name || `Skill ลำดับ ${index + 1}`} ออกจากรายการแนะนำ`}
+                          title="นำ Skill ออกจากรายการแนะนำ"
+                          isDisabled={createSkillsMutation.isPending}
                           onPress={() => removeSuggestion(index)}
                         >
                           <Trash2 size={14} />
@@ -778,6 +939,7 @@ export default function AdminSkillRadarContent() {
                 <BaseButton
                   startContent={<Save size={16} />}
                   isLoading={createSkillsMutation.isPending}
+                  isDisabled={isSkillBusy}
                   onPress={handleSaveAllSuggestions}
                 >
                   บันทึก Skill ทั้งหมดที่แนะนำ
@@ -786,15 +948,17 @@ export default function AdminSkillRadarContent() {
             )}
 
             {selectedPosition && (
-              <BaseCard className="space-y-3">
+              <BaseCard id="skill-form" className="space-y-3 scroll-mt-4">
                 <h2 className="font-medium">{editingSkill ? "แก้ไข Skill" : "เพิ่ม Skill"}</h2>
                 <BaseInput
                   label="ชื่อ Skill"
+                  isDisabled={isSavingSkill}
                   value={skillForm.name}
                   onValueChange={(name) => setSkillForm((prev) => ({ ...prev, name }))}
                 />
                 <BaseInput
                   label="คำอธิบาย"
+                  isDisabled={isSavingSkill}
                   value={skillForm.description ?? ""}
                   onValueChange={(description) =>
                     setSkillForm((prev) => ({ ...prev, description }))
@@ -802,13 +966,15 @@ export default function AdminSkillRadarContent() {
                 />
                 <BaseInput
                   label="Keywords"
+                  isDisabled={isSavingSkill}
                   placeholder="api, database, auth"
                   value={skillKeywordsText}
                   onValueChange={setSkillKeywordsText}
                 />
                 <BaseInput
-                  label="Weight"
+                  label="น้ำหนักคะแนน"
                   type="number"
+                  isDisabled={isSavingSkill}
                   value={String(skillForm.weight ?? 1)}
                   onValueChange={(weight) =>
                     setSkillForm((prev) => ({ ...prev, weight: Number(weight) }))
@@ -817,6 +983,7 @@ export default function AdminSkillRadarContent() {
                 <label className="flex items-center gap-2 text-sm text-default-600">
                   <input
                     type="checkbox"
+                    disabled={isSavingSkill}
                     checked={skillForm.isActive ?? true}
                     onChange={(event) =>
                       setSkillForm((prev) => ({ ...prev, isActive: event.target.checked }))
@@ -824,17 +991,25 @@ export default function AdminSkillRadarContent() {
                   />
                   เปิดใช้งาน
                 </label>
+                {editingSkill && skillForm.isActive === false && (
+                  <div className="flex gap-2 rounded-lg border border-warning-300 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-950/40">
+                    <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+                    <p>
+                      การปิดใช้งานจะไม่ลบคะแนนหรือประวัติเดิม แต่ Skill นี้จะไม่ถูกนำไปใช้กับข้อมูลใหม่
+                    </p>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <BaseButton
-                  startContent={<Save size={16} />}
-                  isLoading={isSavingSkill}
-                  isDisabled={!editingSkill && !selectedPosition.isActive}
-                  onPress={handleSaveSkill}
+                    startContent={<Save size={16} />}
+                    isLoading={isSavingSkill}
+                    isDisabled={isSkillBusy || (!editingSkill && !selectedPosition.isActive)}
+                    onPress={handleSaveSkill}
                   >
                     บันทึก Skill
                   </BaseButton>
                   {editingSkill && (
-                    <BaseButton variant="flat" onPress={resetSkillForm}>
+                    <BaseButton variant="flat" isDisabled={isSkillBusy} onPress={resetSkillForm}>
                       ยกเลิก
                     </BaseButton>
                   )}
@@ -849,9 +1024,9 @@ export default function AdminSkillRadarContent() {
         <div className="mb-3 flex items-center gap-2">
           <Activity size={18} className="text-primary" />
           <div>
-            <h2 className="font-medium">Skill Evidence Audit</h2>
+            <h2 className="font-medium">ตรวจสอบหลักฐานคะแนน Skill</h2>
             <p className="text-sm text-default-500">
-              ตรวจสอบคะแนน Skill Radar ตามผู้ใช้ ตำแหน่ง skill และแหล่งที่มาของคะแนน
+              ตรวจสอบคะแนน Skill Radar ตามผู้ใช้ Position, Skill และแหล่งที่มาของคะแนน
             </p>
           </div>
         </div>
@@ -864,14 +1039,14 @@ export default function AdminSkillRadarContent() {
             isDisabled={events.length === 0}
             onPress={exportCurrentEvents}
           >
-            Export CSV
+            ส่งออก CSV
           </BaseButton>
         </div>
 
         <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <BaseInput
-            label="Search"
-            placeholder="ชื่อผู้ใช้, email, skill, reason"
+            label="ค้นหา"
+            placeholder="ชื่อผู้ใช้ อีเมล Skill หรือเหตุผล"
             value={eventFilters.search ?? ""}
             onValueChange={(search) => updateEventFilters({ search: search || undefined })}
           />
@@ -914,7 +1089,7 @@ export default function AdminSkillRadarContent() {
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm text-default-600">
-            Source
+            แหล่งที่มา
             <select
               className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
               value={eventFilters.sourceType ?? ""}
@@ -931,7 +1106,7 @@ export default function AdminSkillRadarContent() {
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm text-default-600">
-            Per page
+            จำนวนต่อหน้า
             <select
               className="h-10 rounded-lg border border-default-200 bg-background px-3 text-sm outline-none"
               value={eventFilters.limit ?? 10}
@@ -950,17 +1125,17 @@ export default function AdminSkillRadarContent() {
               startContent={<RotateCcw size={14} />}
               onPress={clearEventFilters}
             >
-              Clear filters
+              ล้างตัวกรอง
             </BaseButton>
           </div>
         </div>
 
         {isEventsLoading ? (
-          <p className="text-sm text-default-500">กำลังโหลด evidence...</p>
+          <p className="text-sm text-default-500">กำลังโหลด Evidence...</p>
         ) : isEventsError ? (
           <div className="space-y-3">
             <p className="text-sm text-danger-600">
-              {getErrorMessage(eventsError, "โหลด evidence ไม่สำเร็จ")}
+              {getErrorMessage(eventsError, "โหลด Evidence ไม่สำเร็จ")}
             </p>
             <BaseButton size="sm" variant="flat" onPress={() => void refetchEvents()}>
               ลองอีกครั้ง
@@ -968,7 +1143,7 @@ export default function AdminSkillRadarContent() {
           </div>
         ) : events.length === 0 ? (
           <p className="text-sm text-default-500">
-            ยังไม่มี evidence สำหรับ Skill Radar ลองทำ quiz หรือถาม AI Chat ก่อนครับ
+            ยังไม่มี Evidence สำหรับ Skill Radar ลองทำ Quiz หรือถาม AI Chat ก่อนครับ
           </p>
         ) : (
           <div className="space-y-2">
@@ -1011,7 +1186,15 @@ export default function AdminSkillRadarContent() {
         </div>
       </BaseCard>
 
-      <Modal isOpen={!!deletingPosition} onClose={() => setDeletingPosition(null)}>
+      <Modal
+        isOpen={!!deletingPosition}
+        isDismissable={!deletePositionMutation.isPending}
+        isKeyboardDismissDisabled={deletePositionMutation.isPending}
+        hideCloseButton={deletePositionMutation.isPending}
+        onClose={() => {
+          if (!deletePositionMutation.isPending) setDeletingPosition(null);
+        }}
+      >
         <ModalContent>
           <ModalHeader>ยืนยันการลบ Position</ModalHeader>
           <ModalBody>
@@ -1032,12 +1215,17 @@ export default function AdminSkillRadarContent() {
             </p>
           </ModalBody>
           <ModalFooter>
-            <BaseButton variant="light" onPress={() => setDeletingPosition(null)}>
+            <BaseButton
+              variant="light"
+              isDisabled={deletePositionMutation.isPending}
+              onPress={() => setDeletingPosition(null)}
+            >
               ยกเลิก
             </BaseButton>
             <BaseButton
               color="danger"
               isLoading={deletePositionMutation.isPending}
+              isDisabled={deletePositionMutation.isPending}
               onPress={handleConfirmDeletePosition}
             >
               ลบ Position
@@ -1046,7 +1234,15 @@ export default function AdminSkillRadarContent() {
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={!!deletingSkill} onClose={() => setDeletingSkill(null)}>
+      <Modal
+        isOpen={!!deletingSkill}
+        isDismissable={!deleteSkillMutation.isPending}
+        isKeyboardDismissDisabled={deleteSkillMutation.isPending}
+        hideCloseButton={deleteSkillMutation.isPending}
+        onClose={() => {
+          if (!deleteSkillMutation.isPending) setDeletingSkill(null);
+        }}
+      >
         <ModalContent>
           <ModalHeader>ยืนยันการลบ Skill</ModalHeader>
           <ModalBody>
@@ -1059,12 +1255,17 @@ export default function AdminSkillRadarContent() {
             </p>
           </ModalBody>
           <ModalFooter>
-            <BaseButton variant="light" onPress={() => setDeletingSkill(null)}>
+            <BaseButton
+              variant="light"
+              isDisabled={deleteSkillMutation.isPending}
+              onPress={() => setDeletingSkill(null)}
+            >
               ยกเลิก
             </BaseButton>
             <BaseButton
               color="danger"
               isLoading={deleteSkillMutation.isPending}
+              isDisabled={deleteSkillMutation.isPending}
               onPress={handleConfirmDeleteSkill}
             >
               ลบ Skill
