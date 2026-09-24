@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import QRCode from "react-qr-code";
-import { BookOpen, Check, Copy, Eye, EyeOff, Smartphone, Sparkles } from "lucide-react";
+import { BookOpen, Eye, EyeOff, Sparkles } from "lucide-react";
 import { BaseButton } from "@/components/ui/Button";
 import { BaseInput } from "@/components/ui/Input";
 import { BaseCard } from "@/components/ui/Card";
@@ -25,15 +23,6 @@ export default function LoginContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isQrOpen, setIsQrOpen] = useState(false);
-  const [isLinkCopied, setIsLinkCopied] = useState(false);
-  const [loginUrl, setLoginUrl] = useState("https://learning.develyst.online/login");
-
-  useEffect(() => {
-    const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-    const appUrl = configuredUrl || window.location.origin;
-    setLoginUrl(`${appUrl.replace(/\/$/, "")}/login`);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,16 +62,6 @@ export default function LoginContent() {
     setMode((current) => (current === "login" ? "register" : "login"));
     setConfirmPassword("");
     setError("");
-  };
-
-  const copyLoginUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(loginUrl);
-      setIsLinkCopied(true);
-      window.setTimeout(() => setIsLinkCopied(false), 1600);
-    } catch {
-      setIsLinkCopied(false);
-    }
   };
 
   return (
@@ -192,74 +171,11 @@ export default function LoginContent() {
           >
             {mode === "login" ? "ยังไม่มีบัญชี? สมัครสมาชิก" : "มีบัญชีแล้ว? เข้าสู่ระบบ"}
           </button>
-          <div className="border-t border-default-200/70 pt-3 text-center dark:border-white/10">
-            <button
-              type="button"
-              className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              onClick={() => setIsQrOpen(true)}
-            >
-              <Smartphone size={16} />
-              เปิดบนโทรศัพท์
-            </button>
-          </div>
-          <p className="text-center text-xs leading-5 text-default-400">
+          <p className="border-t border-default-200/70 pt-3 text-center text-xs leading-5 text-default-400 dark:border-white/10">
             บัญชีแอดมินเดิมยังใช้งานได้ตามปกติ
           </p>
         </form>
       </BaseCard>
-
-      <Modal
-        isOpen={isQrOpen}
-        placement="center"
-        size="sm"
-        scrollBehavior="inside"
-        onClose={() => {
-          setIsQrOpen(false);
-          setIsLinkCopied(false);
-        }}
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col items-center gap-2 pb-2 text-center">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Smartphone size={20} />
-            </div>
-            <span>เปิด Learning Curve บนโทรศัพท์</span>
-          </ModalHeader>
-          <ModalBody className="items-center pb-6 text-center">
-            <p className="text-sm text-default-500">สแกน QR Code ด้วยกล้องโทรศัพท์</p>
-            <div
-              className="rounded-lg border border-default-200 bg-white p-3 shadow-sm"
-              role="img"
-              aria-label={`QR Code สำหรับเปิด ${loginUrl}`}
-            >
-              <QRCode
-                value={loginUrl}
-                size={184}
-                level="M"
-                bgColor="#ffffff"
-                fgColor="#0f172a"
-              />
-            </div>
-            <div className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-default-200 bg-default-50 px-3 py-2 text-left dark:bg-default-100/10">
-              <span className="min-w-0 flex-1 truncate text-xs text-default-600" title={loginUrl}>
-                {loginUrl.replace(/^https?:\/\//, "")}
-              </span>
-              <button
-                type="button"
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors hover:bg-primary/20"
-                aria-label="คัดลอกลิงก์เข้าสู่ระบบ"
-                title={isLinkCopied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
-                onClick={() => void copyLoginUrl()}
-              >
-                {isLinkCopied ? <Check size={15} /> : <Copy size={15} />}
-              </button>
-            </div>
-            <p className="text-xs text-default-400">
-              QR Code จะพาไปยังหน้าเข้าสู่ระบบโดยตรง
-            </p>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
     </main>
   );
 }
